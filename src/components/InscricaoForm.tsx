@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle } from 'lucide-react';
 
@@ -134,12 +135,16 @@ const InscricaoForm = () => {
         
         <div className="space-y-2">
           <Label htmlFor="cargoFuncao">Cargo/Função *</Label>
-          <Input
-            id="cargoFuncao"
-            value={formData.cargoFuncao}
-            onChange={(e) => handleInputChange('cargoFuncao', e.target.value)}
-            placeholder="Digite seu cargo ou função"
-          />
+          <Select value={formData.cargoFuncao} onValueChange={(value) => handleInputChange('cargoFuncao', value)}>
+            <SelectTrigger id="cargoFuncao">
+              <SelectValue placeholder="Selecione seu cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="promotor-de-justica">Promotor de Justiça</SelectItem>
+              <SelectItem value="servidor">Servidor</SelectItem>
+              <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="space-y-2">
