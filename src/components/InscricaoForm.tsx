@@ -304,15 +304,92 @@ const InscricaoForm = () => {
         />
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="objetivosEstrategicos">Objetivo(s) Estratégico(s)</Label>
-        <Textarea
-          id="objetivosEstrategicos"
+      <div className="space-y-4">
+        <Label>Objetivo Estratégico do MPPI (selecione 1 opção) *</Label>
+        <RadioGroup
           value={formData.objetivosEstrategicos}
-          onChange={(e) => handleInputChange('objetivosEstrategicos', e.target.value)}
-          placeholder="Liste os objetivos estratégicos..."
-          rows={4}
-        />
+          onValueChange={(value) => handleInputChange('objetivosEstrategicos', value)}
+          className="space-y-3"
+        >
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj1" id="obj1" className="mt-1" />
+            <Label htmlFor="obj1" className="text-sm leading-relaxed cursor-pointer">
+              Aperfeiçoar a atividade investigativa e de inteligência do MPPI
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj2" id="obj2" className="mt-1" />
+            <Label htmlFor="obj2" className="text-sm leading-relaxed cursor-pointer">
+              Aprimorar a efetividade da persecução cível e penal, assegurando ainda direitos e garantias a acusados e vítimas
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj3" id="obj3" className="mt-1" />
+            <Label htmlFor="obj3" className="text-sm leading-relaxed cursor-pointer">
+              Consolidar a atuação ministerial integrada e estimular a articulação interinstitucional
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj4" id="obj4" className="mt-1" />
+            <Label htmlFor="obj4" className="text-sm leading-relaxed cursor-pointer">
+              Garantir a transversalidade dos direitos fundamentais em toda a atividade ministerial
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj5" id="obj5" className="mt-1" />
+            <Label htmlFor="obj5" className="text-sm leading-relaxed cursor-pointer">
+              Impulsionar a fiscalização do emprego de recursos públicos, a implementação de políticas públicas e o controle social
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj6" id="obj6" className="mt-1" />
+            <Label htmlFor="obj6" className="text-sm leading-relaxed cursor-pointer">
+              Intensificar o diálogo com a sociedade e fomentar a solução pacífica de conflitos
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj7" id="obj7" className="mt-1" />
+            <Label htmlFor="obj7" className="text-sm leading-relaxed cursor-pointer">
+              Disseminar práticas de governança e gestão, em todos os níveis, orientadas para resultados
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj8" id="obj8" className="mt-1" />
+            <Label htmlFor="obj8" className="text-sm leading-relaxed cursor-pointer">
+              Zelar pela sustentabilidade em toda forma de atuação
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj9" id="obj9" className="mt-1" />
+            <Label htmlFor="obj9" className="text-sm leading-relaxed cursor-pointer">
+              Assegurar a disponibilidade e a aplicação eficiente dos recursos orçamentários
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj10" id="obj10" className="mt-1" />
+            <Label htmlFor="obj10" className="text-sm leading-relaxed cursor-pointer">
+              Estabelecer gestão administrativa compartilhada e padronizada
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj11" id="obj11" className="mt-1" />
+            <Label htmlFor="obj11" className="text-sm leading-relaxed cursor-pointer">
+              Fortalecer os processos de comunicação e a imagem institucional
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj12" id="obj12" className="mt-1" />
+            <Label htmlFor="obj12" className="text-sm leading-relaxed cursor-pointer">
+              Promover a gestão por competências e a qualidade de vida no trabalho
+            </Label>
+          </div>
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="obj13" id="obj13" className="mt-1" />
+            <Label htmlFor="obj13" className="text-sm leading-relaxed cursor-pointer">
+              Prover soluções tecnológicas integradas e inovadoras
+            </Label>
+          </div>
+        </RadioGroup>
       </div>
       
       <div className="space-y-2">
