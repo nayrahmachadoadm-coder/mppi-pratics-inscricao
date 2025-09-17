@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, User, Target, CheckCircle } from 'lucide-react';
+import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
 
 interface FormData {
   // Dados do proponente
@@ -18,6 +18,7 @@ interface FormData {
   unidadeSetor: string;
   telefoneInstitucional: string;
   emailInstitucional: string;
+  equipeEnvolvida: string;
   
   // Informações sobre a inscrição
   area: string;
@@ -61,6 +62,7 @@ const InscricaoForm = () => {
     unidadeSetor: '',
     telefoneInstitucional: '',
     emailInstitucional: '',
+    equipeEnvolvida: '',
     area: '',
     tituloIniciativa: '',
     anoInicioExecucao: '',
@@ -93,7 +95,9 @@ const InscricaoForm = () => {
     const requiredFields = [
       'nomeCompleto', 'cargoFuncao', 'matricula', 'unidadeSetor', 
       'telefoneInstitucional', 'emailInstitucional', 'area', 
-      'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual'
+      'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
+      'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 
+      'alinhamentoODS', 'replicabilidade'
     ];
     
     const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
@@ -117,14 +121,18 @@ const InscricaoForm = () => {
     { id: 1, title: "Dados do Proponente", icon: User },
     { id: 2, title: "Informações da Inscrição", icon: FileText },
     { id: 3, title: "Descrição", icon: Target },
-    { id: 4, title: "Critérios & Finalização", icon: CheckCircle },
+    { id: 4, title: "Critérios", icon: CheckCircle },
+    { id: 5, title: "Finalização", icon: CheckCircle },
   ];
 
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="nomeCompleto">Nome completo *</Label>
+          <Label htmlFor="nomeCompleto" className="text-base font-medium flex items-center gap-2">
+          <User className="w-4 h-4" />
+          Nome completo *
+        </Label>
           <Input
             id="nomeCompleto"
             value={formData.nomeCompleto}
@@ -134,21 +142,27 @@ const InscricaoForm = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="cargoFuncao">Cargo/Função *</Label>
+          <Label htmlFor="cargoFuncao" className="text-base font-medium flex items-center gap-2">
+          <User className="w-4 h-4" />
+          Cargo/Função *
+        </Label>
           <Select value={formData.cargoFuncao} onValueChange={(value) => handleInputChange('cargoFuncao', value)}>
             <SelectTrigger id="cargoFuncao">
               <SelectValue placeholder="Selecione seu cargo" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
               <SelectItem value="promotor-de-justica">Promotor de Justiça</SelectItem>
               <SelectItem value="servidor">Servidor</SelectItem>
-              <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="matricula">Matrícula *</Label>
+          <Label htmlFor="matricula" className="text-base font-medium flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Matrícula *
+        </Label>
           <Input
             id="matricula"
             value={formData.matricula}
@@ -158,7 +172,10 @@ const InscricaoForm = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="unidadeSetor">Unidade/Setor de lotação *</Label>
+          <Label htmlFor="unidadeSetor" className="text-base font-medium flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          Unidade/Setor de lotação *
+        </Label>
           <Input
             id="unidadeSetor"
             value={formData.unidadeSetor}
@@ -168,7 +185,10 @@ const InscricaoForm = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="telefoneInstitucional">Telefone institucional *</Label>
+          <Label htmlFor="telefoneInstitucional" className="text-base font-medium flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Telefone institucional *
+        </Label>
           <Input
             id="telefoneInstitucional"
             value={formData.telefoneInstitucional}
@@ -178,7 +198,10 @@ const InscricaoForm = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="emailInstitucional">E-mail institucional *</Label>
+          <Label htmlFor="emailInstitucional" className="text-base font-medium flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          E-mail institucional *
+        </Label>
           <Input
             id="emailInstitucional"
             type="email"
@@ -193,63 +216,74 @@ const InscricaoForm = () => {
 
   const renderStep2 = () => (
     <div className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="tituloIniciativa" className="text-base font-medium flex items-center gap-2">
+          <Lightbulb className="w-4 h-4" />
+          Título da prática/projeto *
+        </Label>
+        <Textarea
+          id="tituloIniciativa"
+          value={formData.tituloIniciativa}
+          onChange={(e) => handleInputChange('tituloIniciativa', e.target.value)}
+          placeholder="Informe o nome da iniciativa de forma clara e objetiva,\nrefletindo o conteúdo e o foco principal da prática ou projeto.\nDeve ser um título breve, direto e permitir fácil identificação da iniciativa"
+          rows={3}
+        />
+      </div>
+      
       <div className="space-y-4">
-        <Label className="text-base font-medium">Área *</Label>
+        <Label htmlFor="area" className="text-base font-medium flex items-center gap-2">
+          <Target className="w-4 h-4" />
+          Área/Categoria *
+        </Label>
         <RadioGroup
           value={formData.area}
           onValueChange={(value) => handleInputChange('area', value)}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="space-y-4"
         >
-          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+          <div className="flex items-center space-x-2">
             <RadioGroupItem value="finalistica-pratica" id="finalistica-pratica" />
-            <Label htmlFor="finalistica-pratica">Finalística – Prática</Label>
+            <Label htmlFor="finalistica-pratica">Prática Finalística</Label>
           </div>
-          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+          <div className="flex items-center space-x-2">
             <RadioGroupItem value="finalistica-projeto" id="finalistica-projeto" />
-            <Label htmlFor="finalistica-projeto">Finalística – Projeto</Label>
+            <Label htmlFor="finalistica-projeto">Projeto Finalístico</Label>
           </div>
-          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+          <div className="flex items-center space-x-2">
             <RadioGroupItem value="estruturante-pratica" id="estruturante-pratica" />
-            <Label htmlFor="estruturante-pratica">Estruturante – Prática</Label>
+            <Label htmlFor="estruturante-pratica">Prática Estruturante</Label>
           </div>
-          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+          <div className="flex items-center space-x-2">
             <RadioGroupItem value="estruturante-projeto" id="estruturante-projeto" />
-            <Label htmlFor="estruturante-projeto">Estruturante – Projeto</Label>
+            <Label htmlFor="estruturante-projeto">Projeto Estruturante</Label>
           </div>
-          <div className="flex items-center space-x-2 p-3 border rounded-lg md:col-span-2">
+          <div className="flex items-center space-x-2">
             <RadioGroupItem value="categoria-especial-ia" id="categoria-especial-ia" />
             <Label htmlFor="categoria-especial-ia">Categoria Especial – Inteligência Artificial</Label>
           </div>
         </RadioGroup>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="tituloIniciativa">Título da prática/projeto *</Label>
-          <Input
-            id="tituloIniciativa"
-            value={formData.tituloIniciativa}
-            onChange={(e) => handleInputChange('tituloIniciativa', e.target.value)}
-            placeholder="Digite o título da sua iniciativa"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="anoInicioExecucao">Ano de início da execução *</Label>
-          <Input
-            id="anoInicioExecucao"
-            type="number"
-            min="2000"
-            max="2025"
-            value={formData.anoInicioExecucao}
-            onChange={(e) => handleInputChange('anoInicioExecucao', e.target.value)}
-            placeholder="2024"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="anoInicioExecucao" className="text-base font-medium flex items-center gap-2">
+          <CheckCircle className="w-4 h-4" />
+          Ano de início da execução *
+        </Label>
+        <Input
+          id="anoInicioExecucao"
+          type="number"
+          min="2000"
+          max="2025"
+          value={formData.anoInicioExecucao}
+          onChange={(e) => handleInputChange('anoInicioExecucao', e.target.value)}
+          placeholder="2024"
+        />
       </div>
       
       <div className="space-y-4">
-        <Label className="text-base font-medium">Situação atual *</Label>
+        <Label className="text-base font-medium flex items-center gap-2">
+          <CheckSquare className="w-4 h-4" />
+          Situação atual *
+        </Label>
         <RadioGroup
           value={formData.situacaoAtual}
           onValueChange={(value) => handleInputChange('situacaoAtual', value)}
@@ -267,7 +301,10 @@ const InscricaoForm = () => {
         
         {formData.situacaoAtual === 'concluido' && (
           <div className="space-y-2">
-            <Label htmlFor="dataConclusao">Data de conclusão</Label>
+            <Label htmlFor="dataConclusao" className="text-base font-medium flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Data de conclusão
+            </Label>
             <Input
               id="dataConclusao"
               type="date"
@@ -277,35 +314,70 @@ const InscricaoForm = () => {
           </div>
         )}
       </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="equipeEnvolvida" className="text-base font-medium flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          Relação da equipe de membros e servidores envolvidos
+        </Label>
+        <Textarea
+          id="equipeEnvolvida"
+          value={formData.equipeEnvolvida}
+          onChange={(e) => handleInputChange('equipeEnvolvida', e.target.value)}
+          placeholder="Liste os nomes, cargos e funções dos membros e servidores que participaram da execução do trabalho inscrito. Ex: João Silva - Promotor de Justiça - Coordenador; Maria Santos - Servidora - Analista; etc."
+          rows={4}
+          maxLength={1000}
+        />
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          {formData.equipeEnvolvida.length}/1000 caracteres
+        </div>
+      </div>
     </div>
   );
 
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="resumoExecutivo">Resumo executivo (até 15 linhas)</Label>
+        <Label htmlFor="resumoExecutivo" className="text-base font-medium flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Resumo Executivo (até 2.000 caracteres).
+        </Label>
         <Textarea
           id="resumoExecutivo"
           value={formData.resumoExecutivo}
           onChange={(e) => handleInputChange('resumoExecutivo', e.target.value)}
-          placeholder="Descreva resumidamente sua iniciativa..."
+          placeholder="Apresente uma síntese da iniciativa, destacando de forma breve o contexto, o objetivo principal, as ações desenvolvidas e os resultados alcançados. O texto deve ser conciso, permitindo uma visão geral rápida e completa da iniciativa."
           rows={6}
+          maxLength={2000}
         />
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          {formData.resumoExecutivo.length}/2000 caracteres
+        </div>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="problemaNecessidade">Problema ou necessidade que motivou a iniciativa</Label>
+        <Label htmlFor="problemaNecessidade" className="text-base font-medium flex items-center gap-2">
+          <Target className="w-4 h-4" />
+          Problema ou Necessidade que Motivou a Iniciativa (até 1.000 caracteres).
+        </Label>
         <Textarea
           id="problemaNecessidade"
           value={formData.problemaNecessidade}
           onChange={(e) => handleInputChange('problemaNecessidade', e.target.value)}
-          placeholder="Descreva o problema ou necessidade..."
+          placeholder="Relate de forma clara qual foi o problema identificado ou a necessidade existente que levou à criação da iniciativa. Descreva o contexto, os fatores que evidenciaram essa demanda e os impactos que justificaram a adoção das ações propostas."
           rows={4}
+          maxLength={1000}
         />
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          {formData.problemaNecessidade.length}/1000 caracteres
+        </div>
       </div>
       
       <div className="space-y-4">
-        <Label>Objetivo Estratégico do MPPI (selecione 1 opção) *</Label>
+        <Label className="text-base font-medium flex items-center gap-2">
+          <Target className="w-4 h-4" />
+          Objetivo Estratégico do MPPI (selecione 1 opção) *
+        </Label>
         <RadioGroup
           value={formData.objetivosEstrategicos}
           onValueChange={(value) => handleInputChange('objetivosEstrategicos', value)}
@@ -393,25 +465,39 @@ const InscricaoForm = () => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="etapasMetodologia">Etapas/metodologia da execução</Label>
+        <Label htmlFor="etapasMetodologia" className="text-base font-medium flex items-center gap-2">
+          <CheckSquare className="w-4 h-4" />
+          Etapas / Metodologia da Execução (até 2.000 caracteres).
+        </Label>
         <Textarea
           id="etapasMetodologia"
           value={formData.etapasMetodologia}
           onChange={(e) => handleInputChange('etapasMetodologia', e.target.value)}
-          placeholder="Descreva as etapas e metodologia..."
+          placeholder="Descreva as principais etapas realizadas na execução da iniciativa, apresentando a metodologia adotada, os procedimentos utilizados e a sequência das ações desenvolvidas. Explique como cada fase contribuiu para o alcance dos resultados, destacando estratégias, recursos aplicados e formas de acompanhamento."
           rows={4}
+          maxLength={2000}
         />
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          {formData.etapasMetodologia.length}/2000 caracteres
+        </div>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="resultadosAlcancados">Resultados alcançados (mensuráveis, indicadores, números)</Label>
+        <Label htmlFor="resultadosAlcancados" className="text-base font-medium flex items-center gap-2">
+          <CheckCircle className="w-4 h-4" />
+          Descrição dos Resultados Alcançados (até 2.000 caracteres).
+        </Label>
         <Textarea
           id="resultadosAlcancados"
           value={formData.resultadosAlcancados}
           onChange={(e) => handleInputChange('resultadosAlcancados', e.target.value)}
-          placeholder="Apresente os resultados com dados quantitativos..."
+          placeholder="Informe os resultados obtidos com a iniciativa de forma objetiva, utilizando números ou indicadores mensuráveis (ex.: pessoas atendidas, percentual de aumento/redução, recursos mobilizados). Evite descrições genéricas e priorize dados que evidenciem o impacto alcançado."
           rows={4}
+          maxLength={2000}
         />
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          {formData.resultadosAlcancados.length}/2000 caracteres
+        </div>
       </div>
     </div>
   );
@@ -422,77 +508,132 @@ const InscricaoForm = () => {
         <h3 className="text-lg font-semibold">Critérios de Avaliação</h3>
         
         <div className="space-y-2">
-          <Label htmlFor="cooperacao">Cooperação (parcerias internas/externas envolvidas)</Label>
+          <Label htmlFor="cooperacao" className="text-base font-medium flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-600" />
+            Cooperação (parcerias internas/externas envolvidas)
+          </Label>
           <Textarea
             id="cooperacao"
             value={formData.cooperacao}
             onChange={(e) => handleInputChange('cooperacao', e.target.value)}
-            placeholder="Descreva as parcerias e cooperações..."
+            placeholder="Descreva as formas de atuação colaborativa estabelecidas durante a iniciativa, indicando a cooperação intra e interinstitucional, bem como eventuais parcerias com a sociedade civil. Informe como essas articulações contribuíram para fortalecer as ações, otimizar recursos e ampliar os resultados alcançados."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.cooperacao.length}/2000 caracteres
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="inovacao">Inovação (o que a iniciativa traz de novo e diferenciado)</Label>
+          <Label htmlFor="inovacao" className="text-base font-medium flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-yellow-600" />
+            Inovação (o que a iniciativa traz de novo e diferenciado)
+          </Label>
           <Textarea
             id="inovacao"
             value={formData.inovacao}
             onChange={(e) => handleInputChange('inovacao', e.target.value)}
-            placeholder="Destaque os aspectos inovadores..."
+            placeholder="Relate os aspectos inovadores da iniciativa, destacando o que ela traz de novo e diferenciado em relação a práticas já existentes. Explique como as ações se distinguem por soluções criativas, uso de novas metodologias, tecnologias ou formas de atuação que contribuíram para maior eficiência, impacto ou alcance dos resultados."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.inovacao.length}/2000 caracteres
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="resolutividade">Resolutividade (como a iniciativa solucionou de forma efetiva o problema)</Label>
+          <Label htmlFor="resolutividade" className="text-base font-medium flex items-center gap-2">
+            <CheckSquare className="h-4 w-4 text-green-600" />
+            Resolutividade (como a iniciativa solucionou de forma efetiva o problema)
+          </Label>
           <Textarea
             id="resolutividade"
             value={formData.resolutividade}
             onChange={(e) => handleInputChange('resolutividade', e.target.value)}
-            placeholder="Explique como o problema foi resolvido..."
+            placeholder="Explique de que forma a iniciativa solucionou de maneira efetiva o problema ou necessidade identificada. Descreva os resultados práticos alcançados, evidenciando a efetividade das ações, a redução ou eliminação dos obstáculos enfrentados e o impacto concreto gerado para o público-alvo ou para a instituição."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.resolutividade.length}/2000 caracteres
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="impactoSocial">Impacto social (volume de pessoas beneficiadas, abrangência e efeitos positivos)</Label>
+          <Label htmlFor="impactoSocial" className="text-base font-medium flex items-center gap-2">
+            <Heart className="h-4 w-4 text-red-600" />
+            Impacto social (volume de pessoas beneficiadas, abrangência e efeitos positivos)
+          </Label>
           <Textarea
             id="impactoSocial"
             value={formData.impactoSocial}
             onChange={(e) => handleInputChange('impactoSocial', e.target.value)}
-            placeholder="Quantifique o impacto social..."
+            placeholder="Quantifique o impacto gerado pela iniciativa, informando o número de pessoas beneficiadas, a abrangência territorial das ações e os principais efeitos positivos observados. Sempre que possível, utilize dados concretos e indicadores que evidenciem a relevância social dos resultados alcançados."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.impactoSocial.length}/2000 caracteres
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="alinhamentoODS">Alinhamento aos ODS da ONU (indicar quais ODS foram contemplados e como)</Label>
+          <Label htmlFor="alinhamentoODS" className="text-base font-medium flex items-center gap-2">
+            <Globe className="h-4 w-4 text-blue-500" />
+            Alinhamento aos ODS da Agenda 2030 da ONU (indicar qual objetivo foi contemplado e de que forma)
+          </Label>
           <Textarea
             id="alinhamentoODS"
             value={formData.alinhamentoODS}
             onChange={(e) => handleInputChange('alinhamentoODS', e.target.value)}
-            placeholder="Indique os ODS contemplados..."
+            placeholder="Indique qual Objetivo de Desenvolvimento Sustentável (ODS) foi contemplado pela iniciativa e explique de que forma suas ações contribuíram para alcançá-lo. Relacione as atividades realizadas ao ODS selecionado, destacando impactos e resultados concretos."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.alinhamentoODS.length}/2000 caracteres
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="replicabilidade">Replicabilidade (potencial de ser aplicada em outras áreas, unidades ou contextos)</Label>
+          <Label htmlFor="replicabilidade" className="text-base font-medium flex items-center gap-2">
+            <Copy className="h-4 w-4 text-purple-600" />
+            Replicabilidade (potencial de ser aplicada em outras áreas, unidades ou contextos)
+          </Label>
           <Textarea
             id="replicabilidade"
             value={formData.replicabilidade}
             onChange={(e) => handleInputChange('replicabilidade', e.target.value)}
-            placeholder="Explique o potencial de replicação..."
+            placeholder="Descreva o potencial da iniciativa de ser aplicada ou adaptada em outras áreas, unidades ou contextos. Explique de que forma a experiência pode servir como modelo, destacando elementos que favoreçam sua reprodução, como simplicidade da metodologia, baixo custo, facilidade de implementação ou resultados comprovados."
             rows={3}
+            maxLength={2000}
+            required
           />
+          <div className="text-xs text-muted-foreground text-right mt-1">
+            {formData.replicabilidade.length}/2000 caracteres
+          </div>
         </div>
       </div>
-      
+    </div>
+  );
+
+  const renderStep5 = () => (
+    <div className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Informações Adicionais</h3>
         
         <div className="space-y-4">
-          <Label className="text-base">Já participou de edições anteriores do Prêmio Melhores Práticas?</Label>
+          <Label className="text-base font-medium flex items-center gap-2">
+            <CheckSquare className="w-4 h-4" />
+            Já participou de edições anteriores do Prêmio Melhores Práticas?
+          </Label>
           <RadioGroup
             value={formData.participouEdicoesAnteriores}
             onValueChange={(value) => handleInputChange('participouEdicoesAnteriores', value)}
@@ -510,7 +651,10 @@ const InscricaoForm = () => {
           
           {formData.participouEdicoesAnteriores === 'sim' && (
             <div className="space-y-2">
-              <Label htmlFor="especificarEdicoesAnteriores">Especifique</Label>
+              <Label htmlFor="especificarEdicoesAnteriores" className="text-base font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Especifique
+              </Label>
               <Input
                 id="especificarEdicoesAnteriores"
                 value={formData.especificarEdicoesAnteriores || ''}
@@ -522,7 +666,10 @@ const InscricaoForm = () => {
         </div>
         
         <div className="space-y-4">
-          <Label className="text-base">A prática/projeto já foi vencedor em edição anterior do Prêmio Melhores Práticas?</Label>
+          <Label className="text-base font-medium flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            A prática/projeto já foi vencedor em edição anterior do Prêmio Melhores Práticas?
+          </Label>
           <RadioGroup
             value={formData.foiVencedorAnterior}
             onValueChange={(value) => handleInputChange('foiVencedorAnterior', value)}
@@ -550,8 +697,8 @@ const InscricaoForm = () => {
         
         <div className="p-4 bg-institutional-light border border-primary/20 rounded-lg">
           <p className="text-sm mb-4">
-            Declaro estar ciente e de acordo com as normas do Edital nº XX/2025 – 9ª Edição do Prêmio Melhores Práticas do MPPI, 
-            autorizando a divulgação das informações, imagens e resultados relativos a esta inscrição, em qualquer meio institucional ou de imprensa.
+            Declaro estar ciente e de acordo com as normas do Edital PGJ nº 107/2025 – 9ª Edição do Prêmio Melhores Práticas do MPPI, 
+            autorizando a divulgação das informações, imagens e resultados relacionados a esta inscrição, em quaisquer meios institucionais ou de imprensa.
           </p>
           
           <div className="flex items-center space-x-2">
@@ -561,20 +708,12 @@ const InscricaoForm = () => {
               onCheckedChange={(checked) => handleInputChange('concordaTermos', checked as boolean)}
             />
             <Label htmlFor="concordaTermos" className="text-sm font-medium">
-              Concordo com os termos da declaração *
+              Concordo com os termos desta declaração *
             </Label>
           </div>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="localData">Local e data</Label>
-          <Input
-            id="localData"
-            value={formData.localData}
-            onChange={(e) => handleInputChange('localData', e.target.value)}
-            placeholder="Ex: Teresina-PI, 15 de janeiro de 2025"
-          />
-        </div>
+
       </div>
     </div>
   );
@@ -583,10 +722,8 @@ const InscricaoForm = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full mb-4">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
+        <div className="text-center mb-8 border border-gray-200 rounded-lg shadow-md p-6 bg-white">
+          <img src="https://i.postimg.cc/pT3rRnwr/logo-mppi.png" alt="MPPI Logo" className="w-64 h-32 object-contain mb-6 mx-auto block" />
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Prêmio Melhores Práticas MPPI
           </h1>
@@ -604,18 +741,24 @@ const InscricaoForm = () => {
             
             return (
               <div key={step.id} className="flex flex-col items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
-                  isCompleted ? 'bg-success text-white' : 
-                  isActive ? 'bg-primary text-white' : 
-                  'bg-muted text-muted-foreground'
-                }`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className={`text-xs text-center ${
-                  isActive ? 'text-primary font-medium' : 'text-muted-foreground'
-                }`}>
-                  {step.title}
-                </span>
+                <button 
+                  type="button"
+                  onClick={() => setCurrentStep(step.id)}
+                  className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
+                    isCompleted ? 'bg-success text-white' : 
+                    isActive ? 'bg-primary text-white' : 
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className={`text-xs text-center ${
+                    isActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                  }`}>
+                    {step.title}
+                  </span>
+                </button>
                 {index < steps.length - 1 && (
                   <div className={`h-px flex-1 mt-5 ${
                     isCompleted ? 'bg-success' : 'bg-border'
@@ -650,6 +793,7 @@ const InscricaoForm = () => {
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
+              {currentStep === 5 && renderStep5()}
               
               <div className="flex justify-between mt-8 pt-6 border-t">
                 <Button
@@ -661,10 +805,10 @@ const InscricaoForm = () => {
                   Anterior
                 </Button>
                 
-                {currentStep < 4 ? (
+                {currentStep < 5 ? (
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(Math.min(4, currentStep + 1))}
+                    onClick={() => setCurrentStep(Math.min(5, currentStep + 1))}
                     className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary"
                   >
                     Próximo
