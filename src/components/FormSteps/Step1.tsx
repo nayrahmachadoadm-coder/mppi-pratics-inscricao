@@ -45,7 +45,7 @@ const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange })
           <SelectTrigger id="cargoFuncao" className="text-sm sm:text-base">
             <SelectValue placeholder="Selecione seu cargo" />
           </SelectTrigger>
-          <SelectContent position="item" className="z-50">
+          <SelectContent position="popper" className="z-50">
             <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
             <SelectItem value="promotor-de-justica">Promotor de Justiça</SelectItem>
             <SelectItem value="servidor">Servidor</SelectItem>

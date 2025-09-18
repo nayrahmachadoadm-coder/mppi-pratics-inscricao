@@ -127,6 +127,22 @@ const InscricaoForm = React.memo(() => {
         break;
       case 4:
         requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
+        
+        // Debug logging for Step 4
+        console.log('=== STEP 4 DEBUG INFO ===');
+        console.log('Form data for Step 4 fields:');
+        requiredFields.forEach(field => {
+          const value = formData[field as keyof FormData];
+          console.log(`${field}:`, {
+            value: value,
+            type: typeof value,
+            length: typeof value === 'string' ? value.length : 'N/A',
+            trimmed: typeof value === 'string' ? value.trim() : 'N/A',
+            trimmedLength: typeof value === 'string' ? value.trim().length : 'N/A',
+            isEmpty: !value || (typeof value === 'string' && value.trim() === '')
+          });
+        });
+        console.log('=== END STEP 4 DEBUG ===');
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
@@ -144,7 +160,13 @@ const InscricaoForm = React.memo(() => {
 
     missingFields = requiredFields.filter(field => {
       const value = formData[field as keyof FormData];
-      return !value || (typeof value === 'string' && value.trim() === '');
+      const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+      
+      if (step === 4 && isEmpty) {
+        console.log(`Field "${field}" is missing or empty`);
+      }
+      
+      return isEmpty;
     });
 
     if (missingFields.length > 0) {
