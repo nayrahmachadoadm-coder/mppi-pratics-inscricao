@@ -416,13 +416,13 @@ const InscricaoForm = () => {
               Data de conclusão
             </Label>
             <Input
-               id="dataConclusao"
-               type="text"
-               value={formData.dataConclusao || ''}
-               onChange={(e) => handleDateChange(e.target.value)}
-               placeholder="DD/MM/YYYY"
-               maxLength={10}
-             />
+                id="dataConclusao"
+                type="text"
+                value={formData.dataConclusao || ''}
+                onChange={(e) => handleDateChange(e.target.value)}
+                placeholder="informe da data de conclusão"
+                maxLength={10}
+              />
           </div>
         )}
       </div>
