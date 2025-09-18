@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { sendEmailWithPDF } from '@/lib/emailService';
+import Step1 from '@/components/FormSteps/Step1';
 
 interface FormData {
   // Dados do proponente
@@ -54,9 +55,10 @@ interface FormData {
   localData: string;
 }
 
-const InscricaoForm = () => {
+const InscricaoForm = React.memo(() => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     nomeCompleto: '',
     cargoFuncao: '',
@@ -86,14 +88,14 @@ const InscricaoForm = () => {
     localData: '',
   });
 
-  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
+  const handleInputChange = useCallback((field: keyof FormData, value: string | string[] | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
 
-  const handleDateChange = (value: string) => {
+  const handleDateChange = useCallback((value: string) => {
     // Remove todos os caracteres que não são números
     const numbersOnly = value.replace(/\D/g, '');
     
@@ -107,9 +109,9 @@ const InscricaoForm = () => {
     }
     
     handleInputChange('dataConclusao', formattedDate);
-  };
+  }, [handleInputChange]);
 
-  const validateStep = (step: number): boolean => {
+  const validateStep = useCallback((step: number): boolean => {
     let requiredFields: string[] = [];
     let missingFields: string[] = [];
 
@@ -156,16 +158,22 @@ const InscricaoForm = () => {
     }
 
     return true;
-  };
+  }, [formData, toast]);
 
-  const handleNextStep = () => {
+  const handleNextStep = useCallback(() => {
     if (validateStep(currentStep)) {
       setCurrentStep(Math.min(5, currentStep + 1));
     }
-  };
+  }, [currentStep, validateStep]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePrevStep = useCallback(() => {
+    setCurrentStep(Math.max(1, currentStep - 1));
+  }, [currentStep]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
     
     // Validação completa para envio final
     const allRequiredFields = [
@@ -192,6 +200,8 @@ const InscricaoForm = () => {
       });
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
        // Gerar PDF com os dados do formulário
@@ -224,105 +234,18 @@ const InscricaoForm = () => {
          description: "Ocorreu um erro ao processar sua inscrição. Tente novamente.",
          variant: "destructive",
        });
+     } finally {
+       setIsSubmitting(false);
      }
-  };
+  }, [formData, isSubmitting, toast]);
 
-  const steps = [
+  const steps = useMemo(() => [
     { id: 1, title: "Dados do Proponente", icon: User },
     { id: 2, title: "Informações da Inscrição", icon: FileText },
     { id: 3, title: "Descrição", icon: Target },
     { id: 4, title: "Critérios", icon: CheckCircle },
     { id: 5, title: "Finalização", icon: CheckCircle },
-  ];
-
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="nomeCompleto" className="text-base font-medium flex items-center gap-2">
-          <User className="w-4 h-4" />
-          Nome completo *
-        </Label>
-          <Input
-            id="nomeCompleto"
-            value={formData.nomeCompleto}
-            onChange={(e) => handleInputChange('nomeCompleto', e.target.value)}
-            placeholder="Digite seu nome completo"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="cargoFuncao" className="text-base font-medium flex items-center gap-2">
-          <User className="w-4 h-4" />
-          Cargo/Função *
-        </Label>
-          <Select value={formData.cargoFuncao} onValueChange={(value) => handleInputChange('cargoFuncao', value)}>
-            <SelectTrigger id="cargoFuncao">
-              <SelectValue placeholder="Selecione seu cargo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
-              <SelectItem value="promotor-de-justica">Promotor de Justiça</SelectItem>
-              <SelectItem value="servidor">Servidor</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="matricula" className="text-base font-medium flex items-center gap-2">
-          <FileText className="w-4 h-4" />
-          Matrícula *
-        </Label>
-          <Input
-            id="matricula"
-            value={formData.matricula}
-            onChange={(e) => handleInputChange('matricula', e.target.value)}
-            placeholder="Digite sua matrícula"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="unidadeSetor" className="text-base font-medium flex items-center gap-2">
-          <Globe className="w-4 h-4" />
-          Unidade/Setor de lotação *
-        </Label>
-          <Input
-            id="unidadeSetor"
-            value={formData.unidadeSetor}
-            onChange={(e) => handleInputChange('unidadeSetor', e.target.value)}
-            placeholder="Digite sua unidade ou setor"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="telefoneInstitucional" className="text-base font-medium flex items-center gap-2">
-          <FileText className="w-4 h-4" />
-          Telefone institucional *
-        </Label>
-          <Input
-            id="telefoneInstitucional"
-            value={formData.telefoneInstitucional}
-            onChange={(e) => handleInputChange('telefoneInstitucional', e.target.value)}
-            placeholder="(00) 0000-0000"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="emailInstitucional" className="text-base font-medium flex items-center gap-2">
-          <FileText className="w-4 h-4" />
-          E-mail institucional *
-        </Label>
-          <Input
-            id="emailInstitucional"
-            type="email"
-            value={formData.emailInstitucional}
-            onChange={(e) => handleInputChange('emailInstitucional', e.target.value)}
-            placeholder="seuemail@mppi.mp.br"
-          />
-        </div>
-      </div>
-    </div>
-  );
+  ], []);
 
   const renderStep2 = () => (
     <div className="space-y-6">
@@ -831,48 +754,53 @@ const InscricaoForm = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8 border border-gray-200 rounded-lg shadow-md p-6 bg-white">
-          <img src="https://i.postimg.cc/pT3rRnwr/logo-mppi.png" alt="MPPI Logo" className="w-64 h-32 object-contain mb-6 mx-auto block" />
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+        <div className="text-center mb-6 sm:mb-8 border border-gray-200 rounded-lg shadow-md p-4 sm:p-6 bg-white">
+          <img 
+            src="https://i.postimg.cc/pT3rRnwr/logo-mppi.png" 
+            alt="MPPI Logo" 
+            className="w-48 h-24 sm:w-64 sm:h-32 object-contain mb-4 sm:mb-6 mx-auto block" 
+          />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Prêmio Melhores Práticas MPPI
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             9ª Edição - 2025 | Ficha de Inscrição
           </p>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-between items-center mb-8 px-4">
+        <div className="flex justify-between items-center mb-6 sm:mb-8 px-2 sm:px-4 overflow-x-auto">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
             
             return (
-              <div key={step.id} className="flex flex-col items-center flex-1">
+              <div key={step.id} className="flex flex-col items-center flex-1 min-w-0">
                 <button 
                   type="button"
                   onClick={() => setCurrentStep(step.id)}
                   className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 sm:mb-2 transition-colors ${
                     isCompleted ? 'bg-success text-white' : 
                     isActive ? 'bg-primary text-white' : 
                     'bg-muted text-muted-foreground'
                   }`}>
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <span className={`text-xs text-center ${
+                  <span className={`text-xs text-center px-1 leading-tight ${
                     isActive ? 'text-primary font-medium' : 'text-muted-foreground'
                   }`}>
-                    {step.title}
+                    <span className="hidden sm:inline">{step.title}</span>
+                    <span className="sm:hidden">{step.title.split(' ')[0]}</span>
                   </span>
                 </button>
                 {index < steps.length - 1 && (
-                  <div className={`h-px flex-1 mt-5 ${
+                  <div className={`h-px flex-1 mt-3 sm:mt-5 ${
                     isCompleted ? 'bg-success' : 'bg-border'
                   }`} style={{ 
                     position: 'absolute',
@@ -889,30 +817,32 @@ const InscricaoForm = () => {
 
         {/* Form */}
         <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               {React.createElement(steps[currentStep - 1].icon, { className: "w-5 h-5" })}
-              {steps[currentStep - 1].title}
+              <span className="hidden sm:inline">{steps[currentStep - 1].title}</span>
+              <span className="sm:hidden">{steps[currentStep - 1].title.split(' ')[0]}</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Preencha todas as informações obrigatórias marcadas com *
             </CardDescription>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <form onSubmit={handleSubmit}>
-              {currentStep === 1 && renderStep1()}
+              {currentStep === 1 && <Step1 formData={formData} handleInputChange={handleInputChange} />}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
               {currentStep === 5 && renderStep5()}
               
-              <div className="flex justify-between mt-8 pt-6 border-t">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                  disabled={currentStep === 1}
+                  onClick={handlePrevStep}
+                  disabled={currentStep === 1 || isSubmitting}
+                  className="w-full sm:w-auto order-2 sm:order-1"
                 >
                   Anterior
                 </Button>
@@ -921,16 +851,25 @@ const InscricaoForm = () => {
                   <Button
                     type="button"
                     onClick={handleNextStep}
-                    className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto order-1 sm:order-2 bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary"
                   >
                     Próximo
                   </Button>
                 ) : (
                   <Button
                     type="submit"
-                    className="bg-gradient-to-r from-success to-success text-white hover:opacity-90"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto order-1 sm:order-2 bg-gradient-to-r from-success to-success text-white hover:opacity-90 disabled:opacity-50"
                   >
-                    Enviar Inscrição
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Enviando...
+                      </>
+                    ) : (
+                      'Enviar Inscrição'
+                    )}
                   </Button>
                 )}
               </div>
@@ -940,6 +879,6 @@ const InscricaoForm = () => {
       </div>
     </div>
   );
-};
+});
 
 export default InscricaoForm;
