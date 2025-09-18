@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
+import { generatePDF } from '@/lib/pdfGenerator';
+import { sendEmailWithPDF } from '@/lib/emailService';
 
 interface FormData {
   // Dados do proponente
@@ -84,23 +86,103 @@ const InscricaoForm = () => {
     localData: '',
   });
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleDateChange = (value: string) => {
+    // Remove todos os caracteres que não são números
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Aplica a máscara DD/MM/YYYY
+    let formattedDate = numbersOnly;
+    if (numbersOnly.length >= 3) {
+      formattedDate = numbersOnly.slice(0, 2) + '/' + numbersOnly.slice(2);
+    }
+    if (numbersOnly.length >= 5) {
+      formattedDate = numbersOnly.slice(0, 2) + '/' + numbersOnly.slice(2, 4) + '/' + numbersOnly.slice(4, 8);
+    }
+    
+    handleInputChange('dataConclusao', formattedDate);
+  };
+
+  const validateStep = (step: number): boolean => {
+    let requiredFields: string[] = [];
+    let missingFields: string[] = [];
+
+    switch (step) {
+      case 1:
+        requiredFields = ['nomeCompleto', 'cargoFuncao', 'matricula', 'unidadeSetor', 'telefoneInstitucional', 'emailInstitucional'];
+        break;
+      case 2:
+        requiredFields = ['area', 'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual', 'equipeEnvolvida'];
+        break;
+      case 3:
+        requiredFields = ['resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos', 'etapasMetodologia', 'resultadosAlcancados'];
+        break;
+      case 4:
+        requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
+        break;
+      case 5:
+        requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
+        // Verificação especial para concordaTermos (boolean)
+        if (!formData.concordaTermos) {
+          toast({
+            title: "Campos obrigatórios",
+            description: "Por favor, aceite os termos da declaração antes de continuar.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        break;
+    }
+
+    missingFields = requiredFields.filter(field => {
+      const value = formData[field as keyof FormData];
+      return !value || (typeof value === 'string' && value.trim() === '');
+    });
+
+    if (missingFields.length > 0) {
+      console.log('Campos faltando no step', step, ':', missingFields);
+      toast({
+        title: "Campos obrigatórios",
+        description: `Por favor, preencha todos os campos obrigatórios antes de continuar. Campos faltando: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(Math.min(5, currentStep + 1));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação básica
-    const requiredFields = [
+    // Validação completa para envio final
+    const allRequiredFields = [
       'nomeCompleto', 'cargoFuncao', 'matricula', 'unidadeSetor', 
-      'telefoneInstitucional', 'emailInstitucional', 'area', 
+      'telefoneInstitucional', 'emailInstitucional', 'equipeEnvolvida', 'area', 
       'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
+      'resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos',
+      'etapasMetodologia', 'resultadosAlcancados',
       'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 
-      'alinhamentoODS', 'replicabilidade'
+      'alinhamentoODS', 'replicabilidade', 'participouEdicoesAnteriores',
+      'foiVencedorAnterior'
     ];
     
-    const missingFields = requiredFields.filter(field => !formData[field as keyof FormData]);
+    const missingFields = allRequiredFields.filter(field => {
+      const value = formData[field as keyof FormData];
+      return !value || (typeof value === 'string' && value.trim() === '');
+    });
     
     if (missingFields.length > 0 || !formData.concordaTermos) {
       toast({
@@ -111,10 +193,38 @@ const InscricaoForm = () => {
       return;
     }
 
-    toast({
-      title: "Inscrição enviada com sucesso!",
-      description: "Sua inscrição foi registrada e será avaliada pela Comissão Julgadora.",
-    });
+    try {
+       // Gerar PDF com os dados do formulário
+       const pdfBlob = await generatePDF(formData);
+       
+       // Enviar email com o PDF anexado
+       const emailSuccess = await sendEmailWithPDF({
+         nomeCompleto: formData.nomeCompleto,
+         emailInstitucional: formData.emailInstitucional,
+         tituloIniciativa: formData.tituloIniciativa,
+         pdfBlob
+       });
+
+       if (emailSuccess) {
+         toast({
+           title: "Inscrição enviada com sucesso!",
+           description: "Sua inscrição foi registrada e será avaliada pela Comissão Julgadora. Um email de confirmação foi enviado.",
+         });
+       } else {
+         toast({
+           title: "Inscrição registrada",
+           description: "Sua inscrição foi registrada, mas houve um problema no envio do email de confirmação.",
+           variant: "destructive",
+         });
+       }
+     } catch (error) {
+       console.error('Erro ao enviar inscrição:', error);
+       toast({
+         title: "Erro ao enviar inscrição",
+         description: "Ocorreu um erro ao processar sua inscrição. Tente novamente.",
+         variant: "destructive",
+       });
+     }
   };
 
   const steps = [
@@ -275,7 +385,7 @@ const InscricaoForm = () => {
           max="2025"
           value={formData.anoInicioExecucao}
           onChange={(e) => handleInputChange('anoInicioExecucao', e.target.value)}
-          placeholder="2024"
+          placeholder="Informe o ano de início da execução"
         />
       </div>
       
@@ -306,11 +416,13 @@ const InscricaoForm = () => {
               Data de conclusão
             </Label>
             <Input
-              id="dataConclusao"
-              type="date"
-              value={formData.dataConclusao || ''}
-              onChange={(e) => handleInputChange('dataConclusao', e.target.value)}
-            />
+               id="dataConclusao"
+               type="text"
+               value={formData.dataConclusao || ''}
+               onChange={(e) => handleDateChange(e.target.value)}
+               placeholder="DD/MM/YYYY"
+               maxLength={10}
+             />
           </div>
         )}
       </div>
@@ -318,7 +430,7 @@ const InscricaoForm = () => {
       <div className="space-y-2">
         <Label htmlFor="equipeEnvolvida" className="text-base font-medium flex items-center gap-2">
           <Users className="w-4 h-4" />
-          Relação da equipe de membros e servidores envolvidos
+          Relação da equipe de membros e servidores envolvidos *
         </Label>
         <Textarea
           id="equipeEnvolvida"
@@ -510,7 +622,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="cooperacao" className="text-base font-medium flex items-center gap-2">
             <Users className="h-4 w-4 text-blue-600" />
-            Cooperação (parcerias internas/externas envolvidas)
+            Cooperação (parcerias internas/externas envolvidas) *
           </Label>
           <Textarea
             id="cooperacao"
@@ -529,7 +641,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="inovacao" className="text-base font-medium flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-yellow-600" />
-            Inovação (o que a iniciativa traz de novo e diferenciado)
+            Inovação (o que a iniciativa traz de novo e diferenciado) *
           </Label>
           <Textarea
             id="inovacao"
@@ -548,7 +660,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="resolutividade" className="text-base font-medium flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-green-600" />
-            Resolutividade (como a iniciativa solucionou de forma efetiva o problema)
+            Resolutividade (como a iniciativa solucionou de forma efetiva o problema) *
           </Label>
           <Textarea
             id="resolutividade"
@@ -567,7 +679,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="impactoSocial" className="text-base font-medium flex items-center gap-2">
             <Heart className="h-4 w-4 text-red-600" />
-            Impacto social (volume de pessoas beneficiadas, abrangência e efeitos positivos)
+            Impacto social (volume de pessoas beneficiadas, abrangência e efeitos positivos) *
           </Label>
           <Textarea
             id="impactoSocial"
@@ -586,7 +698,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="alinhamentoODS" className="text-base font-medium flex items-center gap-2">
             <Globe className="h-4 w-4 text-blue-500" />
-            Alinhamento aos ODS da Agenda 2030 da ONU (indicar qual objetivo foi contemplado e de que forma)
+            Alinhamento aos ODS da Agenda 2030 da ONU (indicar qual objetivo foi contemplado e de que forma) *
           </Label>
           <Textarea
             id="alinhamentoODS"
@@ -605,7 +717,7 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="replicabilidade" className="text-base font-medium flex items-center gap-2">
             <Copy className="h-4 w-4 text-purple-600" />
-            Replicabilidade (potencial de ser aplicada em outras áreas, unidades ou contextos)
+            Replicabilidade (potencial de ser aplicada em outras áreas, unidades ou contextos) *
           </Label>
           <Textarea
             id="replicabilidade"
@@ -632,7 +744,7 @@ const InscricaoForm = () => {
         <div className="space-y-4">
           <Label className="text-base font-medium flex items-center gap-2">
             <CheckSquare className="w-4 h-4" />
-            Já participou de edições anteriores do Prêmio Melhores Práticas?
+            Já participou de edições anteriores do Prêmio Melhores Práticas? *
           </Label>
           <RadioGroup
             value={formData.participouEdicoesAnteriores}
@@ -668,7 +780,7 @@ const InscricaoForm = () => {
         <div className="space-y-4">
           <Label className="text-base font-medium flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
-            A prática/projeto já foi vencedor em edição anterior do Prêmio Melhores Práticas?
+            A prática/projeto já foi vencedor em edição anterior do Prêmio Melhores Práticas? *
           </Label>
           <RadioGroup
             value={formData.foiVencedorAnterior}
@@ -808,7 +920,7 @@ const InscricaoForm = () => {
                 {currentStep < 5 ? (
                   <Button
                     type="button"
-                    onClick={() => setCurrentStep(Math.min(5, currentStep + 1))}
+                    onClick={handleNextStep}
                     className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary"
                   >
                     Próximo
