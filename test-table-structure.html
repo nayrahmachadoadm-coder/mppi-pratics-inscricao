@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Estrutura Tabela</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Teste Estrutura da Tabela Inscricoes</h1>
+    <button onclick="testTableStructure()">Testar Estrutura</button>
+    <button onclick="testMinimalInsert()">Testar Inserção Mínima</button>
+    <div id="result"></div>
+
+    <script>
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testTableStructure() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testando estrutura da tabela...</p>';
+
+            try {
+                // Primeiro, vamos tentar fazer uma consulta simples para ver se a tabela existe
+                console.log('🔍 Testando se a tabela existe...');
+                const { data: existsData, error: existsError } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .limit(1);
+
+                if (existsError) {
+                    console.error('❌ Erro ao verificar tabela:', existsError);
+                    resultDiv.innerHTML = `
+                        <h3>❌ Erro ao verificar tabela:</h3>
+                        <pre>${JSON.stringify(existsError, null, 2)}</pre>
+                    `;
+                    return;
+                }
+
+                console.log('✅ Tabela existe, dados:', existsData);
+                resultDiv.innerHTML = `
+                    <h3>✅ Tabela existe!</h3>
+                    <p>Registros encontrados: ${existsData.length}</p>
+                    <pre>${JSON.stringify(existsData, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                console.error('❌ Erro inesperado:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Erro inesperado:</h3>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        }
+
+        async function testMinimalInsert() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testando inserção mínima...</p>';
+
+            try {
+                // Teste com dados mínimos obrigatórios
+                const testData = {
+                    nome_completo: 'Teste Estrutura',
+                    cargo_funcao: 'Teste',
+                    email_institucional: 'teste@teste.com',
+                    telefone: '123456789',
+                    lotacao: 'Teste',
+                    titulo_iniciativa: 'Teste',
+                    area_atuacao: 'Teste',
+                    data_inicio: '2024-01-01',
+                    publico_alvo: 'Teste',
+                    descricao_iniciativa: 'Teste',
+                    objetivos: 'Teste',
+                    metodologia: 'Teste',
+                    principais_resultados: 'Teste',
+                    cooperacao: 'Teste',
+                    inovacao: 'Teste',
+                    resolutividade: 'Teste',
+                    impacto_social: 'Teste',
+                    alinhamento_ods: 'Teste',
+                    replicabilidade: 'Teste',
+                    participou_edicoes_anteriores: false,
+                    foi_vencedor_anterior: false,
+                    declaracao: true
+                };
+
+                console.log('🧪 Testando inserção com dados mínimos...');
+                const { data: insertData, error: insertError } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select();
+
+                if (insertError) {
+                    console.error('❌ Erro na inserção:', insertError);
+                    resultDiv.innerHTML = `
+                        <h3>❌ Erro na inserção:</h3>
+                        <pre>${JSON.stringify(insertError, null, 2)}</pre>
+                        <h4>Dados que tentamos inserir:</h4>
+                        <pre>${JSON.stringify(testData, null, 2)}</pre>
+                    `;
+                } else {
+                    console.log('✅ Inserção bem-sucedida:', insertData);
+                    resultDiv.innerHTML = `
+                        <h3>✅ Inserção bem-sucedida!</h3>
+                        <p>Dados inseridos:</p>
+                        <pre>${JSON.stringify(insertData, null, 2)}</pre>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ Erro inesperado:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Erro inesperado:</h3>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

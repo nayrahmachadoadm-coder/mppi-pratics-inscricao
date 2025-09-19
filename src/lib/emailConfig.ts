@@ -29,20 +29,33 @@
 // 5. Substitua os valores abaixo:
 
 export const EMAIL_CONFIG = {
-  // ⚠️ SUBSTITUA PELOS VALORES REAIS DO SEU EMAILJS:
+  // ⚠️ ATENÇÃO: VERIFIQUE SE ESTES VALORES ESTÃO CORRETOS NO SEU DASHBOARD EMAILJS
   
   // ID do serviço EmailJS (encontrado em Email Services)
-  SERVICE_ID: 'SEU_SERVICE_ID_AQUI',
+  // ❌ ERRO COMUM: Verificar se este serviço existe e está ativo
+  SERVICE_ID: 'service_7wgbrkh',
   
   // ID do template EmailJS (encontrado em Email Templates)  
-  TEMPLATE_ID: 'SEU_TEMPLATE_ID_AQUI',
+  // ❌ ERRO COMUM: Verificar se este template existe e está publicado
+  TEMPLATE_ID: 'template_6zi9h8j',
   
   // Chave pública do EmailJS (encontrada em Account > General)
-  PUBLIC_KEY: 'SUA_PUBLIC_KEY_AQUI',
+  PUBLIC_KEY: 'KhlLBUAUHTe84YtRp',
   
   // Email de destino (sempre receberá uma cópia)
   CC_EMAIL: 'planejamento@mppi.mp.br'
 };
+
+// 🔧 INSTRUÇÕES PARA CORRIGIR O ERRO 400:
+// 
+// 1. Acesse: https://dashboard.emailjs.com/admin/account
+// 2. Na seção "Public Key", copie o valor exato
+// 3. Substitua 'YOUR_PUBLIC_KEY_HERE' acima pelo valor copiado
+// 4. Certifique-se de que não há espaços extras no início ou fim
+// 5. A chave deve ter formato similar a: 'user_xxxxxxxxxxxxxxxxx'
+//
+// EXEMPLO DE CONFIGURAÇÃO CORRETA:
+// PUBLIC_KEY: 'user_abc123def456ghi789',
 
 // Template sugerido para o EmailJS:
 /*

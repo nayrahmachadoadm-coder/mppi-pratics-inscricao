@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste EmailJS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Configuração EmailJS</h1>
+    
+    <div class="test-section">
+        <h2>1. Verificar Configuração</h2>
+        <p>Primeiro, vamos verificar se as configurações estão carregadas corretamente:</p>
+        <button onclick="verificarConfig()">Verificar Configuração</button>
+        <div id="config-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Testar Inicialização EmailJS</h2>
+        <p>Vamos testar se conseguimos inicializar o EmailJS com a Public Key:</p>
+        <button onclick="testarInicializacao()">Testar Inicialização</button>
+        <div id="init-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Enviar Email de Teste</h2>
+        <p>Se a inicialização funcionar, vamos tentar enviar um email de teste:</p>
+        <button onclick="enviarEmailTeste()">Enviar Email de Teste</button>
+        <div id="email-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Importar configurações do EmailJS
+        const EMAIL_CONFIG = {
+            SERVICE_ID: 'service_7wgbrkh',
+            TEMPLATE_ID: 'template_6zi9h8j',
+            PUBLIC_KEY: 'KhlLBUAUHTe84YtRp',
+            CC_EMAIL: 'planejamento@mppi.mp.br'
+        };
+
+        function mostrarResultado(elementId, tipo, mensagem) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${tipo}`;
+            element.innerHTML = mensagem;
+            element.style.display = 'block';
+        }
+
+        function verificarConfig() {
+            console.log('🔍 Verificando configuração...');
+            
+            let resultado = '<h3>Configuração Atual:</h3>';
+            resultado += `<strong>SERVICE_ID:</strong> ${EMAIL_CONFIG.SERVICE_ID}<br>`;
+            resultado += `<strong>TEMPLATE_ID:</strong> ${EMAIL_CONFIG.TEMPLATE_ID}<br>`;
+            resultado += `<strong>PUBLIC_KEY:</strong> ${EMAIL_CONFIG.PUBLIC_KEY}<br>`;
+            resultado += `<strong>CC_EMAIL:</strong> ${EMAIL_CONFIG.CC_EMAIL}<br><br>`;
+            
+            // Verificar se os valores não são placeholders
+            const temPlaceholders = 
+                EMAIL_CONFIG.SERVICE_ID.includes('SEU_') ||
+                EMAIL_CONFIG.TEMPLATE_ID.includes('SEU_') ||
+                EMAIL_CONFIG.PUBLIC_KEY.includes('SUA_');
+            
+            if (temPlaceholders) {
+                resultado += '<span style="color: red;">❌ Ainda há placeholders na configuração!</span>';
+                mostrarResultado('config-result', 'error', resultado);
+            } else {
+                resultado += '<span style="color: green;">✅ Configuração parece estar preenchida!</span>';
+                mostrarResultado('config-result', 'success', resultado);
+            }
+        }
+
+        function testarInicializacao() {
+            console.log('🚀 Testando inicialização...');
+            
+            try {
+                // Tentar inicializar o EmailJS
+                emailjs.init(EMAIL_CONFIG.PUBLIC_KEY);
+                
+                mostrarResultado('init-result', 'success', 
+                    '✅ EmailJS inicializado com sucesso!<br>' +
+                    'A Public Key parece estar válida.'
+                );
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                mostrarResultado('init-result', 'error', 
+                    `❌ Erro na inicialização:<br>${error.message}`
+                );
+            }
+        }
+
+        async function enviarEmailTeste() {
+            console.log('📧 Enviando email de teste...');
+            
+            try {
+                // Inicializar primeiro
+                emailjs.init(EMAIL_CONFIG.PUBLIC_KEY);
+                
+                // Dados de teste
+                const templateParams = {
+                    to_name: 'Teste',
+                    subject: 'Teste de Configuração EmailJS',
+                    message: 'Este é um email de teste para verificar se a configuração está funcionando.',
+                    nome_completo: 'Usuário de Teste',
+                    email_institucional: 'teste@mppi.mp.br',
+                    titulo_iniciativa: 'Teste de Configuração',
+                    inscricao_id: 'TEST-001'
+                };
+
+                mostrarResultado('email-result', 'info', '⏳ Enviando email de teste...');
+
+                const response = await emailjs.send(
+                    EMAIL_CONFIG.SERVICE_ID,
+                    EMAIL_CONFIG.TEMPLATE_ID,
+                    templateParams
+                );
+
+                console.log('✅ Email enviado:', response);
+                mostrarResultado('email-result', 'success', 
+                    `✅ Email de teste enviado com sucesso!<br>` +
+                    `Status: ${response.status}<br>` +
+                    `Text: ${response.text}`
+                );
+
+            } catch (error) {
+                console.error('❌ Erro ao enviar email:', error);
+                mostrarResultado('email-result', 'error', 
+                    `❌ Erro ao enviar email de teste:<br>` +
+                    `Status: ${error.status || 'N/A'}<br>` +
+                    `Mensagem: ${error.text || error.message || 'Erro desconhecido'}<br><br>` +
+                    `<strong>Possíveis soluções:</strong><br>` +
+                    `• Verificar se a Public Key está correta<br>` +
+                    `• Verificar se o SERVICE_ID existe<br>` +
+                    `• Verificar se o TEMPLATE_ID existe<br>` +
+                    `• Verificar se o template tem as variáveis corretas`
+                );
+            }
+        }
+
+        // Verificar configuração automaticamente ao carregar
+        window.onload = function() {
+            verificarConfig();
+        };
+    </script>
+</body>
+</html>

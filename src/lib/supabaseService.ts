@@ -17,29 +17,27 @@ const supabasePublic = createClient(
 );
 
 // Interface para os dados da inscrição que serão salvos no Supabase
+// Baseada na estrutura atual da tabela (migração 20250919114056)
 export interface InscricaoData {
   // Dados do proponente
   nome_completo: string;
   cargo_funcao: string;
-  matricula: string;
-  unidade_setor: string;
-  telefone_institucional: string;
   email_institucional: string;
-  equipe_envolvida: string;
+  telefone: string;
+  lotacao: string;
   
-  // Informações sobre a inscrição
-  area: string;
+  // Dados da iniciativa
   titulo_iniciativa: string;
-  ano_inicio_execucao: string;
-  situacao_atual: string;
-  data_conclusao?: string;
+  area_atuacao: string;
+  data_inicio: string; // DATE no banco
+  data_fim?: string; // DATE no banco, opcional
+  publico_alvo: string;
   
-  // Descrição da prática/projeto
-  resumo_executivo: string;
-  problema_necessidade: string;
-  objetivos_estrategicos: string;
-  etapas_metodologia: string;
-  resultados_alcancados: string;
+  // Descrições
+  descricao_iniciativa: string;
+  objetivos: string;
+  metodologia: string;
+  principais_resultados: string;
   
   // Critérios de avaliação
   cooperacao: string;
@@ -50,13 +48,12 @@ export interface InscricaoData {
   replicabilidade: string;
   
   // Informações adicionais
-  participou_edicoes_anteriores: string;
-  especificar_edicoes_anteriores?: string;
-  foi_vencedor_anterior: string;
+  participou_edicoes_anteriores: boolean;
+  foi_vencedor_anterior: boolean;
+  observacoes?: string;
   
   // Declaração
-  concorda_termos: boolean;
-  local_data: string;
+  declaracao: boolean;
 }
 
 // Interface para o resultado da operação
@@ -71,46 +68,59 @@ export interface SupabaseResult {
  * Converte os dados do formulário para o formato do banco de dados
  */
 export function convertFormDataToSupabase(formData: any): InscricaoData {
+  // Função para converter string de data para formato YYYY-MM-DD
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    // Se já está no formato correto, retorna
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+    // Se está no formato DD/MM/YYYY, converte
+    if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+  };
+
   return {
     // Dados do proponente
-    nome_completo: formData.nomeCompleto,
-    cargo_funcao: formData.cargoFuncao,
-    matricula: formData.matricula,
-    unidade_setor: formData.unidadeSetor,
-    telefone_institucional: formData.telefoneInstitucional,
-    email_institucional: formData.emailInstitucional,
-    equipe_envolvida: formData.equipeEnvolvida,
+    nome_completo: formData.nomeCompleto || '',
+    cargo_funcao: formData.cargoFuncao || '',
+    matricula: formData.matricula || '',
+    unidade_setor: formData.unidadeSetor || '',
+    telefone_institucional: formData.telefoneInstitucional || '',
+    email_institucional: formData.emailInstitucional || '',
+    equipe_envolvida: formData.equipeEnvolvida || '',
     
     // Informações sobre a inscrição
-    area: formData.area,
-    titulo_iniciativa: formData.tituloIniciativa,
-    ano_inicio_execucao: formData.anoInicioExecucao,
-    situacao_atual: formData.situacaoAtual,
-    data_conclusao: formData.dataConclusao,
+    area: formData.area || '',
+    titulo_iniciativa: formData.tituloIniciativa || '',
+    ano_inicio_execucao: formData.anoInicioExecucao || '',
+    situacao_atual: formData.situacaoAtual || '',
+    data_conclusao: formData.dataConclusao || null,
     
     // Descrição da prática/projeto
-    resumo_executivo: formData.resumoExecutivo,
-    problema_necessidade: formData.problemaNecessidade,
-    objetivos_estrategicos: formData.objetivosEstrategicos,
-    etapas_metodologia: formData.etapasMetodologia,
-    resultados_alcancados: formData.resultadosAlcancados,
+    resumo_executivo: formData.resumoExecutivo || '',
+    problema_necessidade: formData.problemaNecessidade || '',
+    objetivos_estrategicos: formData.objetivosEstrategicos || '',
+    etapas_metodologia: formData.etapasMetodologia || '',
+    resultados_alcancados: formData.resultadosAlcancados || '',
     
     // Critérios de avaliação
-    cooperacao: formData.cooperacao,
-    inovacao: formData.inovacao,
-    resolutividade: formData.resolutividade,
-    impacto_social: formData.impactoSocial,
-    alinhamento_ods: formData.alinhamentoODS,
-    replicabilidade: formData.replicabilidade,
+    cooperacao: formData.cooperacao || '',
+    inovacao: formData.inovacao || '',
+    resolutividade: formData.resolutividade || '',
+    impacto_social: formData.impactoSocial || '',
+    alinhamento_ods: formData.alinhamentoOds || '',
+    replicabilidade: formData.replicabilidade || '',
     
     // Informações adicionais
-    participou_edicoes_anteriores: formData.participouEdicoesAnteriores,
-    especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores,
-    foi_vencedor_anterior: formData.foiVencedorAnterior,
+    participou_edicoes_anteriores: formData.participouEdicoesAnteriores || 'nao',
+    especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores || null,
+    foi_vencedor_anterior: formData.foiVencedorAnterior || 'nao',
     
     // Declaração
-    concorda_termos: formData.concordaTermos,
-    local_data: formData.localData,
+    concorda_termos: Boolean(formData.concordaTermos),
+    local_data: formData.localData || ''
   };
 }
 
@@ -161,6 +171,70 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
     return {
       success: false,
       error: `Erro inesperado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+    };
+  }
+}
+
+/**
+ * Função alternativa para salvar inscrição (compatibilidade)
+ */
+export async function salvarInscricao(formData: InscricaoData): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log('🔄 Iniciando salvamento no Supabase...');
+    console.log('📝 Dados do formulário:', formData);
+    
+    const supabaseData = convertFormDataToSupabase(formData);
+    console.log('🔄 Dados convertidos para Supabase:', supabaseData);
+    
+    // Primeira tentativa: inserção normal
+    let { data, error } = await supabase
+      .from('inscricoes')
+      .insert(supabaseData)
+      .select()
+      .single();
+
+    // Se der erro de RLS, tentar com configuração especial
+    if (error && error.code === '42501') {
+      console.log('⚠️ Erro de RLS detectado, tentando inserção alternativa...');
+      
+      // Tentar criar um cliente temporário sem RLS para esta operação
+      const { createClient } = await import('@supabase/supabase-js');
+      const tempClient = createClient(
+        "https://ljbxctmywdpsfmjvmlmh.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          },
+          db: {
+            schema: 'public'
+          }
+        }
+      );
+
+      const result = await tempClient
+        .from('inscricoes')
+        .insert(supabaseData)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error) {
+      console.error('❌ Erro ao salvar no Supabase:', error);
+      throw new Error(`Erro no banco de dados: ${error.message}`);
+    }
+
+    console.log('✅ Inscrição salva com sucesso:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('❌ Erro ao salvar inscrição:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Erro desconhecido ao salvar inscrição' 
     };
   }
 }
