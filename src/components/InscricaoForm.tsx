@@ -244,9 +244,9 @@ const InscricaoForm = React.memo(() => {
           data_inicio: `${formData.anoInicioExecucao}-01-01`,
           data_fim: formData.dataConclusao && formData.situacaoAtual === 'concluido' ? 
             formData.dataConclusao.split('/').reverse().join('-') : null,
-          publico_alvo: formData.equipeEnvolvida,
+          publico_alvo: `Equipe: ${formData.equipeEnvolvida}`,
           descricao_iniciativa: formData.resumoExecutivo,
-          objetivos: formData.problemaNecessidade,
+          objetivos: formData.objetivosEstrategicos,
           metodologia: formData.etapasMetodologia,
           principais_resultados: formData.resultadosAlcancados,
           cooperacao: formData.cooperacao,
