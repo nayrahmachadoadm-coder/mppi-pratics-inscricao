@@ -6,6 +6,7 @@ interface EmailData {
   emailInstitucional: string;
   tituloIniciativa: string;
   pdfBlob: Blob;
+  inscricaoId?: string;
 }
 
 export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> => {
@@ -25,8 +26,12 @@ export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> =
         Sua inscrição no Prêmio Melhores Práticas MPPI - 9ª Edição - 2025 foi enviada com sucesso!
 
         Título da Prática/Projeto: ${emailData.tituloIniciativa}
+        ${emailData.inscricaoId ? `Número da Inscrição: ${emailData.inscricaoId}` : ''}
 
         Em anexo, você encontrará o PDF com todos os dados da sua inscrição.
+
+        Sua inscrição será avaliada pela Comissão Julgadora conforme o cronograma do edital.
+        ${emailData.inscricaoId ? `Guarde o número da sua inscrição para futuras consultas.` : ''}
 
         Atenciosamente,
         Equipe do Prêmio Melhores Práticas MPPI

@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { sendEmailWithPDF } from '@/lib/emailService';
+import { saveInscricao } from '@/lib/supabaseService';
 import Step1 from '@/components/FormSteps/Step1';
 
 interface FormData {
@@ -204,38 +205,114 @@ const InscricaoForm = React.memo(() => {
     setIsSubmitting(true);
 
     try {
-       // Gerar PDF com os dados do formulário
-       const pdfBlob = await generatePDF(formData);
+       console.log('🚀 Iniciando processo de inscrição...');
        
-       // Enviar email com o PDF anexado
+       // 1. SALVAR NO SUPABASE PRIMEIRO
+       console.log('💾 Salvando dados no banco de dados...');
+       const supabaseResult = await saveInscricao(formData);
+       
+       let inscricaoId = '';
+       let supabaseSuccess = false;
+       
+       if (supabaseResult.success) {
+         inscricaoId = supabaseResult.data?.id || '';
+         supabaseSuccess = true;
+         console.log('✅ Dados salvos no Supabase com sucesso! ID:', inscricaoId);
+       } else {
+         console.error('❌ Erro ao salvar no Supabase:', supabaseResult.error);
+         // Continua o processo mesmo se falhar no Supabase (backup via email)
+       }
+
+       // 2. GERAR PDF COM OS DADOS DO FORMULÁRIO
+       console.log('📄 Gerando PDF...');
+       const pdfBlob = await generatePDF(formData);
+       console.log('✅ PDF gerado com sucesso');
+       
+       // 3. ENVIAR EMAIL COM O PDF ANEXADO
+       console.log('📧 Enviando emails...');
        const emailSuccess = await sendEmailWithPDF({
          nomeCompleto: formData.nomeCompleto,
          emailInstitucional: formData.emailInstitucional,
          tituloIniciativa: formData.tituloIniciativa,
-         pdfBlob
+         pdfBlob,
+         inscricaoId: inscricaoId // Incluir ID da inscrição no email se disponível
        });
 
-       if (emailSuccess) {
+       // 4. FEEDBACK PARA O USUÁRIO BASEADO NO RESULTADO
+       if (supabaseSuccess && emailSuccess) {
+         console.log('🎉 Processo completo realizado com sucesso!');
          toast({
            title: "Inscrição enviada com sucesso!",
-           description: "Sua inscrição foi registrada e será avaliada pela Comissão Julgadora. Um email de confirmação foi enviado.",
+           description: `Sua inscrição foi registrada no sistema (ID: ${inscricaoId.substring(0, 8)}...) e será avaliada pela Comissão Julgadora. Emails de confirmação foram enviados.`,
+         });
+       } else if (supabaseSuccess && !emailSuccess) {
+         console.log('⚠️ Dados salvos, mas problema no email');
+         toast({
+           title: "Inscrição registrada no sistema",
+           description: `Sua inscrição foi salva no banco de dados (ID: ${inscricaoId.substring(0, 8)}...), mas houve problema no envio do email de confirmação.`,
+           variant: "destructive",
+         });
+       } else if (!supabaseSuccess && emailSuccess) {
+         console.log('⚠️ Email enviado, mas problema no banco');
+         toast({
+           title: "Inscrição enviada por email",
+           description: "Sua inscrição foi enviada por email, mas houve problema ao salvar no banco de dados. Sua inscrição será processada manualmente.",
+           variant: "destructive",
          });
        } else {
+         console.log('❌ Falha em ambos os processos');
          toast({
-           title: "Inscrição registrada",
-           description: "Sua inscrição foi registrada, mas houve um problema no envio do email de confirmação.",
+           title: "Erro ao processar inscrição",
+           description: "Houve problemas tanto no salvamento quanto no envio de email. Tente novamente ou entre em contato conosco.",
            variant: "destructive",
          });
        }
+       
+       // Se pelo menos um processo foi bem-sucedido, limpar o formulário
+       if (supabaseSuccess || emailSuccess) {
+         console.log('🔄 Limpando formulário...');
+         // Resetar formulário após sucesso
+         setFormData({
+           nomeCompleto: '',
+           cargoFuncao: '',
+           matricula: '',
+           unidadeSetor: '',
+           telefoneInstitucional: '',
+           emailInstitucional: '',
+           equipeEnvolvida: '',
+           area: '',
+           tituloIniciativa: '',
+           anoInicioExecucao: '',
+           situacaoAtual: '',
+           resumoExecutivo: '',
+           problemaNecessidade: '',
+           objetivosEstrategicos: '',
+           etapasMetodologia: '',
+           resultadosAlcancados: '',
+           cooperacao: '',
+           inovacao: '',
+           resolutividade: '',
+           impactoSocial: '',
+           alinhamentoODS: '',
+           replicabilidade: '',
+           participouEdicoesAnteriores: '',
+           foiVencedorAnterior: '',
+           concordaTermos: false,
+           localData: '',
+         });
+         setCurrentStep(1);
+       }
+       
      } catch (error) {
-       console.error('Erro ao enviar inscrição:', error);
+       console.error('💥 Erro inesperado ao processar inscrição:', error);
        toast({
-         title: "Erro ao enviar inscrição",
-         description: "Ocorreu um erro ao processar sua inscrição. Tente novamente.",
+         title: "Erro inesperado",
+         description: "Ocorreu um erro inesperado ao processar sua inscrição. Tente novamente.",
          variant: "destructive",
        });
      } finally {
        setIsSubmitting(false);
+       console.log('🏁 Processo de inscrição finalizado');
      }
   }, [formData, isSubmitting, toast]);
 

@@ -42,7 +42,7 @@ const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange })
           Cargo/Função *
         </Label>
         <Select value={formData.cargoFuncao} onValueChange={(value) => handleInputChange('cargoFuncao', value)}>
-          <SelectTrigger id="cargoFuncao" className="text-sm sm:text-base">
+          <SelectTrigger id="cargoFuncao">
             <SelectValue placeholder="Selecione seu cargo" />
           </SelectTrigger>
           <SelectContent position="item" className="z-50">

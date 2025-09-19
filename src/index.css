@@ -50,18 +50,9 @@ All colors MUST be HSL for proper theming.
     --warning: 25 95% 53%;
     --warning-light: 25 95% 95%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(345 85% 25%), hsl(345 75% 35%));
-    --gradient-subtle: linear-gradient(180deg, hsl(345 10% 98%), hsl(345 10% 96%));
-
-    /* Shadows */
-    --shadow-institutional: 0 4px 16px hsl(345 85% 25% / 0.12);
-    --shadow-soft: 0 2px 8px hsl(345 8% 46% / 0.08);
-    --shadow-card: 0 1px 3px hsl(345 8% 46% / 0.1);
-
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Optimized transitions for better performance */
+    --transition-smooth: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -111,13 +102,17 @@ All colors MUST be HSL for proper theming.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* Performance optimization: enable hardware acceleration */
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
   }
 
-  /* Custom scrollbar */
+  /* Optimized scrollbar with better performance */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -128,9 +123,40 @@ All colors MUST be HSL for proper theming.
 
   ::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full;
+    transition: background-color 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/50;
+  }
+}
+
+/* Performance utilities */
+@layer utilities {
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .smooth-transition {
+    transition: var(--transition-smooth);
+  }
+
+  .fast-transition {
+    transition: var(--transition-fast);
+  }
+
+  /* Optimized focus styles */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+
+  /* Reduced motion for accessibility and performance */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
