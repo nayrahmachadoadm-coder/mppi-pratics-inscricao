@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Conectividade Supabase</h1>
+    
+    <button onclick="testConnection()">Testar Conexão</button>
+    <button onclick="testInsert()">Testar Inserção</button>
+    <button onclick="clearResults()">Limpar Resultados</button>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY'
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        window.testConnection = async function() {
+            addResult('Testando conexão com Supabase...', 'info')
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('count', { count: 'exact', head: true })
+                
+                if (error) {
+                    addResult(`Erro na conexão: ${error.message}`, 'error')
+                } else {
+                    addResult('✅ Conexão com Supabase estabelecida com sucesso!', 'success')
+                    addResult(`Total de registros na tabela: ${data || 0}`, 'info')
+                }
+            } catch (err) {
+                addResult(`Erro inesperado: ${err.message}`, 'error')
+            }
+        }
+        
+        window.testInsert = async function() {
+            addResult('Testando inserção de dados...', 'info')
+            
+            const testData = {
+                nome_completo: 'Teste Usuario',
+                cargo_funcao: 'Teste Cargo',
+                matricula: '12345',
+                unidade_setor: 'Teste Setor',
+                telefone_institucional: '(86) 99999-9999',
+                email_institucional: 'teste@mppi.mp.br',
+                equipe_envolvida: 'Equipe de teste',
+                area: 'finalistica-pratica',
+                titulo_iniciativa: 'Teste de Conectividade',
+                ano_inicio_execucao: '2024',
+                situacao_atual: 'em-execucao',
+                resumo_executivo: 'Teste de resumo executivo',
+                problema_necessidade: 'Teste de problema',
+                objetivos_estrategicos: 'Objetivo 1',
+                etapas_metodologia: 'Metodologia de teste',
+                resultados_alcancados: 'Resultados de teste',
+                cooperacao: 'Teste cooperação',
+                inovacao: 'Teste inovação',
+                resolutividade: 'Teste resolutividade',
+                impacto_social: 'Teste impacto',
+                alinhamento_ods: 'Teste ODS',
+                replicabilidade: 'Teste replicabilidade',
+                participou_edicoes_anteriores: 'nao',
+                foi_vencedor_anterior: 'nao',
+                concorda_termos: true,
+                local_data: 'Teresina, ' + new Date().toLocaleDateString('pt-BR')
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select('id')
+                    .single()
+                
+                if (error) {
+                    addResult(`❌ Erro na inserção: ${error.message}`, 'error')
+                    console.error('Detalhes do erro:', error)
+                } else {
+                    addResult(`✅ Dados inseridos com sucesso! ID: ${data.id}`, 'success')
+                    
+                    // Tentar deletar o registro de teste
+                    const { error: deleteError } = await supabase
+                        .from('inscricoes')
+                        .delete()
+                        .eq('id', data.id)
+                    
+                    if (deleteError) {
+                        addResult(`⚠️ Registro de teste criado mas não foi possível deletar: ${deleteError.message}`, 'error')
+                    } else {
+                        addResult('🗑️ Registro de teste removido com sucesso', 'success')
+                    }
+                }
+            } catch (err) {
+                addResult(`Erro inesperado: ${err.message}`, 'error')
+                console.error('Erro completo:', err)
+            }
+        }
+        
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = ''
+        }
+        
+        function addResult(message, type) {
+            const results = document.getElementById('results')
+            const div = document.createElement('div')
+            div.className = `result ${type}`
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`
+            results.appendChild(div)
+        }
+    </script>
+</body>
+</html>

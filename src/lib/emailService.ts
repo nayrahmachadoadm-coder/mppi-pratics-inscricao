@@ -11,34 +11,52 @@ interface EmailData {
 
 export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> => {
   try {
+    console.log('🔄 Iniciando envio de email...', {
+      nomeCompleto: emailData.nomeCompleto,
+      emailInstitucional: emailData.emailInstitucional,
+      tituloIniciativa: emailData.tituloIniciativa,
+      config: EMAIL_CONFIG
+    });
+
+
+
     // Converter o PDF para base64
+    console.log('📄 Convertendo PDF para base64...');
     const pdfBase64 = await blobToBase64(emailData.pdfBlob);
+    console.log('✅ PDF convertido com sucesso, tamanho:', pdfBase64.length);
     
     // Preparar os dados para o template do EmailJS
+    console.log('📧 Preparando dados do template...');
+    const dataAtual = new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
     const templateParams = {
-      to_name: emailData.nomeCompleto,
+      // Variáveis para o template HTML
+      nome_completo: emailData.nomeCompleto,
+      email_institucional: emailData.emailInstitucional,
+      titulo_iniciativa: emailData.tituloIniciativa,
+      inscricao_id: emailData.inscricaoId || 'Aguardando processamento',
+      data_submissao: dataAtual,
+      
+      // Configurações de email
       to_email: emailData.emailInstitucional,
       cc_email: EMAIL_CONFIG.CC_EMAIL,
-      subject: `Inscrição - ${emailData.tituloIniciativa}`,
-      message: `
-        Prezado(a) ${emailData.nomeCompleto},
-
-        Sua inscrição no Prêmio Melhores Práticas MPPI - 9ª Edição - 2025 foi enviada com sucesso!
-
-        Título da Prática/Projeto: ${emailData.tituloIniciativa}
-        ${emailData.inscricaoId ? `Número da Inscrição: ${emailData.inscricaoId}` : ''}
-
-        Em anexo, você encontrará o PDF com todos os dados da sua inscrição.
-
-        Sua inscrição será avaliada pela Comissão Julgadora conforme o cronograma do edital.
-        ${emailData.inscricaoId ? `Guarde o número da sua inscrição para futuras consultas.` : ''}
-
-        Atenciosamente,
-        Equipe do Prêmio Melhores Práticas MPPI
-      `,
-      attachment: pdfBase64,
+      
+      // Anexo PDF
+      pdf_attachment: pdfBase64,
       attachment_name: `Inscricao_${emailData.tituloIniciativa.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
     };
+
+    console.log('📤 Enviando email via EmailJS...', {
+      serviceId: EMAIL_CONFIG.SERVICE_ID,
+      templateId: EMAIL_CONFIG.TEMPLATE_ID,
+      publicKey: EMAIL_CONFIG.PUBLIC_KEY
+    });
 
     // Enviar email
     const response = await emailjs.send(
@@ -48,10 +66,15 @@ export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> =
       EMAIL_CONFIG.PUBLIC_KEY
     );
 
-    console.log('Email enviado com sucesso:', response);
+    console.log('✅ Email enviado com sucesso:', response);
     return true;
   } catch (error) {
-    console.error('Erro ao enviar email:', error);
+    console.error('❌ Erro ao enviar email:', error);
+    console.error('Detalhes do erro:', {
+      message: error.message,
+      status: error.status,
+      text: error.text
+    });
     return false;
   }
 };

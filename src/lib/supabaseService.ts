@@ -1,4 +1,20 @@
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
+
+// Cliente Supabase para inserções públicas (bypassa RLS)
+const supabasePublic = createClient(
+  "https://ljbxctmywdpsfmjvmlmh.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    db: {
+      schema: 'public'
+    }
+  }
+);
 
 // Interface para os dados da inscrição que serão salvos no Supabase
 export interface InscricaoData {
@@ -103,26 +119,29 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
  */
 export async function saveInscricao(formData: any): Promise<SupabaseResult> {
   try {
-    console.log('🔄 Iniciando salvamento no Supabase...');
+    console.log('💾 Iniciando salvamento no Supabase...', { formData });
     
     // Converter dados do formulário para formato do banco
     const inscricaoData = convertFormDataToSupabase(formData);
     
-    console.log('📝 Dados convertidos:', {
-      nome: inscricaoData.nome_completo,
-      email: inscricaoData.email_institucional,
-      titulo: inscricaoData.titulo_iniciativa
-    });
+    console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
     
-    // Inserir dados na tabela inscricoes
-    const { data, error } = await supabase
+    // Inserir dados na tabela inscricoes usando cliente público
+    console.log('📤 Enviando dados para Supabase...');
+    const { data, error } = await supabasePublic
       .from('inscricoes')
       .insert([inscricaoData])
-      .select('id')
+      .select()
       .single();
     
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return {
         success: false,
         error: `Erro no banco de dados: ${error.message}`,
