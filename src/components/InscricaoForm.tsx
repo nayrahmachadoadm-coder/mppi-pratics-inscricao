@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { sendEmailWithPDF } from '@/lib/emailService';
+import { supabase } from '@/integrations/supabase/client';
 import Step1 from '@/components/FormSteps/Step1';
 
 interface FormData {
@@ -226,40 +227,92 @@ const InscricaoForm = React.memo(() => {
     setIsSubmitting(true);
 
     try {
-       // Gerar PDF com os dados do formulário
-       const pdfBlob = await generatePDF(formData);
-       
-       // Enviar email com o PDF anexado
-       const emailSuccess = await sendEmailWithPDF({
-         nomeCompleto: formData.nomeCompleto,
-         emailInstitucional: formData.emailInstitucional,
-         tituloIniciativa: formData.tituloIniciativa,
-         pdfBlob
-       });
+      console.log('Iniciando processo de submissão...');
+      
+      // Step 1: Salvar dados no Supabase
+      console.log('Salvando dados no Supabase...');
+      const { data, error } = await supabase
+        .from('inscricoes')
+        .insert({
+          nome_completo: formData.nomeCompleto,
+          cargo_funcao: formData.cargoFuncao,
+          email_institucional: formData.emailInstitucional,
+          telefone: formData.telefoneInstitucional,
+          lotacao: `${formData.unidadeSetor} - Matrícula: ${formData.matricula}`,
+          titulo_iniciativa: formData.tituloIniciativa,
+          area_atuacao: formData.area,
+          data_inicio: `${formData.anoInicioExecucao}-01-01`,
+          data_fim: formData.dataConclusao && formData.situacaoAtual === 'concluido' ? 
+            formData.dataConclusao.split('/').reverse().join('-') : null,
+          publico_alvo: formData.equipeEnvolvida,
+          descricao_iniciativa: formData.resumoExecutivo,
+          objetivos: formData.problemaNecessidade,
+          metodologia: formData.etapasMetodologia,
+          principais_resultados: formData.resultadosAlcancados,
+          cooperacao: formData.cooperacao,
+          inovacao: formData.inovacao,
+          resolutividade: formData.resolutividade,
+          impacto_social: formData.impactoSocial,
+          alinhamento_ods: formData.alinhamentoODS,
+          replicabilidade: formData.replicabilidade,
+          participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
+          foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
+          observacoes: formData.especificarEdicoesAnteriores || '',
+          declaracao: formData.concordaTermos
+        })
+        .select();
 
-       if (emailSuccess) {
-         toast({
-           title: "Inscrição enviada com sucesso!",
-           description: "Sua inscrição foi registrada e será avaliada pela Comissão Julgadora. Um email de confirmação foi enviado.",
-         });
-       } else {
-         toast({
-           title: "Inscrição registrada",
-           description: "Sua inscrição foi registrada, mas houve um problema no envio do email de confirmação.",
-           variant: "destructive",
-         });
-       }
-     } catch (error) {
-       console.error('Erro ao enviar inscrição:', error);
-       toast({
-         title: "Erro ao enviar inscrição",
-         description: "Ocorreu um erro ao processar sua inscrição. Tente novamente.",
-         variant: "destructive",
-       });
-     } finally {
-       setIsSubmitting(false);
-     }
-  }, [formData, isSubmitting, toast]);
+      if (error) {
+        console.error('Erro ao salvar no Supabase:', error);
+        toast({
+          title: "Erro ao salvar dados",
+          description: "Houve um problema ao salvar sua inscrição no banco de dados. Continuando com geração do PDF...",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Dados salvos no Supabase com sucesso:', data);
+        toast({
+          title: "Dados salvos",
+          description: "Sua inscrição foi salva no banco de dados com sucesso!",
+        });
+      }
+
+      // Step 2: Gerar PDF (independentemente do resultado do Supabase)
+      console.log('Gerando PDF...');
+      const pdfBlob = await generatePDF(formData);
+      
+      // Step 3: Enviar email com o PDF anexado
+      console.log('Enviando email...');
+      const emailSuccess = await sendEmailWithPDF({
+        nomeCompleto: formData.nomeCompleto,
+        emailInstitucional: formData.emailInstitucional,
+        tituloIniciativa: formData.tituloIniciativa,
+        pdfBlob
+      });
+
+      if (emailSuccess) {
+        toast({
+          title: "Inscrição enviada com sucesso!",
+          description: "Sua inscrição foi registrada no banco de dados e será avaliada pela Comissão Julgadora. Um email de confirmação foi enviado.",
+        });
+      } else {
+        toast({
+          title: "Inscrição parcialmente processada",
+          description: "Sua inscrição foi salva no banco de dados, mas houve um problema no envio do email de confirmação.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erro geral no processo de submissão:', error);
+      toast({
+        title: "Erro ao processar inscrição",
+        description: "Ocorreu um erro ao processar sua inscrição. Verifique sua conexão e tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+   }, [formData, isSubmitting, toast]);
 
   const steps = useMemo(() => [
     { id: 1, title: "Dados do Proponente", icon: User },
