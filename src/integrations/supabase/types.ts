@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inscricoes: {
+        Row: {
+          alinhamento_ods: string
+          area_atuacao: string
+          cargo_funcao: string
+          cooperacao: string
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          declaracao: boolean
+          descricao_iniciativa: string
+          email_institucional: string
+          foi_vencedor_anterior: boolean
+          id: string
+          impacto_social: string
+          inovacao: string
+          lotacao: string
+          metodologia: string
+          nome_completo: string
+          objetivos: string
+          observacoes: string | null
+          participou_edicoes_anteriores: boolean
+          principais_resultados: string
+          publico_alvo: string
+          replicabilidade: string
+          resolutividade: string
+          telefone: string
+          titulo_iniciativa: string
+          updated_at: string
+        }
+        Insert: {
+          alinhamento_ods: string
+          area_atuacao: string
+          cargo_funcao: string
+          cooperacao: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          declaracao?: boolean
+          descricao_iniciativa: string
+          email_institucional: string
+          foi_vencedor_anterior?: boolean
+          id?: string
+          impacto_social: string
+          inovacao: string
+          lotacao: string
+          metodologia: string
+          nome_completo: string
+          objetivos: string
+          observacoes?: string | null
+          participou_edicoes_anteriores?: boolean
+          principais_resultados: string
+          publico_alvo: string
+          replicabilidade: string
+          resolutividade: string
+          telefone: string
+          titulo_iniciativa: string
+          updated_at?: string
+        }
+        Update: {
+          alinhamento_ods?: string
+          area_atuacao?: string
+          cargo_funcao?: string
+          cooperacao?: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          declaracao?: boolean
+          descricao_iniciativa?: string
+          email_institucional?: string
+          foi_vencedor_anterior?: boolean
+          id?: string
+          impacto_social?: string
+          inovacao?: string
+          lotacao?: string
+          metodologia?: string
+          nome_completo?: string
+          objetivos?: string
+          observacoes?: string | null
+          participou_edicoes_anteriores?: boolean
+          principais_resultados?: string
+          publico_alvo?: string
+          replicabilidade?: string
+          resolutividade?: string
+          telefone?: string
+          titulo_iniciativa?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
