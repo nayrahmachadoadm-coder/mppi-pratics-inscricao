@@ -11,9 +11,14 @@ interface InscricaoData {
   telefone: string;
   lotacao: string;
   cargo_funcao: string;
+  matricula?: string; // Campo opcional - matrícula do proponente
   titulo_iniciativa: string;
   descricao_iniciativa: string;
   area_atuacao: string;
+  situacao_atual?: string; // Campo para situação atual da prática
+  data_conclusao?: string | null; // Campo para data de conclusão
+  publico_alvo?: string; // Campo para relação da equipe
+  problema_necessidade?: string; // Campo para problema ou necessidade
   objetivos: string;
   metodologia: string;
   principais_resultados: string;
@@ -149,7 +154,7 @@ const ConfirmacaoInscricao: React.FC = () => {
           {/* Informações de Contato */}
           <div className="text-center text-sm text-gray-500 pt-4 border-t">
             <p>Em caso de dúvidas, entre em contato:</p>
-            <p className="font-medium">premiomelhorespracticas@mppi.mp.br</p>
+            <p className="font-medium">planejamento@mppi.mp.br</p>
           </div>
         </CardContent>
       </Card>

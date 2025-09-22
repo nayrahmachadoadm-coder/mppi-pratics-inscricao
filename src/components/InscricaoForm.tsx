@@ -264,21 +264,27 @@ const InscricaoForm = () => {
            telefone: formData.telefoneInstitucional,
            lotacao: formData.unidadeSetor,
            cargo_funcao: formData.cargoFuncao,
+           matricula: formData.matricula || null, // Campo opcional
            titulo_iniciativa: formData.tituloIniciativa,
            descricao_iniciativa: formData.resumoExecutivo,
            area_atuacao: formData.area,
-           objetivos_estrategicos: formData.objetivosEstrategicos,
-           etapas_metodologia: formData.etapasMetodologia,
-           resultados_alcancados: formData.resultadosAlcancados,
+           situacao_atual: formData.situacaoAtual || null, // Campo para situação atual
+           data_conclusao: formData.dataConclusao || null, // Campo para data de conclusão
+           publico_alvo: formData.equipeEnvolvida || null, // Campo para relação da equipe
+           problema_necessidade: formData.problemaNecessidade || null, // Campo para problema ou necessidade
+           objetivos: formData.objetivosEstrategicos,
+           metodologia: formData.etapasMetodologia,
+           principais_resultados: formData.resultadosAlcancados,
            inovacao: formData.inovacao,
            impacto_social: formData.impactoSocial,
            replicabilidade: formData.replicabilidade,
            participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
-           especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores || '',
-           declaracao_veracidade: formData.concordaTermos,
+           foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
+           declaracao: formData.concordaTermos,
            cooperacao: formData.cooperacao || '',
            resolutividade: formData.resolutividade || '',
            alinhamento_ods: formData.alinhamentoODS || '',
+           observacoes: formData.especificarEdicoesAnteriores || null,
            created_at: new Date().toISOString()
          };
          

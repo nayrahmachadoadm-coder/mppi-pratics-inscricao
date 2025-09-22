@@ -8,11 +8,12 @@ const supabasePublic = createClient(
 );
 
 // Interface para os dados da inscrição que serão salvos no Supabase
-// Baseada na estrutura atual da tabela (migração 003_recreate_inscricoes_table.sql)
+// Baseada na estrutura atual da tabela (migração 006_fix_table_structure.sql)
 export interface InscricaoData {
   // Dados pessoais
   nome_completo: string;
   cargo_funcao: string;
+  matricula?: string; // Campo opcional
   telefone: string;
   email_institucional: string;
   lotacao: string;
@@ -23,9 +24,12 @@ export interface InscricaoData {
   data_inicio: string;
   data_fim?: string | null;
   publico_alvo: string;
+  situacao_atual?: string; // Campo para situação atual da prática
+  data_conclusao?: string | null; // Campo para data de conclusão
   
   // Descrição da prática/projeto
   descricao_iniciativa: string;
+  problema_necessidade?: string; // Campo para problema ou necessidade
   objetivos: string;
   metodologia: string;
   principais_resultados: string;
@@ -41,6 +45,7 @@ export interface InscricaoData {
   // Informações adicionais
   participou_edicoes_anteriores: boolean;
   foi_vencedor_anterior: boolean;
+  local_data?: string; // Campo para local e data
   
   // Declaração
   declaracao: boolean;
@@ -70,6 +75,7 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     // Dados pessoais - mapeamento correto para a tabela
     nome_completo: formData.nomeCompleto || '',
     cargo_funcao: formData.cargoFuncao || '',
+    matricula: formData.matricula || null, // Campo opcional
     telefone: formData.telefoneInstitucional || '',
     email_institucional: formData.emailInstitucional || '',
     lotacao: formData.unidadeSetor || '',
@@ -80,9 +86,12 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     data_inicio: formData.anoInicioExecucao || '',
     data_fim: null, // Campo opcional
     publico_alvo: formData.equipeEnvolvida || '',
+    situacao_atual: formData.situacaoAtual || null, // Campo para situação atual
+    data_conclusao: formData.dataConclusao || null, // Campo para data de conclusão
     
     // Descrição da prática/projeto - mapeamento correto para a tabela
     descricao_iniciativa: formData.resumoExecutivo || '',
+    problema_necessidade: formData.problemaNecessidade || null, // Campo para problema ou necessidade
     objetivos: formData.objetivosEstrategicos || '',
     metodologia: formData.etapasMetodologia || '',
     principais_resultados: formData.resultadosAlcancados || '',
@@ -98,6 +107,7 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     // Informações adicionais - mapeamento correto para a tabela
     participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
     foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
+    local_data: formData.localData || null, // Campo para local e data
     
     // Declaração - mapeamento correto para a tabela
     declaracao: Boolean(formData.concordaTermos),
