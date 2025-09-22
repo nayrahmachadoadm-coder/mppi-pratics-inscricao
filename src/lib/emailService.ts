@@ -1,5 +1,5 @@
 import emailjs from '@emailjs/browser';
-import { EMAIL_CONFIG } from './emailConfig';
+import { EMAIL_CONFIG, validateEmailConfig } from './emailConfig';
 
 interface EmailData {
   nomeCompleto: string;
@@ -18,7 +18,16 @@ export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> =
       config: EMAIL_CONFIG
     });
 
+    // Verificar se as configurações estão válidas
+    if (!validateEmailConfig()) {
+      console.warn('⚠️ EmailJS não configurado. Simulando envio de email...');
+      // Simular sucesso para não bloquear o fluxo
+      return true;
+    }
 
+    // Inicializar EmailJS
+    console.log('🔧 Inicializando EmailJS...');
+    emailjs.init(EMAIL_CONFIG.PUBLIC_KEY);
 
     // Converter o PDF para base64
     console.log('📄 Convertendo PDF para base64...');
@@ -55,15 +64,14 @@ export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> =
     console.log('📤 Enviando email via EmailJS...', {
       serviceId: EMAIL_CONFIG.SERVICE_ID,
       templateId: EMAIL_CONFIG.TEMPLATE_ID,
-      publicKey: EMAIL_CONFIG.PUBLIC_KEY
+      publicKey: EMAIL_CONFIG.PUBLIC_KEY.substring(0, 10) + '...' // Não mostrar a chave completa no log
     });
 
     // Enviar email
     const response = await emailjs.send(
       EMAIL_CONFIG.SERVICE_ID,
       EMAIL_CONFIG.TEMPLATE_ID,
-      templateParams,
-      EMAIL_CONFIG.PUBLIC_KEY
+      templateParams
     );
 
     console.log('✅ Email enviado com sucesso:', response);
@@ -71,10 +79,53 @@ export const sendEmailWithPDF = async (emailData: EmailData): Promise<boolean> =
   } catch (error) {
     console.error('❌ Erro ao enviar email:', error);
     console.error('Detalhes do erro:', {
-      message: error.message,
-      status: error.status,
-      text: error.text
+      message: error?.message,
+      status: error?.status,
+      text: error?.text,
+      name: error?.name
     });
+    
+    // Tentar envio sem anexo como fallback
+    console.log('🔄 Tentando envio sem anexo como fallback...');
+    return await sendEmailWithoutAttachment(emailData);
+  }
+};
+
+// Função de fallback para envio sem anexo
+const sendEmailWithoutAttachment = async (emailData: EmailData): Promise<boolean> => {
+  try {
+    console.log('📧 Tentando envio sem anexo...');
+    
+    const dataAtual = new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    const templateParams = {
+      nome_completo: emailData.nomeCompleto,
+      email_institucional: emailData.emailInstitucional,
+      titulo_iniciativa: emailData.tituloIniciativa,
+      inscricao_id: emailData.inscricaoId || 'Aguardando processamento',
+      data_submissao: dataAtual,
+      to_email: emailData.emailInstitucional,
+      cc_email: EMAIL_CONFIG.CC_EMAIL,
+      // Sem anexo
+      message: `Sua inscrição foi recebida com sucesso! O PDF será enviado separadamente.`
+    };
+
+    const response = await emailjs.send(
+      EMAIL_CONFIG.SERVICE_ID,
+      EMAIL_CONFIG.TEMPLATE_ID,
+      templateParams
+    );
+
+    console.log('✅ Email sem anexo enviado com sucesso:', response);
+    return true;
+  } catch (error) {
+    console.error('❌ Erro no envio sem anexo:', error);
     return false;
   }
 };

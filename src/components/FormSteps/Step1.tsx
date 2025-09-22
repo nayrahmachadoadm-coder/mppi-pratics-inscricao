@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, FileText, Globe } from 'lucide-react';
+import { applyPhoneMask } from '@/utils/masks';
 
 interface FormData {
   nomeCompleto: string;
@@ -19,7 +20,14 @@ interface Step1Props {
   handleInputChange: (field: string, value: string | boolean) => void;
 }
 
-const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange }) => (
+const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange }) => {
+  // Função para lidar com a mudança no campo de telefone com máscara
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const maskedValue = applyPhoneMask(e.target.value);
+    handleInputChange('telefoneInstitucional', maskedValue);
+  };
+
+  return (
   <div className="space-y-4 sm:space-y-6">
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -84,14 +92,15 @@ const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange })
       <div className="space-y-2">
         <Label htmlFor="telefoneInstitucional" className="text-sm sm:text-base font-medium flex items-center gap-2">
           <FileText className="w-4 h-4" />
-          Telefone institucional *
+          Telefone de Contato *
         </Label>
         <Input
           id="telefoneInstitucional"
           value={formData.telefoneInstitucional}
-          onChange={(e) => handleInputChange('telefoneInstitucional', e.target.value)}
-          placeholder="(00) 0000-0000"
+          onChange={handlePhoneChange}
+          placeholder="(00) 00000-0000"
           className="text-sm sm:text-base"
+          maxLength={15}
         />
       </div>
       
@@ -111,7 +120,8 @@ const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange })
       </div>
     </div>
   </div>
-));
+  );
+});
 
 Step1.displayName = 'Step1';
 

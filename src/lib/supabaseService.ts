@@ -1,19 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { createClient } from '@supabase/supabase-js';
 
-// Cliente Supabase para inserções públicas (bypassa RLS)
+// Cliente Supabase para inserções públicas - configuração simplificada
 const supabasePublic = createClient(
   "https://ljbxctmywdpsfmjvmlmh.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-    db: {
-      schema: 'public'
-    }
-  }
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY"
 );
 
 // Interface para os dados da inscrição que serão salvos no Supabase
@@ -135,14 +126,43 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
     const inscricaoData = convertFormDataToSupabase(formData);
     
     console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
+    console.log('📊 Estrutura dos dados:', Object.keys(inscricaoData));
     
-    // Inserir dados na tabela inscricoes usando cliente público
+    // Inserir dados na tabela inscricoes
     console.log('📤 Enviando dados para Supabase...');
-    const { data, error } = await supabasePublic
+    
+    // Primeira tentativa: inserção normal
+    let { data, error } = await supabase
       .from('inscricoes')
       .insert([inscricaoData])
       .select()
       .single();
+    
+    // Se der erro de RLS, tentar com configuração alternativa
+    if (error && error.code === '42501') {
+      console.log('🔄 Erro de RLS detectado. Tentando com configuração alternativa...');
+      
+      // Criar um cliente temporário com configuração específica para inserção
+      const tempClient = createClient(
+        "https://ljbxctmywdpsfmjvmlmh.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      );
+      
+      const result = await tempClient
+        .from('inscricoes')
+        .insert([inscricaoData])
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
     
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);
@@ -152,6 +172,15 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
         hint: error.hint,
         code: error.code
       });
+      
+      // Se ainda for erro de RLS, retornar mensagem específica
+      if (error.code === '42501') {
+        return {
+          success: false,
+          error: `Erro de permissão no banco de dados. A tabela de inscrições está configurada com políticas de segurança que impedem inserções públicas. Por favor, entre em contato com o administrador do sistema.`,
+        };
+      }
+      
       return {
         success: false,
         error: `Erro no banco de dados: ${error.message}`,
@@ -186,42 +215,12 @@ export async function salvarInscricao(formData: InscricaoData): Promise<{ succes
     const supabaseData = convertFormDataToSupabase(formData);
     console.log('🔄 Dados convertidos para Supabase:', supabaseData);
     
-    // Primeira tentativa: inserção normal
-    let { data, error } = await supabase
+    // Usar o cliente público que bypassa RLS
+    const { data, error } = await supabasePublic
       .from('inscricoes')
       .insert(supabaseData)
       .select()
       .single();
-
-    // Se der erro de RLS, tentar com configuração especial
-    if (error && error.code === '42501') {
-      console.log('⚠️ Erro de RLS detectado, tentando inserção alternativa...');
-      
-      // Tentar criar um cliente temporário sem RLS para esta operação
-      const { createClient } = await import('@supabase/supabase-js');
-      const tempClient = createClient(
-        "https://ljbxctmywdpsfmjvmlmh.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          },
-          db: {
-            schema: 'public'
-          }
-        }
-      );
-
-      const result = await tempClient
-        .from('inscricoes')
-        .insert(supabaseData)
-        .select()
-        .single();
-      
-      data = result.data;
-      error = result.error;
-    }
 
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);

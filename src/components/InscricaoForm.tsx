@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
-import { generatePDF } from '@/lib/pdfGenerator';
-import { sendEmailWithPDF } from '@/lib/emailService';
 import { saveInscricao } from '@/lib/supabaseService';
 import Step1 from '@/components/FormSteps/Step1';
 
@@ -58,6 +57,7 @@ interface FormData {
 
 const InscricaoForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -249,100 +249,50 @@ const InscricaoForm = () => {
     try {
        console.log('🚀 Iniciando processo de inscrição...');
        
-       // 1. SALVAR NO SUPABASE PRIMEIRO
+       // 1. SALVAR NO SUPABASE
        console.log('💾 Salvando dados no banco de dados...');
        const supabaseResult = await saveInscricao(formData);
        
-       let inscricaoId = '';
-       let supabaseSuccess = false;
-       
        if (supabaseResult.success) {
-         inscricaoId = supabaseResult.data?.id || '';
-         supabaseSuccess = true;
+         const inscricaoId = supabaseResult.data?.id || '';
          console.log('✅ Dados salvos no Supabase com sucesso! ID:', inscricaoId);
+         
+         // 2. PREPARAR DADOS PARA A PÁGINA DE CONFIRMAÇÃO
+         const inscricaoData = {
+           nome: formData.nomeCompleto,
+           email: formData.emailInstitucional,
+           telefone: formData.telefoneInstitucional,
+           orgao: formData.unidadeSetor,
+           cargo: formData.cargoFuncao,
+           titulo_pratica: formData.tituloIniciativa,
+           descricao_pratica: formData.resumoExecutivo,
+           categoria: formData.area,
+           objetivos: formData.objetivosEstrategicos,
+           metodologia: formData.etapasMetodologia,
+           resultados: formData.resultadosAlcancados,
+           inovacao: formData.inovacao,
+           sustentabilidade: formData.impactoSocial,
+           replicabilidade: formData.replicabilidade,
+           participacao_anterior: formData.participouEdicoesAnteriores === 'sim',
+           edicao_anterior: formData.especificarEdicoesAnteriores || '',
+           declaracao_veracidade: formData.concordaTermos,
+           created_at: new Date().toISOString()
+         };
+         
+         // 3. REDIRECIONAR PARA PÁGINA DE CONFIRMAÇÃO
+         console.log('🔄 Redirecionando para página de confirmação...');
+         navigate('/confirmacao', { 
+           state: { inscricaoData },
+           replace: true 
+         });
+         
        } else {
          console.error('❌ Erro ao salvar no Supabase:', supabaseResult.error);
-         // Continua o processo mesmo se falhar no Supabase (backup via email)
-       }
-
-       // 2. GERAR PDF COM OS DADOS DO FORMULÁRIO
-       console.log('📄 Gerando PDF...');
-       const pdfBlob = await generatePDF(formData);
-       console.log('✅ PDF gerado com sucesso');
-       
-       // 3. ENVIAR EMAIL COM O PDF ANEXADO
-       console.log('📧 Enviando emails...');
-       const emailSuccess = await sendEmailWithPDF({
-         nomeCompleto: formData.nomeCompleto,
-         emailInstitucional: formData.emailInstitucional,
-         tituloIniciativa: formData.tituloIniciativa,
-         pdfBlob,
-         inscricaoId: inscricaoId // Incluir ID da inscrição no email se disponível
-       });
-
-       // 4. FEEDBACK PARA O USUÁRIO BASEADO NO RESULTADO
-       if (supabaseSuccess && emailSuccess) {
-         console.log('🎉 Processo completo realizado com sucesso!');
-         toast({
-           title: "Inscrição enviada com sucesso!",
-           description: `Sua inscrição foi registrada no sistema (ID: ${inscricaoId.substring(0, 8)}...) e será avaliada pela Comissão Julgadora. Emails de confirmação foram enviados.`,
-         });
-       } else if (supabaseSuccess && !emailSuccess) {
-         console.log('⚠️ Dados salvos, mas problema no email');
-         toast({
-           title: "Inscrição registrada no sistema",
-           description: `Sua inscrição foi salva no banco de dados (ID: ${inscricaoId.substring(0, 8)}...), mas houve problema no envio do email de confirmação.`,
-           variant: "destructive",
-         });
-       } else if (!supabaseSuccess && emailSuccess) {
-         console.log('⚠️ Email enviado, mas problema no banco');
-         toast({
-           title: "Inscrição enviada por email",
-           description: "Sua inscrição foi enviada por email, mas houve problema ao salvar no banco de dados. Sua inscrição será processada manualmente.",
-           variant: "destructive",
-         });
-       } else {
-         console.log('❌ Falha em ambos os processos');
          toast({
            title: "Erro ao processar inscrição",
-           description: "Houve problemas tanto no salvamento quanto no envio de email. Tente novamente ou entre em contato conosco.",
+           description: "Houve um problema ao salvar sua inscrição. Tente novamente ou entre em contato conosco.",
            variant: "destructive",
          });
-       }
-       
-       // Se pelo menos um processo foi bem-sucedido, limpar o formulário
-       if (supabaseSuccess || emailSuccess) {
-         console.log('🔄 Limpando formulário...');
-         // Resetar formulário após sucesso
-         setFormData({
-           nomeCompleto: '',
-           cargoFuncao: '',
-           matricula: '',
-           unidadeSetor: '',
-           telefoneInstitucional: '',
-           emailInstitucional: '',
-           equipeEnvolvida: '',
-           area: '',
-           tituloIniciativa: '',
-           anoInicioExecucao: '',
-           situacaoAtual: '',
-           resumoExecutivo: '',
-           problemaNecessidade: '',
-           objetivosEstrategicos: '',
-           etapasMetodologia: '',
-           resultadosAlcancados: '',
-           cooperacao: '',
-           inovacao: '',
-           resolutividade: '',
-           impactoSocial: '',
-           alinhamentoODS: '',
-           replicabilidade: '',
-           participouEdicoesAnteriores: '',
-           foiVencedorAnterior: '',
-           concordaTermos: false,
-           localData: '',
-         });
-         setCurrentStep(1);
        }
        
      } catch (error) {

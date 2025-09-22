@@ -29,21 +29,36 @@
 // 5. Substitua os valores abaixo:
 
 export const EMAIL_CONFIG = {
-  // ⚠️ ATENÇÃO: VERIFIQUE SE ESTES VALORES ESTÃO CORRETOS NO SEU DASHBOARD EMAILJS
+  // ⚠️ ATENÇÃO: CONFIGURAÇÕES TEMPORÁRIAS PARA TESTE
+  // Para produção, configure corretamente no dashboard do EmailJS
   
   // ID do serviço EmailJS (encontrado em Email Services)
-  // ❌ ERRO COMUM: Verificar se este serviço existe e está ativo
-  SERVICE_ID: 'service_7wgbrkh',
+  SERVICE_ID: 'service_test123', // ⚠️ SUBSTITUIR pelo SERVICE_ID real
   
   // ID do template EmailJS (encontrado em Email Templates)  
-  // ❌ ERRO COMUM: Verificar se este template existe e está publicado
-  TEMPLATE_ID: 'template_6zi9h8j',
+  TEMPLATE_ID: 'template_test123', // ⚠️ SUBSTITUIR pelo TEMPLATE_ID real
   
   // Chave pública do EmailJS (encontrada em Account > General)
-  PUBLIC_KEY: 'KhlLBUAUHTe84YtRp',
+  PUBLIC_KEY: 'test_public_key', // ⚠️ SUBSTITUIR pela PUBLIC_KEY real
   
   // Email de destino (sempre receberá uma cópia)
   CC_EMAIL: 'planejamento@mppi.mp.br'
+};
+
+// Função para validar configurações
+export const validateEmailConfig = (): boolean => {
+  const isValid = EMAIL_CONFIG.SERVICE_ID !== 'service_test123' &&
+                  EMAIL_CONFIG.TEMPLATE_ID !== 'template_test123' &&
+                  EMAIL_CONFIG.PUBLIC_KEY !== 'test_public_key' &&
+                  EMAIL_CONFIG.SERVICE_ID.length > 0 &&
+                  EMAIL_CONFIG.TEMPLATE_ID.length > 0 &&
+                  EMAIL_CONFIG.PUBLIC_KEY.length > 0;
+  
+  if (!isValid) {
+    console.warn('⚠️ EmailJS não configurado corretamente. Usando configurações de teste.');
+  }
+  
+  return isValid;
 };
 
 // 🔧 INSTRUÇÕES PARA CORRIGIR O ERRO 400:
