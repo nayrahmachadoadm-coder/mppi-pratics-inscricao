@@ -8,27 +8,30 @@ const supabasePublic = createClient(
 );
 
 // Interface para os dados da inscrição que serão salvos no Supabase
-// Baseada na estrutura atual da tabela (migração 20250919114056)
+// Baseada na estrutura atual da tabela (migração 003_recreate_inscricoes_table.sql)
 export interface InscricaoData {
   // Dados do proponente
   nome_completo: string;
   cargo_funcao: string;
+  matricula: string;
+  unidade_setor: string;
+  telefone_institucional: string;
   email_institucional: string;
-  telefone: string;
-  lotacao: string;
+  equipe_envolvida: string;
   
-  // Dados da iniciativa
+  // Informações sobre a inscrição
+  area: string;
   titulo_iniciativa: string;
-  area_atuacao: string;
-  data_inicio: string;
-  data_fim: string | null;
-  publico_alvo: string;
+  ano_inicio_execucao: string;
+  situacao_atual: string;
+  data_conclusao?: string;
   
-  // Descrições
-  descricao_iniciativa: string;
-  objetivos: string;
-  metodologia: string;
-  principais_resultados: string;
+  // Descrição da prática/projeto
+  resumo_executivo: string;
+  problema_necessidade: string;
+  objetivos_estrategicos: string;
+  etapas_metodologia: string;
+  resultados_alcancados: string;
   
   // Critérios de avaliação
   cooperacao: string;
@@ -39,12 +42,13 @@ export interface InscricaoData {
   replicabilidade: string;
   
   // Informações adicionais
-  participou_edicoes_anteriores: boolean;
-  foi_vencedor_anterior: boolean;
-  observacoes: string | null;
+  participou_edicoes_anteriores: string;
+  especificar_edicoes_anteriores?: string;
+  foi_vencedor_anterior: string;
   
   // Declaração
-  declaracao: boolean;
+  concorda_termos: boolean;
+  local_data: string;
 }
 
 // Interface para o resultado da operação
@@ -59,39 +63,29 @@ export interface SupabaseResult {
  * Converte os dados do formulário para o formato do banco de dados
  */
 export function convertFormDataToSupabase(formData: any): InscricaoData {
-  // Função para converter string de data para formato YYYY-MM-DD
-  const formatDate = (dateStr: string): string => {
-    if (!dateStr) return '';
-    // Se já está no formato correto, retorna
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
-    // Se está no formato DD/MM/YYYY, converte
-    if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [day, month, year] = dateStr.split('/');
-      return `${year}-${month}-${day}`;
-    }
-    return dateStr;
-  };
-
   return {
     // Dados do proponente - mapeamento correto para a tabela
     nome_completo: formData.nomeCompleto || '',
     cargo_funcao: formData.cargoFuncao || '',
+    matricula: formData.matricula || 'N/A', // Campo obrigatório na tabela
+    unidade_setor: formData.unidadeSetor || '',
+    telefone_institucional: formData.telefoneInstitucional || '',
     email_institucional: formData.emailInstitucional || '',
-    telefone: formData.telefoneInstitucional || '',
-    lotacao: formData.unidadeSetor || '',
+    equipe_envolvida: formData.equipeEnvolvida || '',
     
-    // Dados da iniciativa - mapeamento correto para a tabela
+    // Informações sobre a inscrição - mapeamento correto para a tabela
+    area: formData.area || '',
     titulo_iniciativa: formData.tituloIniciativa || '',
-    area_atuacao: formData.area || '',
-    data_inicio: formatDate(formData.anoInicioExecucao ? `01/01/${formData.anoInicioExecucao}` : ''),
-    data_fim: formData.dataConclusao ? formatDate(formData.dataConclusao) : null,
-    publico_alvo: formData.equipeEnvolvida || '',
+    ano_inicio_execucao: formData.anoInicioExecucao || '',
+    situacao_atual: formData.situacaoAtual || '',
+    data_conclusao: formData.dataConclusao || undefined,
     
-    // Descrições - mapeamento correto para a tabela
-    descricao_iniciativa: formData.resumoExecutivo || '',
-    objetivos: formData.objetivosEstrategicos || '',
-    metodologia: formData.etapasMetodologia || '',
-    principais_resultados: formData.resultadosAlcancados || '',
+    // Descrição da prática/projeto - mapeamento correto para a tabela
+    resumo_executivo: formData.resumoExecutivo || '',
+    problema_necessidade: formData.problemaNecessidade || '',
+    objetivos_estrategicos: formData.objetivosEstrategicos || '',
+    etapas_metodologia: formData.etapasMetodologia || '',
+    resultados_alcancados: formData.resultadosAlcancados || '',
     
     // Critérios de avaliação
     cooperacao: formData.cooperacao || '',
@@ -102,12 +96,13 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     replicabilidade: formData.replicabilidade || '',
     
     // Informações adicionais - mapeamento correto para a tabela
-    participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
-    foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
-    observacoes: formData.especificarEdicoesAnteriores || null,
+    participou_edicoes_anteriores: formData.participouEdicoesAnteriores || 'nao',
+    especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores || undefined,
+    foi_vencedor_anterior: formData.foiVencedorAnterior || 'nao',
     
     // Declaração - mapeamento correto para a tabela
-    declaracao: Boolean(formData.concordaTermos)
+    concorda_termos: Boolean(formData.concordaTermos),
+    local_data: new Date().toLocaleDateString('pt-BR') // Data atual formatada
   };
 }
 
