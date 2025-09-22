@@ -54,7 +54,7 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       try {
         // Carregar e adicionar logo
         const logoUrl = 'https://i.postimg.cc/pT3rRnwr/logo-mppi.png';
-        const logoX = (pageWidth - 120) / 2; // Centralizar logo de 120px
+        const logoX = (pageWidth - 90) / 2; // Centralizar logo de 90px
         
         // Criar uma imagem temporária para carregar o logo
         const img = new Image();
@@ -64,13 +64,13 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
           img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 120;
-            canvas.height = 20;
+            canvas.width = 90;
+            canvas.height = 15;
             
             if (ctx) {
-              ctx.drawImage(img, 0, 0, 120, 20);
+              ctx.drawImage(img, 0, 0, 90, 15);
               const imgData = canvas.toDataURL('image/png');
-              pdf.addImage(imgData, 'PNG', logoX, 15, 120, 20);
+              pdf.addImage(imgData, 'PNG', logoX, 15, 90, 15);
             }
             resolveImg();
           };
@@ -90,14 +90,17 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       // Título centralizado
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      const title1 = 'PRÊMIO MELHORES PRÁTICAS MPPI - 9ª EDIÇÃO - 2025';
-      const title2 = 'FICHA DE INSCRIÇÃO';
+      const title1 = 'PRÊMIO MELHORES PRÁTICAS MPPI';
       
       const title1Width = pdf.getTextWidth(title1);
-      const title2Width = pdf.getTextWidth(title2);
+      pdf.text(title1, (pageWidth - title1Width) / 2, 40);
       
-      pdf.text(title1, (pageWidth - title1Width) / 2, 45);
-      pdf.text(title2, (pageWidth - title2Width) / 2, 55);
+      // Subtítulo com fonte menor
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const title2 = '9ª Edição - 2025 | Ficha de Inscrição';
+      const title2Width = pdf.getTextWidth(title2);
+      pdf.text(title2, (pageWidth - title2Width) / 2, 50);
       
       // Linha divisória do cabeçalho
       pdf.setLineWidth(0.5);
@@ -193,12 +196,24 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
 
     // Step 4 - Critérios
     addText('4. CRITÉRIOS DE AVALIAÇÃO', 12, true);
-    addText(`Cooperação: ${inscricaoData.cooperacao}`);
-    addText(`Inovação: ${inscricaoData.inovacao}`);
-    addText(`Resolutividade: ${inscricaoData.resolutividade}`);
-    addText(`Impacto Social: ${inscricaoData.impacto_social}`);
-    addText(`Alinhamento aos ODS: ${inscricaoData.alinhamento_ods}`);
-    addText(`Replicabilidade: ${inscricaoData.replicabilidade}`);
+    
+    addText('Cooperação:', 10, true);
+    addText(inscricaoData.cooperacao);
+    
+    addText('Inovação:', 10, true);
+    addText(inscricaoData.inovacao);
+    
+    addText('Resolutividade:', 10, true);
+    addText(inscricaoData.resolutividade);
+    
+    addText('Impacto Social:', 10, true);
+    addText(inscricaoData.impacto_social);
+    
+    addText('Alinhamento aos ODS:', 10, true);
+    addText(inscricaoData.alinhamento_ods);
+    
+    addText('Replicabilidade:', 10, true);
+    addText(inscricaoData.replicabilidade);
     yPosition += 5;
 
     // Step 5 - Informações Adicionais

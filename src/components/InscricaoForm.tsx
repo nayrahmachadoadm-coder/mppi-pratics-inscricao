@@ -135,8 +135,8 @@ const InscricaoForm = () => {
         requiredFields = ['resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos', 'etapasMetodologia', 'resultadosAlcancados'];
         break;
       case 4:
-        // Step 4 - Critérios de Avaliação (opcionais - podem ser preenchidos posteriormente)
-        requiredFields = [];
+        // Step 4 - Critérios de Avaliação (obrigatórios)
+        requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
