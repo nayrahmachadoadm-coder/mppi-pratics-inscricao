@@ -1,37 +1,27 @@
 import jsPDF from 'jspdf';
 
-interface FormData {
-  nomeCompleto: string;
-  cargoFuncao: string;
-  matricula: string;
-  unidadeSetor: string;
-  telefoneInstitucional: string;
-  emailInstitucional: string;
-  equipeEnvolvida: string;
-  area: string;
-  tituloIniciativa: string;
-  anoInicioExecucao: string;
-  situacaoAtual: string;
-  dataConclusao?: string;
-  resumoExecutivo: string;
-  problemaNecessidade: string;
-  objetivosEstrategicos: string;
-  etapasMetodologia: string;
-  resultadosAlcancados: string;
-  cooperacao: string;
+interface InscricaoData {
+  nome: string;
+  email: string;
+  telefone: string;
+  orgao: string;
+  cargo: string;
+  titulo_pratica: string;
+  descricao_pratica: string;
+  categoria: string;
+  objetivos: string;
+  metodologia: string;
+  resultados: string;
   inovacao: string;
-  resolutividade: string;
-  impactoSocial: string;
-  alinhamentoODS: string;
+  sustentabilidade: string;
   replicabilidade: string;
-  participouEdicoesAnteriores: string;
-  especificarEdicoesAnteriores?: string;
-  foiVencedorAnterior: string;
-  concordaTermos: boolean;
-  localData: string;
+  participacao_anterior: boolean;
+  edicao_anterior?: string;
+  declaracao_veracidade: boolean;
+  created_at: string;
 }
 
-export const generatePDF = (formData: FormData): Promise<Blob> => {
+export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
   return new Promise((resolve) => {
     const pdf = new jsPDF();
     let yPosition = 20;
@@ -72,87 +62,52 @@ export const generatePDF = (formData: FormData): Promise<Blob> => {
 
     // Step 1 - Dados do Proponente
     addText('1. DADOS DO PROPONENTE', 12, true);
-    addText(`Nome Completo: ${formData.nomeCompleto}`);
-    addText(`Cargo/Função: ${formData.cargoFuncao}`);
-    addText(`Matrícula: ${formData.matricula}`);
-    addText(`Unidade/Setor: ${formData.unidadeSetor}`);
-    addText(`Telefone Institucional: ${formData.telefoneInstitucional}`);
-    addText(`E-mail Institucional: ${formData.emailInstitucional}`);
+    addText(`Nome Completo: ${inscricaoData.nome}`);
+    addText(`Cargo/Função: ${inscricaoData.cargo}`);
+    addText(`Órgão/Unidade: ${inscricaoData.orgao}`);
+    addText(`Telefone: ${inscricaoData.telefone}`);
+    addText(`E-mail: ${inscricaoData.email}`);
     yPosition += 5;
 
-    // Step 2 - Informações da Inscrição
-    addText('2. INFORMAÇÕES DA INSCRIÇÃO', 12, true);
-    addText(`Título da Prática/Projeto: ${formData.tituloIniciativa}`);
-    
-    // Mapear área para texto legível
-    const areaMap: { [key: string]: string } = {
-      'finalistica-pratica': 'Prática Finalística',
-      'finalistica-projeto': 'Projeto Finalístico',
-      'estruturante-pratica': 'Prática Estruturante',
-      'estruturante-projeto': 'Projeto Estruturante',
-      'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial'
-    };
-    addText(`Área/Categoria: ${areaMap[formData.area] || formData.area}`);
-    
-    addText(`Ano de Início da Execução: ${formData.anoInicioExecucao}`);
-    
-    const situacaoMap: { [key: string]: string } = {
-      'concluido': 'Concluído',
-      'em-execucao': 'Em execução'
-    };
-    addText(`Situação Atual: ${situacaoMap[formData.situacaoAtual] || formData.situacaoAtual}`);
-    
-    if (formData.dataConclusao) {
-      addText(`Data de Conclusão: ${formData.dataConclusao}`);
-    }
-    
-    addText(`Equipe Envolvida: ${formData.equipeEnvolvida}`);
+    // Step 2 - Informações da Prática
+    addText('2. INFORMAÇÕES DA PRÁTICA', 12, true);
+    addText(`Título da Prática/Projeto: ${inscricaoData.titulo_pratica}`);
+    addText(`Categoria: ${inscricaoData.categoria}`);
     yPosition += 5;
 
     // Step 3 - Descrição
-    addText('3. DESCRIÇÃO', 12, true);
-    addText(`Resumo Executivo: ${formData.resumoExecutivo}`);
-    addText(`Problema/Necessidade: ${formData.problemaNecessidade}`);
-    addText(`Objetivos Estratégicos: ${formData.objetivosEstrategicos}`);
-    addText(`Etapas/Metodologia: ${formData.etapasMetodologia}`);
-    addText(`Resultados Alcançados: ${formData.resultadosAlcancados}`);
+    addText('3. DESCRIÇÃO DA PRÁTICA', 12, true);
+    addText(`Descrição: ${inscricaoData.descricao_pratica}`);
+    addText(`Objetivos: ${inscricaoData.objetivos}`);
+    addText(`Metodologia: ${inscricaoData.metodologia}`);
+    addText(`Resultados: ${inscricaoData.resultados}`);
     yPosition += 5;
 
     // Step 4 - Critérios
     addText('4. CRITÉRIOS DE AVALIAÇÃO', 12, true);
-    addText(`Cooperação: ${formData.cooperacao}`);
-    addText(`Inovação: ${formData.inovacao}`);
-    addText(`Resolutividade: ${formData.resolutividade}`);
-    addText(`Impacto Social: ${formData.impactoSocial}`);
-    addText(`Alinhamento aos ODS: ${formData.alinhamentoODS}`);
-    addText(`Replicabilidade: ${formData.replicabilidade}`);
+    addText(`Inovação: ${inscricaoData.inovacao}`);
+    addText(`Sustentabilidade/Impacto Social: ${inscricaoData.sustentabilidade}`);
+    addText(`Replicabilidade: ${inscricaoData.replicabilidade}`);
     yPosition += 5;
 
-    // Step 5 - Finalização
+    // Step 5 - Informações Adicionais
     addText('5. INFORMAÇÕES ADICIONAIS', 12, true);
+    addText(`Participou de edições anteriores: ${inscricaoData.participacao_anterior ? 'Sim' : 'Não'}`);
     
-    const participouMap: { [key: string]: string } = {
-      'sim': 'Sim',
-      'nao': 'Não'
-    };
-    addText(`Participou de edições anteriores: ${participouMap[formData.participouEdicoesAnteriores] || formData.participouEdicoesAnteriores}`);
-    
-    if (formData.especificarEdicoesAnteriores) {
-      addText(`Especificação: ${formData.especificarEdicoesAnteriores}`);
+    if (inscricaoData.edicao_anterior) {
+      addText(`Especificação: ${inscricaoData.edicao_anterior}`);
     }
     
-    addText(`Foi vencedor anterior: ${participouMap[formData.foiVencedorAnterior] || formData.foiVencedorAnterior}`);
-    addText(`Concordou com os termos: ${formData.concordaTermos ? 'Sim' : 'Não'}`);
-    
-    if (formData.localData) {
-      addText(`Local e Data: ${formData.localData}`);
-    }
+    addText(`Declaração de veracidade: ${inscricaoData.declaracao_veracidade ? 'Sim' : 'Não'}`);
+    yPosition += 5;
 
-    yPosition += 10;
+    // Informações do documento
+    addText(`Data da inscrição: ${new Date(inscricaoData.created_at).toLocaleString('pt-BR')}`, 8);
     addText(`Documento gerado em: ${new Date().toLocaleString('pt-BR')}`, 8);
 
-    // Converter para Blob
-    const pdfBlob = pdf.output('blob');
-    resolve(pdfBlob);
+    // Salvar o PDF
+    const fileName = `Inscricao_${inscricaoData.nome.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+    pdf.save(fileName);
+    resolve();
   });
 };

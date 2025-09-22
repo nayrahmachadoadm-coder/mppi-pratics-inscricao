@@ -20,8 +20,8 @@ export interface InscricaoData {
   // Dados da iniciativa
   titulo_iniciativa: string;
   area_atuacao: string;
-  data_inicio: string; // DATE no banco
-  data_fim?: string; // DATE no banco, opcional
+  data_inicio: string;
+  data_fim: string | null;
   publico_alvo: string;
   
   // Descrições
@@ -41,7 +41,7 @@ export interface InscricaoData {
   // Informações adicionais
   participou_edicoes_anteriores: boolean;
   foi_vencedor_anterior: boolean;
-  observacoes?: string;
+  observacoes: string | null;
   
   // Declaração
   declaracao: boolean;
@@ -73,45 +73,41 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
   };
 
   return {
-    // Dados do proponente
+    // Dados do proponente - mapeamento correto para a tabela
     nome_completo: formData.nomeCompleto || '',
     cargo_funcao: formData.cargoFuncao || '',
-    matricula: formData.matricula || '',
-    unidade_setor: formData.unidadeSetor || '',
-    telefone_institucional: formData.telefoneInstitucional || '',
     email_institucional: formData.emailInstitucional || '',
-    equipe_envolvida: formData.equipeEnvolvida || '',
+    telefone: formData.telefoneInstitucional || '',
+    lotacao: formData.unidadeSetor || '',
     
-    // Informações sobre a inscrição
-    area: formData.area || '',
+    // Dados da iniciativa - mapeamento correto para a tabela
     titulo_iniciativa: formData.tituloIniciativa || '',
-    ano_inicio_execucao: formData.anoInicioExecucao || '',
-    situacao_atual: formData.situacaoAtual || '',
-    data_conclusao: formData.dataConclusao || null,
+    area_atuacao: formData.area || '',
+    data_inicio: formatDate(formData.anoInicioExecucao ? `01/01/${formData.anoInicioExecucao}` : ''),
+    data_fim: formData.dataConclusao ? formatDate(formData.dataConclusao) : null,
+    publico_alvo: formData.equipeEnvolvida || '',
     
-    // Descrição da prática/projeto
-    resumo_executivo: formData.resumoExecutivo || '',
-    problema_necessidade: formData.problemaNecessidade || '',
-    objetivos_estrategicos: formData.objetivosEstrategicos || '',
-    etapas_metodologia: formData.etapasMetodologia || '',
-    resultados_alcancados: formData.resultadosAlcancados || '',
+    // Descrições - mapeamento correto para a tabela
+    descricao_iniciativa: formData.resumoExecutivo || '',
+    objetivos: formData.objetivosEstrategicos || '',
+    metodologia: formData.etapasMetodologia || '',
+    principais_resultados: formData.resultadosAlcancados || '',
     
     // Critérios de avaliação
     cooperacao: formData.cooperacao || '',
     inovacao: formData.inovacao || '',
     resolutividade: formData.resolutividade || '',
     impacto_social: formData.impactoSocial || '',
-    alinhamento_ods: formData.alinhamentoOds || '',
+    alinhamento_ods: formData.alinhamentoODS || '',
     replicabilidade: formData.replicabilidade || '',
     
-    // Informações adicionais
-    participou_edicoes_anteriores: formData.participouEdicoesAnteriores || 'nao',
-    especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores || null,
-    foi_vencedor_anterior: formData.foiVencedorAnterior || 'nao',
+    // Informações adicionais - mapeamento correto para a tabela
+    participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
+    foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
+    observacoes: formData.especificarEdicoesAnteriores || null,
     
-    // Declaração
-    concorda_termos: Boolean(formData.concordaTermos),
-    local_data: formData.localData || ''
+    // Declaração - mapeamento correto para a tabela
+    declaracao: Boolean(formData.concordaTermos)
   };
 }
 

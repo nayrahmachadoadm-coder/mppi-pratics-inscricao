@@ -135,8 +135,8 @@ const InscricaoForm = () => {
         requiredFields = ['resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos', 'etapasMetodologia', 'resultadosAlcancados'];
         break;
       case 4:
-        // Step 4 - Critérios de Avaliação (todos os 6 critérios são obrigatórios)
-        requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
+        // Step 4 - Critérios de Avaliação (opcionais - podem ser preenchidos posteriormente)
+        requiredFields = [];
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
@@ -220,9 +220,9 @@ const InscricaoForm = () => {
     
     if (isSubmitting) return;
     
-    // Validação completa para envio final (Step 4 não é obrigatório)
+    // Validação completa para envio final - apenas campos obrigatórios dos steps 1, 2, 3 e 5
     const allRequiredFields = [
-      'nomeCompleto', 'cargoFuncao', 'matricula', 'unidadeSetor', 
+      'nomeCompleto', 'cargoFuncao', 'unidadeSetor', 
       'telefoneInstitucional', 'emailInstitucional', 'equipeEnvolvida', 'area', 
       'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
       'resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos',
