@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Conexão Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Conexão com Supabase</h1>
+    
+    <div class="test-section">
+        <h2>1. Teste de Conexão</h2>
+        <button onclick="testConnection()">Testar Conexão</button>
+        <div id="connection-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Teste de Inserção</h2>
+        <button onclick="testInsert()">Testar Inserção de Dados</button>
+        <div id="insert-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Teste de Leitura</h2>
+        <button onclick="testRead()">Testar Leitura de Dados</button>
+        <div id="read-result"></div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = "https://ljbxctmywdpsfmjvmlmh.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p>Testando conexão...</p>';
+            
+            try {
+                const { data, error } = await supabase.from('inscricoes').select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">
+                        <h3>❌ Erro na conexão</h3>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="success">
+                        <h3>✅ Conexão bem-sucedida!</h3>
+                        <p>Total de registros na tabela: ${data || 0}</p>
+                    </div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">
+                    <h3>❌ Erro inesperado</h3>
+                    <pre>${err.message}</pre>
+                </div>`;
+            }
+        }
+
+        async function testInsert() {
+            const resultDiv = document.getElementById('insert-result');
+            resultDiv.innerHTML = '<p>Testando inserção...</p>';
+            
+            const testData = {
+                nome_completo: 'Teste Usuario',
+                cargo_funcao: 'Analista de Teste',
+                matricula: 'TEST123',
+                unidade_setor: 'Setor de Testes',
+                telefone_institucional: '(11) 99999-9999',
+                email_institucional: 'teste@mppi.mp.br',
+                equipe_envolvida: 'Equipe de Testes',
+                area: 'Tecnologia',
+                titulo_iniciativa: 'Teste de Integração',
+                ano_inicio_execucao: '2025',
+                situacao_atual: 'Em andamento',
+                resumo_executivo: 'Este é um teste de inserção no banco de dados.',
+                problema_necessidade: 'Necessidade de testar a integração.',
+                objetivos_estrategicos: 'Verificar se os dados são salvos corretamente.',
+                etapas_metodologia: 'Executar teste automatizado.',
+                resultados_alcancados: 'Teste executado com sucesso.',
+                cooperacao: 'Teste de cooperação',
+                inovacao: 'Teste de inovação',
+                resolutividade: 'Teste de resolutividade',
+                impacto_social: 'Teste de impacto social',
+                alinhamento_ods: 'Teste de alinhamento ODS',
+                replicabilidade: 'Teste de replicabilidade',
+                participou_edicoes_anteriores: 'nao',
+                foi_vencedor_anterior: 'nao',
+                concorda_termos: true,
+                local_data: new Date().toLocaleDateString('pt-BR')
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">
+                        <h3>❌ Erro na inserção</h3>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="success">
+                        <h3>✅ Inserção bem-sucedida!</h3>
+                        <p>ID do registro criado: ${data.id}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">
+                    <h3>❌ Erro inesperado</h3>
+                    <pre>${err.message}</pre>
+                </div>`;
+            }
+        }
+
+        async function testRead() {
+            const resultDiv = document.getElementById('read-result');
+            resultDiv.innerHTML = '<p>Testando leitura...</p>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">
+                        <h3>❌ Erro na leitura</h3>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="success">
+                        <h3>✅ Leitura bem-sucedida!</h3>
+                        <p>Registros encontrados: ${data.length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">
+                    <h3>❌ Erro inesperado</h3>
+                    <pre>${err.message}</pre>
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

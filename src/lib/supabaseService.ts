@@ -10,28 +10,25 @@ const supabasePublic = createClient(
 // Interface para os dados da inscrição que serão salvos no Supabase
 // Baseada na estrutura atual da tabela (migração 003_recreate_inscricoes_table.sql)
 export interface InscricaoData {
-  // Dados do proponente
+  // Dados pessoais
   nome_completo: string;
   cargo_funcao: string;
-  matricula: string;
-  unidade_setor: string;
-  telefone_institucional: string;
+  telefone: string;
   email_institucional: string;
-  equipe_envolvida: string;
+  lotacao: string;
   
-  // Informações sobre a inscrição
-  area: string;
+  // Dados da iniciativa
+  area_atuacao: string;
   titulo_iniciativa: string;
-  ano_inicio_execucao: string;
-  situacao_atual: string;
-  data_conclusao?: string;
+  data_inicio: string;
+  data_fim?: string | null;
+  publico_alvo: string;
   
   // Descrição da prática/projeto
-  resumo_executivo: string;
-  problema_necessidade: string;
-  objetivos_estrategicos: string;
-  etapas_metodologia: string;
-  resultados_alcancados: string;
+  descricao_iniciativa: string;
+  objetivos: string;
+  metodologia: string;
+  principais_resultados: string;
   
   // Critérios de avaliação
   cooperacao: string;
@@ -42,13 +39,17 @@ export interface InscricaoData {
   replicabilidade: string;
   
   // Informações adicionais
-  participou_edicoes_anteriores: string;
-  especificar_edicoes_anteriores?: string;
-  foi_vencedor_anterior: string;
+  participou_edicoes_anteriores: boolean;
+  foi_vencedor_anterior: boolean;
   
   // Declaração
-  concorda_termos: boolean;
-  local_data: string;
+  declaracao: boolean;
+  observacoes?: string | null;
+  
+  // Campos opcionais do banco
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Interface para o resultado da operação
@@ -63,46 +64,44 @@ export interface SupabaseResult {
  * Converte os dados do formulário para o formato do banco de dados
  */
 export function convertFormDataToSupabase(formData: any): InscricaoData {
+  console.log('🔄 DEBUG: Convertendo dados do formulário para Supabase:', formData);
+  
   return {
-    // Dados do proponente - mapeamento correto para a tabela
+    // Dados pessoais - mapeamento correto para a tabela
     nome_completo: formData.nomeCompleto || '',
     cargo_funcao: formData.cargoFuncao || '',
-    matricula: formData.matricula || 'N/A', // Campo obrigatório na tabela
-    unidade_setor: formData.unidadeSetor || '',
-    telefone_institucional: formData.telefoneInstitucional || '',
+    telefone: formData.telefoneInstitucional || '',
     email_institucional: formData.emailInstitucional || '',
-    equipe_envolvida: formData.equipeEnvolvida || '',
+    lotacao: formData.unidadeSetor || '',
     
-    // Informações sobre a inscrição - mapeamento correto para a tabela
-    area: formData.area || '',
+    // Dados da iniciativa - mapeamento correto para a tabela
+    area_atuacao: formData.area || '',
     titulo_iniciativa: formData.tituloIniciativa || '',
-    ano_inicio_execucao: formData.anoInicioExecucao || '',
-    situacao_atual: formData.situacaoAtual || '',
-    data_conclusao: formData.dataConclusao || undefined,
+    data_inicio: formData.anoInicioExecucao || '',
+    data_fim: null, // Campo opcional
+    publico_alvo: formData.equipeEnvolvida || '',
     
     // Descrição da prática/projeto - mapeamento correto para a tabela
-    resumo_executivo: formData.resumoExecutivo || '',
-    problema_necessidade: formData.problemaNecessidade || '',
-    objetivos_estrategicos: formData.objetivosEstrategicos || '',
-    etapas_metodologia: formData.etapasMetodologia || '',
-    resultados_alcancados: formData.resultadosAlcancados || '',
+    descricao_iniciativa: formData.resumoExecutivo || '',
+    objetivos: formData.objetivosEstrategicos || '',
+    metodologia: formData.etapasMetodologia || '',
+    principais_resultados: formData.resultadosAlcancados || '',
     
-    // Critérios de avaliação
-    cooperacao: formData.cooperacao || '',
-    inovacao: formData.inovacao || '',
-    resolutividade: formData.resolutividade || '',
-    impacto_social: formData.impactoSocial || '',
-    alinhamento_ods: formData.alinhamentoODS || '',
-    replicabilidade: formData.replicabilidade || '',
+    // Critérios de avaliação - garantir valores padrão para campos obrigatórios
+    cooperacao: formData.cooperacao || 'Não informado',
+    inovacao: formData.inovacao || 'Não informado',
+    resolutividade: formData.resolutividade || 'Não informado',
+    impacto_social: formData.impactoSocial || 'Não informado',
+    alinhamento_ods: formData.alinhamentoODS || 'Não informado',
+    replicabilidade: formData.replicabilidade || 'Não informado',
     
     // Informações adicionais - mapeamento correto para a tabela
-    participou_edicoes_anteriores: formData.participouEdicoesAnteriores || 'nao',
-    especificar_edicoes_anteriores: formData.especificarEdicoesAnteriores || undefined,
-    foi_vencedor_anterior: formData.foiVencedorAnterior || 'nao',
+    participou_edicoes_anteriores: formData.participouEdicoesAnteriores === 'sim',
+    foi_vencedor_anterior: formData.foiVencedorAnterior === 'sim',
     
     // Declaração - mapeamento correto para a tabela
-    concorda_termos: Boolean(formData.concordaTermos),
-    local_data: new Date().toLocaleDateString('pt-BR') // Data atual formatada
+    declaracao: Boolean(formData.concordaTermos),
+    observacoes: formData.especificarEdicoesAnteriores || null
   };
 }
 
@@ -119,41 +118,14 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
     console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
     console.log('📊 Estrutura dos dados:', Object.keys(inscricaoData));
     
-    // Inserir dados na tabela inscricoes
+    // Inserir dados na tabela inscricoes usando o cliente público que bypassa RLS
     console.log('📤 Enviando dados para Supabase...');
     
-    // Primeira tentativa: inserção normal
-    let { data, error } = await supabase
+    const { data, error } = await supabasePublic
       .from('inscricoes')
       .insert([inscricaoData])
       .select()
       .single();
-    
-    // Se der erro de RLS, tentar com configuração alternativa
-    if (error && error.code === '42501') {
-      console.log('🔄 Erro de RLS detectado. Tentando com configuração alternativa...');
-      
-      // Criar um cliente temporário com configuração específica para inserção
-      const tempClient = createClient(
-        "https://ljbxctmywdpsfmjvmlmh.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY",
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          }
-        }
-      );
-      
-      const result = await tempClient
-        .from('inscricoes')
-        .insert([inscricaoData])
-        .select()
-        .single();
-      
-      data = result.data;
-      error = result.error;
-    }
     
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);
@@ -163,14 +135,6 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
         hint: error.hint,
         code: error.code
       });
-      
-      // Se ainda for erro de RLS, retornar mensagem específica
-      if (error.code === '42501') {
-        return {
-          success: false,
-          error: `Erro de permissão no banco de dados. A tabela de inscrições está configurada com políticas de segurança que impedem inserções públicas. Por favor, entre em contato com o administrador do sistema.`,
-        };
-      }
       
       return {
         success: false,

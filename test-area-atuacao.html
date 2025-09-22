@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Campo area_atuacao</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Específico - Campo area_atuacao</h1>
+        
+        <div style="margin-bottom: 20px;">
+            <button onclick="testAreaAtuacao()">Testar Inserção com area_atuacao</button>
+            <button onclick="clearCache()">Limpar Cache do Supabase</button>
+            <button onclick="testFormularioCompleto()">Testar Formulário Completo</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        
+        // Criar cliente com cache limpo
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+            },
+            global: {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            }
+        });
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testAreaAtuacao() {
+            clearResults();
+            addResult('🧪 Testando inserção específica do campo area_atuacao...', 'info');
+            
+            // Dados mínimos focando no campo area_atuacao
+            const testData = {
+                nome_completo: 'Teste Area Atuacao',
+                cargo_funcao: 'Analista',
+                telefone: '(11) 99999-9999',
+                email_institucional: 'teste.area@mppi.mp.br',
+                lotacao: 'Unidade Teste',
+                area_atuacao: 'Tecnologia da Informação', // Campo específico que estava causando erro
+                titulo_iniciativa: 'Teste Area Atuacao',
+                data_inicio: '2024',
+                publico_alvo: 'Servidores',
+                descricao_iniciativa: 'Teste específico para area_atuacao',
+                objetivos: 'Verificar se o campo area_atuacao funciona',
+                metodologia: 'Inserção direta via Supabase',
+                principais_resultados: 'Campo area_atuacao funcionando',
+                cooperacao: 'Teste',
+                inovacao: 'Teste',
+                resolutividade: 'Teste',
+                impacto_social: 'Teste',
+                alinhamento_ods: 'Teste',
+                replicabilidade: 'Teste',
+                participou_edicoes_anteriores: false,
+                foi_vencedor_anterior: false,
+                declaracao: true
+            };
+
+            addResult(`📋 Dados a serem inseridos:
+${JSON.stringify(testData, null, 2)}`, 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    addResult(`❌ ERRO na inserção: ${error.message}`, 'error');
+                    addResult(`Código do erro: ${error.code}`, 'error');
+                    addResult(`Detalhes: ${JSON.stringify(error, null, 2)}`, 'error');
+                    
+                    if (error.message.includes('area_atuacao')) {
+                        addResult(`
+🔍 DIAGNÓSTICO: O erro ainda menciona area_atuacao.
+Isso pode indicar:
+1. Cache do cliente Supabase
+2. Problema de sincronização
+3. Permissões RLS
+`, 'error');
+                    }
+                } else {
+                    addResult('✅ SUCESSO! Inserção realizada com area_atuacao!', 'success');
+                    addResult(`ID do registro: ${data[0]?.id}`, 'success');
+                    addResult(`area_atuacao salvo: ${data[0]?.area_atuacao}`, 'success');
+                    
+                    // Limpar o registro de teste
+                    if (data[0]?.id) {
+                        await supabase.from('inscricoes').delete().eq('id', data[0].id);
+                        addResult('🧹 Registro de teste removido.', 'info');
+                    }
+                }
+            } catch (err) {
+                addResult(`💥 Erro inesperado: ${err.message}`, 'error');
+            }
+        }
+
+        async function clearCache() {
+            addResult('🧹 Limpando cache...', 'info');
+            
+            // Limpar localStorage
+            localStorage.clear();
+            
+            // Limpar sessionStorage
+            sessionStorage.clear();
+            
+            // Forçar reload da página
+            addResult('✅ Cache limpo! Recarregando página...', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        async function testFormularioCompleto() {
+            clearResults();
+            addResult('🧪 Testando com dados completos do formulário...', 'info');
+            
+            // Simular dados exatamente como vêm do formulário
+            const formData = {
+                nomeCompleto: 'João Silva',
+                cargoFuncao: 'Analista de Sistemas',
+                telefoneInstitucional: '(86) 99999-9999',
+                emailInstitucional: 'joao.silva@mppi.mp.br',
+                unidadeSetor: 'Coordenadoria de TI',
+                area: 'Tecnologia da Informação',
+                tituloIniciativa: 'Sistema de Gestão Digital',
+                anoInicioExecucao: '2024',
+                publicoAlvo: 'Servidores do MPPI',
+                descricaoIniciativa: 'Sistema para digitalização de processos',
+                objetivos: 'Modernizar os processos internos',
+                metodologia: 'Desenvolvimento ágil',
+                principaisResultados: 'Redução de 50% no tempo de processos',
+                cooperacao: 'Excelente',
+                inovacao: 'Alta',
+                resolutividade: 'Muito boa',
+                impactoSocial: 'Significativo',
+                alinhamentoOds: 'ODS 16 - Paz, Justiça e Instituições Eficazes',
+                replicabilidade: 'Alta',
+                participouEdicoesAnteriores: false,
+                foiVencedorAnterior: false,
+                declaracao: true
+            };
+
+            // Converter usando a mesma lógica do supabaseService
+            const convertedData = {
+                nome_completo: formData.nomeCompleto || '',
+                cargo_funcao: formData.cargoFuncao || '',
+                telefone: formData.telefoneInstitucional || '',
+                email_institucional: formData.emailInstitucional || '',
+                lotacao: formData.unidadeSetor || '',
+                area_atuacao: formData.area || '', // Esta é a conversão que estava causando problema
+                titulo_iniciativa: formData.tituloIniciativa || '',
+                data_inicio: formData.anoInicioExecucao || '',
+                publico_alvo: formData.publicoAlvo || '',
+                descricao_iniciativa: formData.descricaoIniciativa || '',
+                objetivos: formData.objetivos || '',
+                metodologia: formData.metodologia || '',
+                principais_resultados: formData.principaisResultados || '',
+                cooperacao: formData.cooperacao || '',
+                inovacao: formData.inovacao || '',
+                resolutividade: formData.resolutividade || '',
+                impacto_social: formData.impactoSocial || '',
+                alinhamento_ods: formData.alinhamentoOds || '',
+                replicabilidade: formData.replicabilidade || '',
+                participou_edicoes_anteriores: formData.participouEdicoesAnteriores || false,
+                foi_vencedor_anterior: formData.foiVencedorAnterior || false,
+                declaracao: formData.declaracao || false
+            };
+
+            addResult(`📋 Dados convertidos (como no supabaseService):
+${JSON.stringify(convertedData, null, 2)}`, 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([convertedData])
+                    .select();
+
+                if (error) {
+                    addResult(`❌ ERRO: ${error.message}`, 'error');
+                } else {
+                    addResult('✅ SUCESSO! Formulário completo funcionando!', 'success');
+                    addResult(`ID: ${data[0]?.id}`, 'success');
+                    
+                    // Limpar registro
+                    if (data[0]?.id) {
+                        await supabase.from('inscricoes').delete().eq('id', data[0].id);
+                        addResult('🧹 Registro removido.', 'info');
+                    }
+                }
+            } catch (err) {
+                addResult(`💥 Erro: ${err.message}`, 'error');
+            }
+        }
+
+        // Executar teste inicial
+        window.onload = function() {
+            addResult('🚀 Teste específico para area_atuacao carregado.', 'info');
+            addResult('Clique em "Testar Inserção com area_atuacao" para verificar se o problema foi resolvido.', 'info');
+        };
+    </script>
+</body>
+</html>

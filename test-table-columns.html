@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Estrutura da Tabela Inscricoes</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .sql-commands {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico e Correção da Tabela Inscricoes</h1>
+        
+        <div style="margin-bottom: 20px;">
+            <button onclick="checkTableStructure()">1. Verificar Estrutura Atual</button>
+            <button onclick="generateSQLCommands()" id="generateBtn" disabled>2. Gerar Comandos SQL</button>
+            <button onclick="testInsertWithCurrentStructure()">3. Testar Inserção</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let currentColumns = [];
+        let missingColumns = [];
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function checkTableStructure() {
+            clearResults();
+            addResult('🔍 Verificando estrutura atual da tabela inscricoes...', 'info');
+            
+            try {
+                // Tentar fazer uma consulta simples para ver quais campos existem
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    addResult(`❌ Erro ao consultar tabela: ${error.message}`, 'error');
+                    return;
+                }
+
+                // Se conseguiu fazer a consulta, vamos ver quais campos retornaram
+                if (data && data.length > 0) {
+                    currentColumns = Object.keys(data[0]);
+                    addResult('✅ Estrutura atual da tabela (baseada em dados existentes):', 'success');
+                    addResult(`Colunas encontradas: ${currentColumns.join(', ')}`, 'info');
+                } else {
+                    // Se não há dados, vamos tentar uma inserção de teste para ver quais campos são aceitos
+                    addResult('⚠️ Tabela vazia. Tentando descobrir estrutura através de teste...', 'warning');
+                    await discoverTableStructure();
+                }
+
+                // Verificar quais colunas estão faltando
+                const requiredColumns = [
+                    'area_atuacao', 'telefone', 'lotacao', 'data_inicio', 'data_fim',
+                    'publico_alvo', 'descricao_iniciativa', 'objetivos', 
+                    'metodologia', 'principais_resultados', 'declaracao'
+                ];
+
+                missingColumns = requiredColumns.filter(col => !currentColumns.includes(col));
+                
+                if (missingColumns.length > 0) {
+                    addResult(`⚠️ Colunas faltantes detectadas: ${missingColumns.join(', ')}`, 'warning');
+                    document.getElementById('generateBtn').disabled = false;
+                } else {
+                    addResult('✅ Todas as colunas necessárias estão presentes!', 'success');
+                }
+
+                // Mostrar tabela com status das colunas
+                showColumnStatus(requiredColumns);
+
+            } catch (err) {
+                addResult(`💥 Erro inesperado: ${err.message}`, 'error');
+            }
+        }
+
+        async function discoverTableStructure() {
+            // Tentar inserir um objeto vazio para ver quais campos são obrigatórios
+            try {
+                const { error } = await supabase
+                    .from('inscricoes')
+                    .insert([{}]);
+
+                if (error) {
+                    // Analisar a mensagem de erro para descobrir campos obrigatórios
+                    addResult(`Analisando estrutura através do erro: ${error.message}`, 'info');
+                    
+                    // Campos que sabemos que existem baseado nas migrations anteriores
+                    currentColumns = [
+                        'id', 'nome_completo', 'cargo_funcao', 'email_institucional',
+                        'titulo_iniciativa', 'area', 'cooperacao', 'inovacao', 
+                        'resolutividade', 'impacto_social', 'alinhamento_ods',
+                        'replicabilidade', 'participou_edicoes_anteriores',
+                        'foi_vencedor_anterior', 'concorda_termos', 'local_data',
+                        'status', 'observacoes', 'created_at', 'updated_at'
+                    ];
+                }
+            } catch (err) {
+                addResult(`Erro ao descobrir estrutura: ${err.message}`, 'error');
+            }
+        }
+
+        function showColumnStatus(requiredColumns) {
+            let tableHTML = '<table><tr><th>Coluna</th><th>Status</th><th>Ação Necessária</th></tr>';
+            
+            requiredColumns.forEach(col => {
+                const exists = currentColumns.includes(col);
+                const status = exists ? '✅ Existe' : '❌ Faltando';
+                const action = exists ? 'Nenhuma' : 'Adicionar coluna';
+                const rowClass = exists ? 'success' : 'error';
+                
+                tableHTML += `<tr class="${rowClass}"><td>${col}</td><td>${status}</td><td>${action}</td></tr>`;
+            });
+            
+            tableHTML += '</table>';
+            addResult(tableHTML, 'info');
+        }
+
+        function generateSQLCommands() {
+            if (missingColumns.length === 0) {
+                addResult('✅ Nenhuma coluna faltando. Não é necessário executar comandos SQL.', 'success');
+                return;
+            }
+
+            addResult('📝 Gerando comandos SQL para adicionar colunas faltantes...', 'info');
+
+            const sqlCommands = missingColumns.map(col => {
+                switch(col) {
+                    case 'area_atuacao':
+                    case 'telefone':
+                    case 'lotacao':
+                    case 'data_inicio':
+                    case 'data_fim':
+                    case 'publico_alvo':
+                    case 'descricao_iniciativa':
+                    case 'objetivos':
+                    case 'metodologia':
+                    case 'principais_resultados':
+                        return `ALTER TABLE public.inscricoes ADD COLUMN ${col} TEXT;`;
+                    case 'declaracao':
+                        return `ALTER TABLE public.inscricoes ADD COLUMN ${col} BOOLEAN DEFAULT false;`;
+                    default:
+                        return `ALTER TABLE public.inscricoes ADD COLUMN ${col} TEXT;`;
+                }
+            }).join('\n');
+
+            const fullSQL = `-- Comandos SQL para adicionar colunas faltantes na tabela inscricoes
+-- Execute estes comandos no painel SQL do Supabase Dashboard
+
+${sqlCommands}
+
+-- Após executar os comandos acima, execute este comando para verificar:
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'inscricoes' 
+AND table_schema = 'public'
+ORDER BY column_name;`;
+
+            addResult('📋 Comandos SQL gerados:', 'info');
+            addResult(`<div class="sql-commands">${fullSQL}</div>`, 'info');
+
+            addResult(`
+🔧 INSTRUÇÕES PARA EXECUTAR:
+
+1. Acesse o Supabase Dashboard: https://supabase.com/dashboard
+2. Vá para o projeto: ljbxctmywdpsfmjvmlmh
+3. Clique em "SQL Editor" no menu lateral
+4. Cole os comandos SQL acima
+5. Clique em "Run" para executar
+6. Volte aqui e clique em "Testar Inserção" para verificar
+
+⚠️ IMPORTANTE: Execute os comandos no Supabase Dashboard, não aqui no navegador.
+`, 'warning');
+        }
+
+        async function testInsertWithCurrentStructure() {
+            addResult('🧪 Testando inserção com a estrutura atual...', 'info');
+            
+            // Criar dados de teste apenas com campos que sabemos que existem
+            const baseTestData = {
+                nome_completo: 'Teste Usuario',
+                cargo_funcao: 'Analista',
+                email_institucional: 'teste@mppi.mp.br',
+                titulo_iniciativa: 'Iniciativa Teste',
+                area: 'Tecnologia', // Usando 'area' em vez de 'area_atuacao'
+                cooperacao: 'Cooperação teste',
+                inovacao: 'Inovação teste',
+                resolutividade: 'Resolutividade teste',
+                impacto_social: 'Impacto teste',
+                alinhamento_ods: 'ODS teste',
+                replicabilidade: 'Replicabilidade teste',
+                participou_edicoes_anteriores: false,
+                foi_vencedor_anterior: false,
+                concorda_termos: true
+            };
+
+            // Adicionar campos opcionais se existirem
+            const optionalFields = {
+                telefone: '(11) 99999-9999',
+                lotacao: 'Unidade Teste',
+                area_atuacao: 'Tecnologia',
+                data_inicio: '2024',
+                data_fim: '2024',
+                publico_alvo: 'Servidores',
+                descricao_iniciativa: 'Descrição teste',
+                objetivos: 'Objetivos teste',
+                metodologia: 'Metodologia teste',
+                principais_resultados: 'Resultados teste',
+                declaracao: true
+            };
+
+            // Adicionar apenas campos que existem na tabela
+            const testData = { ...baseTestData };
+            Object.keys(optionalFields).forEach(field => {
+                if (currentColumns.includes(field)) {
+                    testData[field] = optionalFields[field];
+                }
+            });
+
+            addResult(`Tentando inserir com os campos: ${Object.keys(testData).join(', ')}`, 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    addResult(`❌ Erro na inserção: ${error.message}`, 'error');
+                    
+                    if (error.message.includes('area_atuacao')) {
+                        addResult(`
+🔍 DIAGNÓSTICO: O erro confirma que a coluna 'area_atuacao' não existe.
+📋 SOLUÇÃO: Execute os comandos SQL gerados acima no Supabase Dashboard.
+`, 'warning');
+                    }
+                } else {
+                    addResult('✅ Inserção realizada com sucesso!', 'success');
+                    addResult(`ID do registro criado: ${data[0]?.id}`, 'info');
+                    
+                    // Limpar o registro de teste
+                    if (data[0]?.id) {
+                        await supabase.from('inscricoes').delete().eq('id', data[0].id);
+                        addResult('🧹 Registro de teste removido.', 'info');
+                    }
+                }
+            } catch (err) {
+                addResult(`💥 Erro inesperado na inserção: ${err.message}`, 'error');
+            }
+        }
+
+        // Executar verificação inicial
+        window.onload = function() {
+            addResult('🚀 Ferramenta de diagnóstico carregada. Clique em "Verificar Estrutura Atual" para começar.', 'info');
+        };
+    </script>
+</body>
+</html>

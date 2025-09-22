@@ -6,24 +6,28 @@ import { CheckCircle, Download, Home, FileText } from 'lucide-react';
 import { generatePDF } from '@/lib/pdfGenerator';
 
 interface InscricaoData {
-  nome: string;
-  email: string;
+  nome_completo: string;
+  email_institucional: string;
   telefone: string;
-  orgao: string;
-  cargo: string;
-  titulo_pratica: string;
-  descricao_pratica: string;
-  categoria: string;
+  lotacao: string;
+  cargo_funcao: string;
+  titulo_iniciativa: string;
+  descricao_iniciativa: string;
+  area_atuacao: string;
   objetivos: string;
   metodologia: string;
-  resultados: string;
+  principais_resultados: string;
+  cooperacao: string;
   inovacao: string;
-  sustentabilidade: string;
+  resolutividade: string;
+  impacto_social: string;
+  alinhamento_ods: string;
   replicabilidade: string;
-  participacao_anterior: boolean;
-  edicao_anterior?: string;
-  declaracao_veracidade: boolean;
-  created_at: string;
+  participou_edicoes_anteriores: boolean;
+  foi_vencedor_anterior: boolean;
+  declaracao: boolean;
+  observacoes?: string | null;
+  created_at?: string;
 }
 
 const ConfirmacaoInscricao: React.FC = () => {
@@ -84,27 +88,27 @@ const ConfirmacaoInscricao: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Nome:</span>
-                <p className="text-gray-800">{inscricaoData.nome}</p>
+                <p className="text-gray-800">{inscricaoData.nome_completo}</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Email:</span>
-                <p className="text-gray-800">{inscricaoData.email}</p>
+                <p className="text-gray-800">{inscricaoData.email_institucional}</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Órgão:</span>
-                <p className="text-gray-800">{inscricaoData.orgao}</p>
+                <p className="text-gray-800">{inscricaoData.lotacao}</p>
               </div>
               <div>
                 <span className="font-medium text-gray-600">Data da Inscrição:</span>
-                <p className="text-gray-800">{formatDate(inscricaoData.created_at)}</p>
+                <p className="text-gray-800">{inscricaoData.created_at ? formatDate(inscricaoData.created_at) : 'Não disponível'}</p>
               </div>
               <div className="md:col-span-2">
                 <span className="font-medium text-gray-600">Título da Prática:</span>
-                <p className="text-gray-800">{inscricaoData.titulo_pratica}</p>
+                <p className="text-gray-800">{inscricaoData.titulo_iniciativa}</p>
               </div>
               <div className="md:col-span-2">
-                <span className="font-medium text-gray-600">Categoria:</span>
-                <p className="text-gray-800">{inscricaoData.categoria}</p>
+                <span className="font-medium text-gray-600">Área de Atuação:</span>
+                <p className="text-gray-800">{inscricaoData.area_atuacao}</p>
               </div>
             </div>
           </div>

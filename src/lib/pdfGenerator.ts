@@ -1,24 +1,28 @@
 import jsPDF from 'jspdf';
 
 interface InscricaoData {
-  nome: string;
-  email: string;
+  nome_completo: string;
+  email_institucional: string;
   telefone: string;
-  orgao: string;
-  cargo: string;
-  titulo_pratica: string;
-  descricao_pratica: string;
-  categoria: string;
+  lotacao: string;
+  cargo_funcao: string;
+  titulo_iniciativa: string;
+  descricao_iniciativa: string;
+  area_atuacao: string;
   objetivos: string;
   metodologia: string;
-  resultados: string;
+  principais_resultados: string;
+  cooperacao: string;
   inovacao: string;
-  sustentabilidade: string;
+  resolutividade: string;
+  impacto_social: string;
+  alinhamento_ods: string;
   replicabilidade: string;
-  participacao_anterior: boolean;
-  edicao_anterior?: string;
-  declaracao_veracidade: boolean;
-  created_at: string;
+  participou_edicoes_anteriores: boolean;
+  foi_vencedor_anterior: boolean;
+  declaracao: boolean;
+  observacoes?: string | null;
+  created_at?: string;
 }
 
 export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
@@ -62,51 +66,54 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
 
     // Step 1 - Dados do Proponente
     addText('1. DADOS DO PROPONENTE', 12, true);
-    addText(`Nome Completo: ${inscricaoData.nome}`);
-    addText(`Cargo/Função: ${inscricaoData.cargo}`);
-    addText(`Órgão/Unidade: ${inscricaoData.orgao}`);
+    addText(`Nome Completo: ${inscricaoData.nome_completo}`);
+    addText(`Cargo/Função: ${inscricaoData.cargo_funcao}`);
+    addText(`Órgão/Unidade: ${inscricaoData.lotacao}`);
     addText(`Telefone: ${inscricaoData.telefone}`);
-    addText(`E-mail: ${inscricaoData.email}`);
+    addText(`E-mail: ${inscricaoData.email_institucional}`);
     yPosition += 5;
 
     // Step 2 - Informações da Prática
     addText('2. INFORMAÇÕES DA PRÁTICA', 12, true);
-    addText(`Título da Prática/Projeto: ${inscricaoData.titulo_pratica}`);
-    addText(`Categoria: ${inscricaoData.categoria}`);
+    addText(`Título da Prática/Projeto: ${inscricaoData.titulo_iniciativa}`);
+    addText(`Área: ${inscricaoData.area_atuacao}`);
     yPosition += 5;
 
     // Step 3 - Descrição
     addText('3. DESCRIÇÃO DA PRÁTICA', 12, true);
-    addText(`Descrição: ${inscricaoData.descricao_pratica}`);
+    addText(`Descrição da Iniciativa: ${inscricaoData.descricao_iniciativa}`);
     addText(`Objetivos: ${inscricaoData.objetivos}`);
     addText(`Metodologia: ${inscricaoData.metodologia}`);
-    addText(`Resultados: ${inscricaoData.resultados}`);
+    addText(`Principais Resultados: ${inscricaoData.principais_resultados}`);
     yPosition += 5;
 
     // Step 4 - Critérios
     addText('4. CRITÉRIOS DE AVALIAÇÃO', 12, true);
+    addText(`Cooperação: ${inscricaoData.cooperacao}`);
     addText(`Inovação: ${inscricaoData.inovacao}`);
-    addText(`Sustentabilidade/Impacto Social: ${inscricaoData.sustentabilidade}`);
+    addText(`Resolutividade: ${inscricaoData.resolutividade}`);
+    addText(`Impacto Social: ${inscricaoData.impacto_social}`);
+    addText(`Alinhamento aos ODS: ${inscricaoData.alinhamento_ods}`);
     addText(`Replicabilidade: ${inscricaoData.replicabilidade}`);
     yPosition += 5;
 
     // Step 5 - Informações Adicionais
     addText('5. INFORMAÇÕES ADICIONAIS', 12, true);
-    addText(`Participou de edições anteriores: ${inscricaoData.participacao_anterior ? 'Sim' : 'Não'}`);
+    addText(`Participou de edições anteriores: ${inscricaoData.participou_edicoes_anteriores ? 'Sim' : 'Não'}`);
+    addText(`Foi vencedor anterior: ${inscricaoData.foi_vencedor_anterior ? 'Sim' : 'Não'}`);
     
-    if (inscricaoData.edicao_anterior) {
-      addText(`Especificação: ${inscricaoData.edicao_anterior}`);
+    if (inscricaoData.observacoes) {
+      addText(`Observações: ${inscricaoData.observacoes}`);
     }
     
-    addText(`Declaração de veracidade: ${inscricaoData.declaracao_veracidade ? 'Sim' : 'Não'}`);
+    addText(`Declaração de veracidade: ${inscricaoData.declaracao ? 'Sim' : 'Não'}`);
     yPosition += 5;
 
     // Informações do documento
-    addText(`Data da inscrição: ${new Date(inscricaoData.created_at).toLocaleString('pt-BR')}`, 8);
     addText(`Documento gerado em: ${new Date().toLocaleString('pt-BR')}`, 8);
 
     // Salvar o PDF
-    const fileName = `Inscricao_${inscricaoData.nome.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+    const fileName = `Inscricao_${inscricaoData.nome_completo.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
     pdf.save(fileName);
     resolve();
   });
