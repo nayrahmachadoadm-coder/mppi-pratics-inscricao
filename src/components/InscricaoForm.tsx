@@ -56,7 +56,7 @@ interface FormData {
   localData: string;
 }
 
-const InscricaoForm = React.memo(() => {
+const InscricaoForm = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,10 +90,15 @@ const InscricaoForm = React.memo(() => {
   });
 
   const handleInputChange = useCallback((field: keyof FormData, value: string | string[] | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    console.log(`💾 DEBUG: handleInputChange - campo: '${field}', valor: '${value}', tipo: ${typeof value}`);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      console.log(`📝 DEBUG: FormData atualizado para campo '${field}':`, newData[field]);
+      return newData;
+    });
   }, []);
 
   const handleDateChange = useCallback((value: string) => {
@@ -112,7 +117,10 @@ const InscricaoForm = React.memo(() => {
     handleInputChange('dataConclusao', formattedDate);
   }, [handleInputChange]);
 
-  const validateStep = useCallback((step: number): boolean => {
+  const validateStep = useCallback((step: number, isForSubmit: boolean = false): boolean => {
+    console.log(`🔍 DEBUG: validateStep chamado - Step: ${step}, isForSubmit: ${isForSubmit}`);
+    console.log(`📊 DEBUG: currentStep atual: ${currentStep}`);
+    
     let requiredFields: string[] = [];
     let missingFields: string[] = [];
 
@@ -127,28 +135,14 @@ const InscricaoForm = React.memo(() => {
         requiredFields = ['resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos', 'etapasMetodologia', 'resultadosAlcancados'];
         break;
       case 4:
+        // Step 4 - Critérios de Avaliação (todos os 6 critérios são obrigatórios)
         requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
-        
-        // Debug logging for Step 4
-        console.log('=== STEP 4 DEBUG INFO ===');
-        console.log('Form data for Step 4 fields:');
-        requiredFields.forEach(field => {
-          const value = formData[field as keyof FormData];
-          console.log(`${field}:`, {
-            value: value,
-            type: typeof value,
-            length: typeof value === 'string' ? value.length : 'N/A',
-            trimmed: typeof value === 'string' ? value.trim() : 'N/A',
-            trimmedLength: typeof value === 'string' ? value.trim().length : 'N/A',
-            isEmpty: !value || (typeof value === 'string' && value.trim() === '')
-          });
-        });
-        console.log('=== END STEP 4 DEBUG ===');
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
-        // Verificação especial para concordaTermos (boolean)
-        if (!formData.concordaTermos) {
+        // Verificação especial para concordaTermos (boolean) - APENAS no submit final
+        if (isForSubmit && !formData.concordaTermos) {
+          console.log(`❌ DEBUG: concordaTermos não aceito no submit final`);
           toast({
             title: "Campos obrigatórios",
             description: "Por favor, aceite os termos da declaração antes de continuar.",
@@ -159,19 +153,28 @@ const InscricaoForm = React.memo(() => {
         break;
     }
 
+    console.log(`📋 DEBUG: Campos obrigatórios para Step ${step}:`, requiredFields);
+    console.log(`📊 DEBUG: FormData completo:`, formData);
+    console.log(`📊 DEBUG: Valores dos campos:`, requiredFields.map(field => ({
+      field,
+      value: formData[field as keyof FormData],
+      type: typeof formData[field as keyof FormData],
+      length: typeof formData[field as keyof FormData] === 'string' ? (formData[field as keyof FormData] as string).length : 'N/A',
+      trimmed: typeof formData[field as keyof FormData] === 'string' ? (formData[field as keyof FormData] as string).trim() : 'N/A',
+      trimmedLength: typeof formData[field as keyof FormData] === 'string' ? (formData[field as keyof FormData] as string).trim().length : 'N/A'
+    })));
+
     missingFields = requiredFields.filter(field => {
       const value = formData[field as keyof FormData];
       const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
-      
-      if (step === 4 && isEmpty) {
-        console.log(`Field "${field}" is missing or empty`);
-      }
-      
+      console.log(`🔍 DEBUG: Verificando campo '${field}': valor='${value}', isEmpty=${isEmpty}`);
       return isEmpty;
     });
 
+    console.log(`❌ DEBUG: Campos faltando para Step ${step}:`, missingFields);
+
     if (missingFields.length > 0) {
-      console.log('Campos faltando no step', step, ':', missingFields);
+      console.log(`🚨 DEBUG: Validação FALHOU - mostrando toast de erro`);
       toast({
         title: "Campos obrigatórios",
         description: `Por favor, preencha todos os campos obrigatórios antes de continuar. Campos faltando: ${missingFields.join(', ')}`,
@@ -180,12 +183,30 @@ const InscricaoForm = React.memo(() => {
       return false;
     }
 
+    console.log(`✅ DEBUG: Validação PASSOU para Step ${step}`);
+    return true;
+
     return true;
   }, [formData, toast]);
 
   const handleNextStep = useCallback(() => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(Math.min(5, currentStep + 1));
+    console.log(`🚀 DEBUG: handleNextStep chamado - currentStep: ${currentStep}`);
+    
+    // Para todos os steps (1, 2, 3, 4), usa a validação normal
+    // Step 5 é o último, então não há "próximo" step
+    if (currentStep < 5) {
+      console.log(`🔄 DEBUG: Chamando validateStep(${currentStep})`);
+      const isValid = validateStep(currentStep);
+      console.log(`📊 DEBUG: Resultado da validação: ${isValid}`);
+      
+      if (isValid) {
+        console.log(`✅ DEBUG: Avançando para step ${currentStep + 1}`);
+        setCurrentStep(currentStep + 1);
+      } else {
+        console.log(`❌ DEBUG: Validação falhou, permanecendo no step ${currentStep}`);
+      }
+    } else {
+      console.log(`🛑 DEBUG: Já está no último step (${currentStep}), não pode avançar`);
     }
   }, [currentStep, validateStep]);
 
@@ -194,20 +215,19 @@ const InscricaoForm = React.memo(() => {
   }, [currentStep]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    console.log(`🚨 DEBUG: handleSubmit chamado! currentStep: ${currentStep}`);
     e.preventDefault();
     
     if (isSubmitting) return;
     
-    // Validação completa para envio final
+    // Validação completa para envio final (Step 4 não é obrigatório)
     const allRequiredFields = [
       'nomeCompleto', 'cargoFuncao', 'matricula', 'unidadeSetor', 
       'telefoneInstitucional', 'emailInstitucional', 'equipeEnvolvida', 'area', 
       'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
       'resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos',
       'etapasMetodologia', 'resultadosAlcancados',
-      'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 
-      'alinhamentoODS', 'replicabilidade', 'participouEdicoesAnteriores',
-      'foiVencedorAnterior'
+      'participouEdicoesAnteriores', 'foiVencedorAnterior'
     ];
     
     const missingFields = allRequiredFields.filter(field => {
@@ -653,7 +673,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Descreva as formas de atuação colaborativa estabelecidas durante a iniciativa, indicando a cooperação intra e interinstitucional, bem como eventuais parcerias com a sociedade civil. Informe como essas articulações contribuíram para fortalecer as ações, otimizar recursos e ampliar os resultados alcançados."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.cooperacao.length}/2000 caracteres
@@ -672,7 +691,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Relate os aspectos inovadores da iniciativa, destacando o que ela traz de novo e diferenciado em relação a práticas já existentes. Explique como as ações se distinguem por soluções criativas, uso de novas metodologias, tecnologias ou formas de atuação que contribuíram para maior eficiência, impacto ou alcance dos resultados."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.inovacao.length}/2000 caracteres
@@ -691,7 +709,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Explique de que forma a iniciativa solucionou de maneira efetiva o problema ou necessidade identificada. Descreva os resultados práticos alcançados, evidenciando a efetividade das ações, a redução ou eliminação dos obstáculos enfrentados e o impacto concreto gerado para o público-alvo ou para a instituição."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.resolutividade.length}/2000 caracteres
@@ -710,7 +727,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Quantifique o impacto gerado pela iniciativa, informando o número de pessoas beneficiadas, a abrangência territorial das ações e os principais efeitos positivos observados. Sempre que possível, utilize dados concretos e indicadores que evidenciem a relevância social dos resultados alcançados."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.impactoSocial.length}/2000 caracteres
@@ -729,7 +745,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Indique qual Objetivo de Desenvolvimento Sustentável (ODS) foi contemplado pela iniciativa e explique de que forma suas ações contribuíram para alcançá-lo. Relacione as atividades realizadas ao ODS selecionado, destacando impactos e resultados concretos."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.alinhamentoODS.length}/2000 caracteres
@@ -748,7 +763,6 @@ const InscricaoForm = React.memo(() => {
             placeholder="Descreva o potencial da iniciativa de ser aplicada ou adaptada em outras áreas, unidades ou contextos. Explique de que forma a experiência pode servir como modelo, destacando elementos que favoreçam sua reprodução, como simplicidade da metodologia, baixo custo, facilidade de implementação ou resultados comprovados."
             rows={3}
             maxLength={2000}
-            required
           />
           <div className="text-xs text-muted-foreground text-right mt-1">
             {formData.replicabilidade.length}/2000 caracteres
@@ -978,6 +992,6 @@ const InscricaoForm = React.memo(() => {
       </div>
     </div>
   );
-});
+};
 
 export default InscricaoForm;
