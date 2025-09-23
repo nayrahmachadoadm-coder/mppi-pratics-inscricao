@@ -220,13 +220,30 @@ const InscricaoForm = () => {
     
     if (isSubmitting) return;
     
-    // Validação completa para envio final - apenas campos obrigatórios dos steps 1, 2, 3 e 5
+    // IMPORTANTE: handleSubmit só deve ser executado quando estiver no Step 5 (último step)
+    // Se não estiver no Step 5, não deve processar o submit
+    if (currentStep !== 5) {
+      console.log(`⚠️ DEBUG: handleSubmit chamado fora do Step 5 (currentStep: ${currentStep}). Ignorando.`);
+      return;
+    }
+    
+    // Validação final do Step 5 usando a função validateStep
+    console.log(`🔄 DEBUG: Validando Step 5 antes do envio final`);
+    const isStep5Valid = validateStep(5, true); // isForSubmit = true
+    
+    if (!isStep5Valid) {
+      console.log(`❌ DEBUG: Validação do Step 5 falhou`);
+      return;
+    }
+    
+    // Validação completa para envio final - todos os campos obrigatórios
     const allRequiredFields = [
       'nomeCompleto', 'cargoFuncao', 'unidadeSetor', 
       'telefoneInstitucional', 'emailInstitucional', 'equipeEnvolvida', 'area', 
       'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
       'resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos',
       'etapasMetodologia', 'resultadosAlcancados',
+      'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade',
       'participouEdicoesAnteriores', 'foiVencedorAnterior'
     ];
     
