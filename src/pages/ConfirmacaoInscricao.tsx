@@ -68,6 +68,18 @@ const ConfirmacaoInscricao: React.FC = () => {
     });
   };
 
+  const formatAreaAtuacao = (area: string) => {
+    const areaMap: { [key: string]: string } = {
+      'finalistica-pratica': 'Prática Finalística',
+      'finalistica-projeto': 'Projeto Finalístico',
+      'estruturante-pratica': 'Prática Estruturante',
+      'estruturante-projeto': 'Projeto Estruturante',
+      'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial'
+    };
+    
+    return areaMap[area] || area;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl shadow-xl">
@@ -113,7 +125,7 @@ const ConfirmacaoInscricao: React.FC = () => {
               </div>
               <div className="md:col-span-2">
                 <span className="font-medium text-gray-600">Área de Atuação:</span>
-                <p className="text-gray-800">{inscricaoData.area_atuacao}</p>
+                <p className="text-gray-800">{formatAreaAtuacao(inscricaoData.area_atuacao)}</p>
               </div>
             </div>
           </div>

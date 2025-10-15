@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
 
 interface InscricaoData {
   nome_completo: string;
@@ -29,6 +30,29 @@ interface InscricaoData {
   observacoes?: string | null;
   created_at?: string;
 }
+
+// Funções de formatação para padronizar a exibição
+const formatCargoFuncao = (cargo: string) => {
+  const cargoMap: { [key: string]: string } = {
+    'promotor-de-justica': 'Promotor de Justiça',
+    'procurador-de-justica': 'Procurador de Justiça',
+    'servidor': 'Servidor'
+  };
+  
+  return cargoMap[cargo] || cargo;
+};
+
+const formatAreaAtuacao = (area: string) => {
+  const areaMap: { [key: string]: string } = {
+    'finalistica-pratica': 'Prática Finalística',
+    'finalistica-projeto': 'Projeto Finalístico',
+    'estruturante-pratica': 'Prática Estruturante',
+    'estruturante-projeto': 'Projeto Estruturante',
+    'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial'
+  };
+  
+  return areaMap[area] || area;
+};
 
 export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
   return new Promise(async (resolve) => {
@@ -64,7 +88,7 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     // Step 1
     simulateAddText('1. DADOS DO PROPONENTE', 11);
     simulateAddText(`Nome Completo: ${inscricaoData.nome_completo}`);
-    simulateAddText(`Cargo/Função: ${inscricaoData.cargo_funcao}`);
+    simulateAddText(`Cargo/Função: ${formatCargoFuncao(inscricaoData.cargo_funcao)}`);
     if (inscricaoData.matricula) simulateAddText(`Matrícula: ${inscricaoData.matricula}`);
     simulateAddText(`Órgão/Unidade: ${inscricaoData.lotacao}`);
     simulateAddText(`Telefone: ${inscricaoData.telefone}`);
@@ -74,7 +98,7 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     // Step 2
     simulateAddText('2. INFORMAÇÕES DA INSCRIÇÃO', 11);
     simulateAddText(`Título da Prática/Projeto: ${inscricaoData.titulo_iniciativa}`);
-    simulateAddText(`Área: ${inscricaoData.area_atuacao}`);
+    simulateAddText(`Área: ${formatAreaAtuacao(inscricaoData.area_atuacao)}`);
     if (inscricaoData.situacao_atual) simulateAddText(`Situação Atual: ${inscricaoData.situacao_atual}`);
     if (inscricaoData.data_conclusao) simulateAddText(`Data de Conclusão: ${inscricaoData.data_conclusao}`);
     if (inscricaoData.publico_alvo) {
@@ -91,8 +115,8 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       simulateAddText('Problema ou Necessidade:', 9);
       simulateAddText(inscricaoData.problema_necessidade);
     }
-    simulateAddText('Objetivos:', 9);
-    simulateAddText(inscricaoData.objetivos);
+    simulateAddText('Objetivo Estratégico:', 9);
+    simulateAddText(formatObjetivoEstrategico(inscricaoData.objetivos));
     simulateAddText('Metodologia:', 9);
     simulateAddText(inscricaoData.metodologia);
     simulateAddText('Principais Resultados:', 9);
@@ -239,6 +263,11 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       pdf.text(dateStr, pageWidth - margin - dateWidth, footerY);
     };
 
+    // Função para adicionar espaçamento entre quesitos
+    const addQuestionSpacing = () => {
+      yPosition += 4; // Espaçamento entre quesitos
+    };
+
     // Função para adicionar texto com quebra de linha e alinhamento justificado
     const addText = (text: string, fontSize: number = 9, isBold: boolean = false, isTitle: boolean = false, forceLeftAlign: boolean = false) => {
       // Padronizar tamanhos de fonte
@@ -259,10 +288,21 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       }
       
       const maxWidth = 170;
-      const splitText = pdf.splitTextToSize(text, maxWidth);
-      const textHeight = splitText.length * lineHeight;
       
-      checkPageBreak(textHeight);
+      // Melhorar quebra de parágrafos - dividir por quebras de linha explícitas primeiro
+      const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
+      let totalHeight = 0;
+      
+      // Calcular altura total considerando todos os parágrafos
+      paragraphs.forEach(paragraph => {
+        const splitText = pdf.splitTextToSize(paragraph.trim(), maxWidth);
+        totalHeight += splitText.length * lineHeight;
+        if (paragraphs.length > 1) {
+          totalHeight += 2; // Espaçamento entre parágrafos
+        }
+      });
+      
+      checkPageBreak(totalHeight);
       
       // Reconfigurar fonte após possível quebra de página
       pdf.setFontSize(fontSize);
@@ -272,41 +312,53 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
         pdf.setFont('helvetica', 'normal');
       }
       
-      // Implementar alinhamento justificado para textos longos (não títulos), exceto quando forçado alinhamento à esquerda
-      if (!isBold && splitText.length > 1 && !forceLeftAlign) {
-        // Para textos com múltiplas linhas, aplicar justificação
-        for (let i = 0; i < splitText.length; i++) {
-          const line = splitText[i];
-          const isLastLine = i === splitText.length - 1;
-          
-          if (!isLastLine && line.trim().length > 0) {
-            // Justificar linha (exceto a última)
-            const words = line.trim().split(' ');
-            if (words.length > 1) {
-              const lineWidth = pdf.getTextWidth(line);
-              const spaceWidth = (maxWidth - lineWidth) / (words.length - 1);
-              
-              let xPos = margin;
-              for (let j = 0; j < words.length; j++) {
-                pdf.text(words[j], xPos, yPosition + (i * lineHeight));
-                if (j < words.length - 1) {
-                  xPos += pdf.getTextWidth(words[j]) + pdf.getTextWidth(' ') + spaceWidth;
+      // Processar cada parágrafo
+      paragraphs.forEach((paragraph, paragraphIndex) => {
+        const splitText = pdf.splitTextToSize(paragraph.trim(), maxWidth);
+        
+        // Implementar alinhamento justificado para textos longos (não títulos), exceto quando forçado alinhamento à esquerda
+        if (!isBold && splitText.length > 1 && !forceLeftAlign) {
+          // Para textos com múltiplas linhas, aplicar justificação
+          for (let i = 0; i < splitText.length; i++) {
+            const line = splitText[i];
+            const isLastLine = i === splitText.length - 1;
+            
+            if (!isLastLine && line.trim().length > 0) {
+              // Justificar linha (exceto a última)
+              const words = line.trim().split(' ');
+              if (words.length > 1) {
+                const lineWidth = pdf.getTextWidth(line);
+                const spaceWidth = (maxWidth - lineWidth) / (words.length - 1);
+                
+                let xPos = margin;
+                for (let j = 0; j < words.length; j++) {
+                  pdf.text(words[j], xPos, yPosition + (i * lineHeight));
+                  if (j < words.length - 1) {
+                    xPos += pdf.getTextWidth(words[j]) + pdf.getTextWidth(' ') + spaceWidth;
+                  }
                 }
+              } else {
+                pdf.text(line, margin, yPosition + (i * lineHeight));
               }
             } else {
+              // Última linha ou linha única - alinhamento normal
               pdf.text(line, margin, yPosition + (i * lineHeight));
             }
-          } else {
-            // Última linha ou linha única - alinhamento normal
-            pdf.text(line, margin, yPosition + (i * lineHeight));
           }
+        } else {
+          // Para títulos e textos curtos - alinhamento normal
+          pdf.text(splitText, margin, yPosition);
         }
-      } else {
-        // Para títulos e textos curtos - alinhamento normal
-        pdf.text(splitText, margin, yPosition);
-      }
+        
+        yPosition += splitText.length * lineHeight;
+        
+        // Adicionar espaçamento entre parágrafos (exceto no último)
+        if (paragraphIndex < paragraphs.length - 1) {
+          yPosition += 2;
+        }
+      });
       
-      yPosition += textHeight + 1; // Reduzido de +3 para +1
+      yPosition += 1; // Espaçamento mínimo após o texto
     };
 
     // Adicionar cabeçalho inicial
@@ -316,19 +368,19 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     // Step 1 - Dados do Proponente
     addText('1. DADOS DO PROPONENTE', 11, true, true);
     addText(`Nome Completo: ${inscricaoData.nome_completo}`);
-    addText(`Cargo/Função: ${inscricaoData.cargo_funcao}`);
+    addText(`Cargo/Função: ${formatCargoFuncao(inscricaoData.cargo_funcao)}`);
     if (inscricaoData.matricula) {
       addText(`Matrícula: ${inscricaoData.matricula}`);
     }
     addText(`Órgão/Unidade: ${inscricaoData.lotacao}`);
     addText(`Telefone: ${inscricaoData.telefone}`);
     addText(`E-mail: ${inscricaoData.email_institucional}`);
-    yPosition += 2; // Reduzido de 5 para 2
+    yPosition += 2; // Espaçamento final da seção
 
     // Step 2 - Informações da Inscrição
     addText('2. INFORMAÇÕES DA INSCRIÇÃO', 11, true, true);
     addText(`Título da Prática/Projeto: ${inscricaoData.titulo_iniciativa}`);
-    addText(`Área: ${inscricaoData.area_atuacao}`);
+    addText(`Área: ${formatAreaAtuacao(inscricaoData.area_atuacao)}`);
     if (inscricaoData.situacao_atual) {
       addText(`Situação Atual: ${inscricaoData.situacao_atual}`);
     }
@@ -336,65 +388,77 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       addText(`Data de Conclusão: ${inscricaoData.data_conclusao}`);
     }
     if (inscricaoData.publico_alvo) {
+      addQuestionSpacing();
       addText('Relação da Equipe:', 9, true);
       addText(inscricaoData.publico_alvo, 9, false, false, true);
     }
-    yPosition += 2; // Reduzido de 5 para 2
+    yPosition += 2; // Espaçamento final da seção
 
     // Step 3 - Descrição
     addText('3. DESCRIÇÃO DA PRÁTICA', 11, true, true);
     
     addText('Resumo Executivo:', 9, true);
     addText(inscricaoData.descricao_iniciativa);
+    addQuestionSpacing();
     
     if (inscricaoData.problema_necessidade) {
       addText('Problema ou Necessidade:', 9, true);
       addText(inscricaoData.problema_necessidade);
+      addQuestionSpacing();
     }
     
-    addText('Objetivos:', 9, true);
-    addText(inscricaoData.objetivos);
+    addText('Objetivo Estratégico:', 9, true);
+    addText(formatObjetivoEstrategico(inscricaoData.objetivos));
+    addQuestionSpacing();
     
     addText('Metodologia:', 9, true);
     addText(inscricaoData.metodologia);
+    addQuestionSpacing();
     
     addText('Principais Resultados:', 9, true);
     addText(inscricaoData.principais_resultados);
-    yPosition += 2; // Reduzido de 5 para 2
+    yPosition += 2; // Espaçamento final da seção
 
     // Step 4 - Critérios
     addText('4. CRITÉRIOS DE AVALIAÇÃO', 11, true, true);
     
     addText('Cooperação:', 9, true);
     addText(inscricaoData.cooperacao);
+    addQuestionSpacing();
     
     addText('Inovação:', 9, true);
     addText(inscricaoData.inovacao);
+    addQuestionSpacing();
     
     addText('Resolutividade:', 9, true);
     addText(inscricaoData.resolutividade);
+    addQuestionSpacing();
     
     addText('Impacto Social:', 9, true);
     addText(inscricaoData.impacto_social);
+    addQuestionSpacing();
     
     addText('Alinhamento aos ODS:', 9, true);
     addText(inscricaoData.alinhamento_ods);
+    addQuestionSpacing();
     
     addText('Replicabilidade:', 9, true);
     addText(inscricaoData.replicabilidade);
-    yPosition += 2; // Reduzido de 5 para 2
+    yPosition += 2; // Espaçamento final da seção
 
     // Step 5 - Informações Adicionais
     addText('5. INFORMAÇÕES ADICIONAIS', 11, true, true);
     addText(`Participou de edições anteriores: ${inscricaoData.participou_edicoes_anteriores ? 'Sim' : 'Não'}`);
     addText(`Foi vencedor anterior: ${inscricaoData.foi_vencedor_anterior ? 'Sim' : 'Não'}`);
+    addQuestionSpacing();
     
     if (inscricaoData.observacoes) {
       addText(`Observações: ${inscricaoData.observacoes}`);
+      addQuestionSpacing();
     }
     
     addText(`Declaração de veracidade: ${inscricaoData.declaracao ? 'Sim' : 'Não'}`);
-    yPosition += 2; // Reduzido de 5 para 2
+    yPosition += 2; // Espaçamento final da seção
 
     // Adicionar rodapé final
     addFooter();

@@ -1,11 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { createClient } from '@supabase/supabase-js';
 
-// Cliente Supabase para inserções públicas - configuração simplificada
-const supabasePublic = createClient(
-  "https://ljbxctmywdpsfmjvmlmh.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY"
-);
+// Cliente Supabase para inserções públicas usando variáveis de ambiente
+const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('[Supabase] Variáveis de ambiente ausentes: VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY');
+}
+const supabasePublic = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Interface para os dados da inscrição que serão salvos no Supabase
 // Baseada na estrutura atual da tabela (migração 006_fix_table_structure.sql)
@@ -71,7 +73,16 @@ export interface SupabaseResult {
 export function convertFormDataToSupabase(formData: any): InscricaoData {
   console.log('🔄 DEBUG: Convertendo dados do formulário para Supabase:', formData);
   
-  return {
+  // Debug específico para Step 5
+  console.log('🔍 DEBUG Step 5 - Dados originais:', {
+    participouEdicoesAnteriores: formData.participouEdicoesAnteriores,
+    foiVencedorAnterior: formData.foiVencedorAnterior,
+    especificarEdicoesAnteriores: formData.especificarEdicoesAnteriores,
+    concordaTermos: formData.concordaTermos,
+    localData: formData.localData
+  });
+  
+  const convertedData = {
     // Dados pessoais - mapeamento correto para a tabela
     nome_completo: formData.nomeCompleto || '',
     cargo_funcao: formData.cargoFuncao || '',
@@ -113,6 +124,16 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     declaracao: Boolean(formData.concordaTermos),
     observacoes: formData.especificarEdicoesAnteriores || null
   };
+  
+  // Debug específico para Step 5 - dados convertidos
+  console.log('🔍 DEBUG Step 5 - Dados convertidos:', {
+    participou_edicoes_anteriores: convertedData.participou_edicoes_anteriores,
+    foi_vencedor_anterior: convertedData.foi_vencedor_anterior,
+    observacoes: convertedData.observacoes,
+    declaracao: convertedData.declaracao
+  });
+  
+  return convertedData;
 }
 
 /**
