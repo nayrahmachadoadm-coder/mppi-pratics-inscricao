@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +63,7 @@ const AdminDashboard = () => {
   const [sessionTime, setSessionTime] = useState(0);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const itemsPerPage = 10;
 
@@ -87,6 +88,16 @@ const AdminDashboard = () => {
   // Carregar dados iniciais
   useEffect(() => {
     loadInitialData();
+  }, []);
+
+  // Ler parâmetro de área da URL para filtro inicial
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const area = params.get('area');
+    if (area) {
+      setSelectedArea(area);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Carregar inscrições quando filtros mudarem

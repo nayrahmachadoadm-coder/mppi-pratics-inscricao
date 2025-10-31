@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Campos do Step 5 - Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Corrigir Campos do Step 5 - Supabase</h1>
+        <p>Este script irá adicionar os campos faltantes do Step 5 na tabela do Supabase.</p>
+        
+        <div class="warning result">
+            <strong>⚠️ Atenção:</strong> Este script irá modificar a estrutura da tabela no Supabase. 
+            Certifique-se de que você tem as permissões necessárias.
+        </div>
+        
+        <button onclick="checkCurrentStructure()">🔍 Verificar Estrutura Atual</button>
+        <button onclick="addMissingFields()" id="fixBtn">🔧 Adicionar Campos Faltantes</button>
+        <button onclick="verifyFix()">✅ Verificar Correção</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY'
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        function displayResults(content, type = 'result') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = content;
+            resultsDiv.appendChild(div);
+        }
+        
+        window.checkCurrentStructure = async function() {
+            try {
+                displayResults('<h3>🔍 Verificando estrutura atual da tabela...</h3>');
+                
+                // Verificar se a tabela existe e quais campos estão presentes
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    displayResults(`<h3>❌ Erro ao verificar tabela:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const fields = Object.keys(data[0]);
+                    const step5Fields = ['participou_edicoes_anteriores', 'foi_vencedor_anterior', 'observacoes'];
+                    
+                    let missingFields = [];
+                    let existingFields = [];
+                    
+                    step5Fields.forEach(field => {
+                        if (fields.includes(field)) {
+                            existingFields.push(field);
+                        } else {
+                            missingFields.push(field);
+                        }
+                    });
+                    
+                    let resultHtml = '<h3>📋 Estrutura Atual da Tabela:</h3>';
+                    resultHtml += `<p><strong>Total de campos:</strong> ${fields.length}</p>`;
+                    
+                    if (existingFields.length > 0) {
+                        resultHtml += `<p><strong>✅ Campos do Step 5 existentes:</strong> ${existingFields.join(', ')}</p>`;
+                    }
+                    
+                    if (missingFields.length > 0) {
+                        resultHtml += `<p><strong>❌ Campos do Step 5 faltantes:</strong> ${missingFields.join(', ')}</p>`;
+                        resultHtml += '<p>🔧 Clique em "Adicionar Campos Faltantes" para corrigir.</p>';
+                    } else {
+                        resultHtml += '<p><strong>✅ Todos os campos do Step 5 estão presentes!</strong></p>';
+                    }
+                    
+                    resultHtml += `<details><summary>📄 Todos os campos da tabela</summary><pre>${fields.join('\\n')}</pre></details>`;
+                    
+                    displayResults(resultHtml, missingFields.length > 0 ? 'warning' : 'success');
+                } else {
+                    displayResults('<h3>⚠️ Tabela vazia - não é possível verificar estrutura</h3>', 'warning');
+                }
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+        
+        window.addMissingFields = async function() {
+            try {
+                displayResults('<h3>🔧 Tentando adicionar campos faltantes...</h3>');
+                
+                // Nota: O cliente JavaScript do Supabase não permite ALTER TABLE
+                // Vamos tentar uma abordagem alternativa: inserir um registro com os campos
+                displayResults(`
+                    <h3>⚠️ Limitação do Cliente JavaScript</h3>
+                    <p>O cliente JavaScript do Supabase não permite modificar a estrutura da tabela diretamente.</p>
+                    <p><strong>Para corrigir o problema, você precisa:</strong></p>
+                    <ol>
+                        <li>Acessar o <a href="https://ljbxctmywdpsfmjvmlmh.supabase.co/project/ljbxctmywdpsfmjvmlmh/sql" target="_blank">SQL Editor do Supabase</a></li>
+                        <li>Executar o seguinte comando SQL:</li>
+                    </ol>
+                    <pre>-- Adicionar campos faltantes do Step 5
+ALTER TABLE public.inscricoes 
+ADD COLUMN IF NOT EXISTS participou_edicoes_anteriores BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS observacoes TEXT;
+
+-- Verificar se os campos foram adicionados
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+AND table_name = 'inscricoes'
+AND column_name IN ('participou_edicoes_anteriores', 'foi_vencedor_anterior', 'observacoes')
+ORDER BY column_name;</pre>
+                    <p>Após executar o SQL, clique em "Verificar Correção" para confirmar.</p>
+                `, 'warning');
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+        
+        window.verifyFix = async function() {
+            try {
+                displayResults('<h3>✅ Verificando se a correção foi aplicada...</h3>');
+                
+                // Tentar buscar dados incluindo os campos do Step 5
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('id, nome_completo, participou_edicoes_anteriores, foi_vencedor_anterior, observacoes')
+                    .limit(3);
+                
+                if (error) {
+                    if (error.message.includes('column') && error.message.includes('does not exist')) {
+                        displayResults(`
+                            <h3>❌ Campos ainda não foram adicionados</h3>
+                            <p>Erro: ${error.message}</p>
+                            <p>Execute o SQL no Supabase Dashboard primeiro.</p>
+                        `, 'error');
+                    } else {
+                        displayResults(`<h3>❌ Erro ao verificar:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    }
+                    return;
+                }
+                
+                displayResults(`
+                    <h3>✅ Correção aplicada com sucesso!</h3>
+                    <p>Os campos do Step 5 estão agora disponíveis na tabela.</p>
+                    <p><strong>Registros encontrados:</strong> ${data.length}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `, 'success');
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

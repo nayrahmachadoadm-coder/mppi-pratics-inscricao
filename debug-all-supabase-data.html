@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Todos os Dados do Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .user-data {
+            background: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .boolean-field {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .boolean-true {
+            color: #28a745;
+        }
+        .boolean-false {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug - Todos os Dados do Supabase</h1>
+        <p>Este arquivo verifica todos os dados reais armazenados no Supabase, focando nos campos do Step 5.</p>
+        
+        <button onclick="fetchAllData()">🔄 Buscar Todos os Dados</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabaseUrl = 'https://ixqjqjqjqjqjqjqjqjqj.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4cWpxanFqcWpxanFqcWpxanFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NjI4NzEsImV4cCI6MjA1MjUzODg3MX0.example'
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        function displayResults(content, type = 'result') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = content;
+            resultsDiv.appendChild(div);
+        }
+        
+        function formatBoolean(value, fieldName) {
+            const className = value ? 'boolean-true' : 'boolean-false';
+            const text = value ? 'true (Sim)' : 'false (Não)';
+            return `<span class="boolean-field">${fieldName}:</span> <span class="${className}">${text}</span>`;
+        }
+        
+        window.fetchAllData = async function() {
+            try {
+                displayResults('<h3>🔍 Buscando todos os dados do Supabase...</h3>');
+                
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Erro do Supabase:', error);
+                    displayResults(`<h3>❌ Erro ao buscar dados:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    displayResults('<h3>⚠️ Nenhum registro encontrado no Supabase</h3>', 'error');
+                    return;
+                }
+                
+                displayResults(`<h3>✅ Encontrados ${data.length} registros no Supabase</h3>`, 'success');
+                
+                data.forEach((inscricao, index) => {
+                    const step5Info = `
+                        <div class="user-data">
+                            <h4>📋 Registro ${index + 1} - ID: ${inscricao.id}</h4>
+                            <p><strong>Nome:</strong> ${inscricao.nome_completo || 'N/A'}</p>
+                            <p><strong>Email:</strong> ${inscricao.email_institucional || 'N/A'}</p>
+                            <p><strong>Título:</strong> ${inscricao.titulo_iniciativa || 'N/A'}</p>
+                            <p><strong>Data de Criação:</strong> ${inscricao.created_at || 'N/A'}</p>
+                            <hr>
+                            <h5>🎯 Campos do Step 5:</h5>
+                            <p>${formatBoolean(inscricao.participou_edicoes_anteriores, 'participou_edicoes_anteriores')}</p>
+                            <p>${formatBoolean(inscricao.foi_vencedor_anterior, 'foi_vencedor_anterior')}</p>
+                            <p><strong>Observações:</strong> ${inscricao.observacoes || 'N/A'}</p>
+                            <hr>
+                            <details>
+                                <summary>📄 Dados Completos (JSON)</summary>
+                                <pre>${JSON.stringify(inscricao, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                    displayResults(step5Info);
+                });
+                
+            } catch (error) {
+                console.error('Erro geral:', error);
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

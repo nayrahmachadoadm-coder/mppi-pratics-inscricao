@@ -208,7 +208,7 @@ const AdminInscricaoDetails = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/admin/dashboard')}
+                onClick={() => navigate(`/admin/categoria/${inscricao.area_atuacao}`)}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -478,6 +478,8 @@ const AdminInscricaoDetails = () => {
               </CardContent>
             </Card>
 
+            {/* Avaliações (Médias) removidas conforme política de confidencialidade */}
+
             {/* Ações Rápidas */}
             <Card>
               <CardHeader>
@@ -494,11 +496,11 @@ const AdminInscricaoDetails = () => {
                 
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/admin/dashboard')}
+                  onClick={() => navigate(`/admin/categoria/${inscricao.area_atuacao}`)}
                   className="w-full flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Voltar ao Dashboard
+                  Voltar à Categoria
                 </Button>
               </CardContent>
             </Card>

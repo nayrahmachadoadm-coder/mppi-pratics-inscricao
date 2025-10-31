@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Step 5 - Dados Reais do Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        #results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .boolean-true {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .boolean-false {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Step 5 - Verificação de Dados Reais</h1>
+        
+        <div class="button-group">
+            <button onclick="checkStep5Data()">Verificar Dados Step 5</button>
+            <button onclick="checkFieldStructure()">Verificar Estrutura dos Campos</button>
+            <button onclick="testDataConversion()">Testar Conversão de Dados</button>
+            <button onclick="clearResults()">Limpar Resultados</button>
+        </div>
+        
+        <div id="results">
+            <p>Clique em um dos botões acima para começar a verificação...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+        // Configuração do Supabase
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Função para exibir resultados
+        function displayResult(content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            
+            resultsDiv.innerHTML += `<div class="${className}">[${timestamp}] ${content}</div>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Função para limpar resultados
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '<p>Resultados limpos. Clique em um botão para começar nova verificação...</p>';
+        }
+
+        // Função para verificar dados do Step 5
+        window.checkStep5Data = async function() {
+            displayResult('🔍 Iniciando verificação dos dados do Step 5...', 'info');
+            
+            try {
+                // Buscar todas as inscrições
+                const { data: inscricoes, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    displayResult(`❌ Erro ao buscar inscrições: ${error.message}`, 'error');
+                    return;
+                }
+
+                displayResult(`✅ Encontradas ${inscricoes.length} inscrições no total`, 'success');
+
+                if (inscricoes.length === 0) {
+                    displayResult('ℹ️ Nenhuma inscrição encontrada para análise', 'info');
+                    return;
+                }
+
+                // Analisar campos do Step 5 (campos reais)
+                const step5Fields = [
+                    'participou_edicoes_anteriores',
+                    'foi_vencedor_anterior',
+                    'observacoes',
+                    'declaracao'
+                ];
+
+                displayResult('\n📊 ANÁLISE DOS CAMPOS DO STEP 5:', 'info');
+                
+                let tableHtml = '<table><tr><th>Campo</th><th>Preenchidos</th><th>Vazios</th><th>% Preenchimento</th></tr>';
+                
+                step5Fields.forEach(field => {
+                    const preenchidos = inscricoes.filter(i => i[field] !== null && i[field] !== undefined && i[field] !== '').length;
+                    const vazios = inscricoes.length - preenchidos;
+                    const percentual = ((preenchidos / inscricoes.length) * 100).toFixed(1);
+                    
+                    tableHtml += `<tr>
+                        <td>${field}</td>
+                        <td>${preenchidos}</td>
+                        <td>${vazios}</td>
+                        <td>${percentual}%</td>
+                    </tr>`;
+                });
+                
+                tableHtml += '</table>';
+                displayResult(tableHtml, 'info');
+
+                // Mostrar exemplos de dados
+                displayResult('\n📝 EXEMPLOS DE DADOS (últimas 3 inscrições):', 'info');
+                
+                inscricoes.slice(0, 3).forEach((inscricao, index) => {
+                    displayResult(`\n--- INSCRIÇÃO ${index + 1} (ID: ${inscricao.id}) ---`, 'info');
+                    step5Fields.forEach(field => {
+                        const value = inscricao[field];
+                        const displayValue = value === null || value === undefined ? '❌ NULL' : 
+                                           value === '' ? '❌ VAZIO' : 
+                                           typeof value === 'boolean' ? (value ? '✅ true' : '❌ false') :
+                                           `✅ "${value}"`;
+                        displayResult(`${field}: ${displayValue}`, 'info');
+                    });
+                });
+
+            } catch (error) {
+                displayResult(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Função para verificar estrutura dos campos
+        window.checkFieldStructure = async function() {
+            displayResult('🏗️ Verificando estrutura da tabela inscricoes...', 'info');
+            
+            try {
+                // Tentar fazer uma consulta para verificar se os campos existem
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('participou_edicoes_anteriores, foi_vencedor_anterior, observacoes, declaracao')
+                    .limit(1);
+
+                if (error) {
+                    displayResult(`❌ Erro ao verificar estrutura: ${error.message}`, 'error');
+                    
+                    // Verificar se é erro de campo não encontrado
+                    if (error.message.includes('column') && error.message.includes('does not exist')) {
+                        displayResult('⚠️ Alguns campos do Step 5 podem não existir na tabela!', 'error');
+                    }
+                    return;
+                }
+
+                displayResult('✅ Todos os campos do Step 5 existem na tabela!', 'success');
+                
+                if (data && data.length > 0) {
+                    displayResult('\n📋 Estrutura dos campos verificada:', 'info');
+                    const sample = data[0];
+                    Object.keys(sample).forEach(key => {
+                        const value = sample[key];
+                        const type = value === null ? 'NULL' : typeof value;
+                        displayResult(`${key}: ${type}`, 'info');
+                    });
+                }
+
+            } catch (error) {
+                displayResult(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Função para testar conversão de dados
+        window.testDataConversion = async function() {
+            displayResult('🧪 Testando conversão de dados do Step 5...', 'info');
+            
+            // Dados de teste simulando o que vem do formulário
+            const testData = {
+                participou_edicoes_anteriores: true,
+                foi_vencedor_anterior: false,
+                observacoes: 'Participou da edição de 2023 com projeto de digitalização',
+                declaracao: true
+            };
+
+            displayResult('📝 Dados de teste a serem inseridos:', 'info');
+            displayResult(JSON.stringify(testData, null, 2), 'info');
+
+            try {
+                // Tentar inserir dados de teste
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([{
+                        nome: 'TESTE DEBUG STEP 5',
+                        email: 'teste.debug@example.com',
+                        cpf: '00000000000',
+                        telefone: '(00) 00000-0000',
+                        ...testData,
+                        status: 'rascunho'
+                    }])
+                    .select();
+
+                if (error) {
+                    displayResult(`❌ Erro ao inserir dados de teste: ${error.message}`, 'error');
+                    return;
+                }
+
+                displayResult('✅ Dados de teste inseridos com sucesso!', 'success');
+                
+                if (data && data.length > 0) {
+                    const insertedData = data[0];
+                    displayResult('\n📊 Dados inseridos (verificação):', 'info');
+                    
+                    Object.keys(testData).forEach(key => {
+                        const original = testData[key];
+                        const inserted = insertedData[key];
+                        const match = original === inserted ? '✅' : '❌';
+                        displayResult(`${key}: ${original} → ${inserted} ${match}`, 'info');
+                    });
+
+                    // Limpar dados de teste
+                    await supabase
+                        .from('inscricoes')
+                        .delete()
+                        .eq('id', insertedData.id);
+                    
+                    displayResult('\n🧹 Dados de teste removidos da base', 'info');
+                }
+
+            } catch (error) {
+                displayResult(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicialização
+        displayResult('🚀 Sistema de debug inicializado. Supabase conectado!', 'success');
+        displayResult('ℹ️ Use os botões acima para verificar os dados do Step 5', 'info');
+
+    </script>
+</body>
+</html>

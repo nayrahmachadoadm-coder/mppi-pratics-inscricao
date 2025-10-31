@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
 import { authenticateAdmin, isAdminAuthenticated } from '@/lib/adminAuth';
+import { authenticateUser, isUserAuthenticated, isUserRole } from '@/lib/userAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin = () => {
@@ -17,14 +18,37 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   // Verificar se já está autenticado
   useEffect(() => {
     if (isAdminAuthenticated()) {
       navigate('/admin/dashboard');
+    } else if (isUserAuthenticated()) {
+      // Redirecionar baseado no papel do usuário
+      if (isUserRole('admin')) {
+        navigate('/admin/dashboard');
+      } else if (isUserRole('jurado')) {
+        navigate('/admin/categorias');
+      }
     }
   }, [navigate]);
+
+  // Aviso discreto quando redirecionado de páginas públicas antigas
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const notice = params.get('notice');
+    const from = params.get('from');
+    if (!isAdminAuthenticated() && notice === 'encerradas') {
+      toast({
+        title: 'Inscrições encerradas',
+        description: from
+          ? `Página "${from}" não está mais disponível. Faça login para análise das inscrições.`
+          : 'Página pública não disponível. Faça login para análise das inscrições.',
+      });
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,18 +62,37 @@ const AdminLogin = () => {
         return;
       }
 
-      // Tentar autenticar
-      const isAuthenticated = authenticateAdmin(username.trim(), password);
-
-      if (isAuthenticated) {
+      // Tentar autenticar primeiro como admin (sistema antigo)
+      const isAdminAuth = authenticateAdmin(username.trim(), password);
+      
+      if (isAdminAuth) {
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para o painel administrativo...",
         });
         
-        // Pequeno delay para mostrar o toast
         setTimeout(() => {
-          navigate('/admin/dashboard');
+          navigate('/admin/categorias');
+        }, 1000);
+        return;
+      }
+
+      // Se não for admin, tentar autenticar como usuário (sistema novo)
+      const userAuth = authenticateUser(username.trim(), password);
+      
+      if (userAuth.success) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando...",
+        });
+        
+        setTimeout(() => {
+          // Redirecionar baseado no papel
+          if (isUserRole('admin')) {
+            navigate('/admin/dashboard');
+          } else if (isUserRole('jurado')) {
+            navigate('/admin/categorias');
+          }
         }, 1000);
       } else {
         setError('Credenciais inválidas. Verifique seu usuário e senha.');
@@ -77,26 +120,36 @@ const AdminLogin = () => {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="mb-4 flex items-center justify-center">
+            <img src="/logo-mppi.png" alt="Logo MPPI" className="h-16 w-auto" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Área Administrativa
+          <h1 className="text-xl font-bold text-gray-900 mb-2">
+            Prêmio Melhores Práticas do MPPI - 9ª Edição
           </h1>
           <p className="text-gray-600">
-            Sistema de Gestão de Inscrições - Melhores Práticas MPPI
+            Sistema de Julgamento e Gestão de Inscrições
           </p>
+        </div>
+
+        {/* Aviso de período encerrado */}
+        <div className="mb-4">
+          <Alert>
+            <AlertDescription>
+              Período de inscrições encerrado. O sistema está disponível para avaliação das inscrições.
+            </AlertDescription>
+          </Alert>
         </div>
 
         {/* Formulário de Login */}
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
+              <img src="/favicon.ico" alt="Ícone MPPI" className="h-4 w-4 opacity-80" />
               <Lock className="w-5 h-5" />
-              Login Administrativo
+              Login do Sistema
             </CardTitle>
             <CardDescription className="text-center">
-              Acesse o painel de controle das inscrições
+              Acesse o sistema de avaliação das inscrições
             </CardDescription>
           </CardHeader>
           
@@ -175,8 +228,7 @@ const AdminLogin = () => {
                 <div className="text-sm text-blue-800">
                   <p className="font-medium mb-1">Acesso Restrito</p>
                   <p className="text-xs">
-                    Esta área é destinada exclusivamente aos administradores do sistema. 
-                    Todas as ações são registradas e monitoradas.
+                    Área destinada exclusivamente aos administradores do sistema e jurados. Todas as ações são registradas e monitoradas.
                   </p>
                 </div>
               </div>
@@ -184,16 +236,7 @@ const AdminLogin = () => {
           </CardContent>
         </Card>
 
-        {/* Link para voltar */}
-        <div className="text-center mt-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            ← Voltar ao site principal
-          </Button>
-        </div>
+        
       </div>
     </div>
   );

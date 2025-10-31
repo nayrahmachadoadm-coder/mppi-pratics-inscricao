@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Usuário Específico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        
+        .data-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+        
+        .field-name {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .field-value {
+            margin-left: 10px;
+            color: #6c757d;
+        }
+        
+        .boolean-true {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .boolean-false {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug - Usuário THIAGO QUEIROZ DE BRITO</h1>
+        
+        <div class="button-group">
+            <button onclick="checkSpecificUser()">Verificar Dados do Usuário</button>
+            <button onclick="clearResults()">Limpar Resultados</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function displayResults(content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const className = type === 'error' ? 'results error' : 
+                             type === 'success' ? 'results success' : 'results';
+            resultsDiv.innerHTML += `<div class="${className}">${content}</div>`;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function checkSpecificUser() {
+            try {
+                displayResults('<h3>🔍 Buscando dados do usuário THIAGO QUEIROZ DE BRITO...</h3>');
+                
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .eq('nome_completo', 'THIAGO QUEIROZ DE BRITO');
+
+                if (error) {
+                    displayResults(`<h3>❌ Erro ao buscar dados:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    displayResults('<h3>⚠️ Nenhum registro encontrado para THIAGO QUEIROZ DE BRITO</h3>', 'error');
+                    return;
+                }
+
+                displayResults(`<h3>✅ Encontrado ${data.length} registro(s)</h3>`, 'success');
+
+                data.forEach((registro, index) => {
+                    displayResults(`
+                        <h4>📋 Registro ${index + 1} - ID: ${registro.id}</h4>
+                        <div class="data-item">
+                            <div class="field-name">Nome Completo:</div>
+                            <div class="field-value">${registro.nome_completo}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Email:</div>
+                            <div class="field-value">${registro.email_institucional}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Título da Iniciativa:</div>
+                            <div class="field-value">${registro.titulo_iniciativa}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Participou de Edições Anteriores:</div>
+                            <div class="field-value">
+                                <span class="${registro.participou_edicoes_anteriores ? 'boolean-true' : 'boolean-false'}">
+                                    ${registro.participou_edicoes_anteriores ? 'SIM (true)' : 'NÃO (false)'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Foi Vencedor Anterior:</div>
+                            <div class="field-value">
+                                <span class="${registro.foi_vencedor_anterior ? 'boolean-true' : 'boolean-false'}">
+                                    ${registro.foi_vencedor_anterior ? 'SIM (true)' : 'NÃO (false)'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Declaração Aceita:</div>
+                            <div class="field-value">
+                                <span class="${registro.declaracao ? 'boolean-true' : 'boolean-false'}">
+                                    ${registro.declaracao ? 'SIM (true)' : 'NÃO (false)'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Observações:</div>
+                            <div class="field-value">${registro.observacoes || 'Nenhuma'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Data de Criação:</div>
+                            <div class="field-value">${new Date(registro.created_at).toLocaleString('pt-BR')}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="field-name">Dados Completos (JSON):</div>
+                            <pre>${JSON.stringify(registro, null, 2)}</pre>
+                        </div>
+                    `);
+                });
+
+            } catch (error) {
+                displayResults(`<h3>❌ Erro inesperado:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

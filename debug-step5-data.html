@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Step 5 - Dados Supabase</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .boolean-true {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .boolean-false {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Step 5 - Verificação dos Dados</h1>
+        <p>Este script verifica os dados do Step 5 (Informações Adicionais) salvos no Supabase.</p>
+        
+        <div>
+            <button onclick="verificarDadosStep5()">🔍 Verificar Dados do Step 5</button>
+            <button onclick="testarInsercaoStep5()">🧪 Testar Inserção Step 5</button>
+            <button onclick="limparResultados()">🧹 Limpar Resultados</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function addResult(message, type = 'result') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function limparResultados() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function verificarDadosStep5() {
+            addResult('🔍 Verificando dados do Step 5 no banco...', 'result');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('id, nome_completo, participou_edicoes_anteriores, foi_vencedor_anterior, observacoes, created_at')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    addResult(`❌ Erro ao buscar dados: ${error.message}`, 'error');
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    addResult('⚠️ Nenhuma inscrição encontrada no banco de dados.', 'warning');
+                    return;
+                }
+                
+                addResult(`✅ Encontradas ${data.length} inscrições. Analisando dados do Step 5...`, 'success');
+                
+                // Criar tabela com os dados
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Participou Edições Anteriores</th>
+                                <th>Foi Vencedor Anterior</th>
+                                <th>Observações</th>
+                                <th>Data Criação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.forEach(inscricao => {
+                    const participouClass = inscricao.participou_edicoes_anteriores ? 'boolean-true' : 'boolean-false';
+                    const vencedorClass = inscricao.foi_vencedor_anterior ? 'boolean-true' : 'boolean-false';
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>${inscricao.id.substring(0, 8)}...</td>
+                            <td>${inscricao.nome_completo}</td>
+                            <td class="${participouClass}">${inscricao.participou_edicoes_anteriores ? 'SIM' : 'NÃO'}</td>
+                            <td class="${vencedorClass}">${inscricao.foi_vencedor_anterior ? 'SIM' : 'NÃO'}</td>
+                            <td>${inscricao.observacoes || 'N/A'}</td>
+                            <td>${new Date(inscricao.created_at).toLocaleString('pt-BR')}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += '</tbody></table>';
+                
+                addResult(tableHTML, 'success');
+                
+                // Estatísticas
+                const totalParticipou = data.filter(i => i.participou_edicoes_anteriores).length;
+                const totalVencedor = data.filter(i => i.foi_vencedor_anterior).length;
+                
+                addResult(`
+                    <h3>📊 Estatísticas:</h3>
+                    <ul>
+                        <li><strong>Total de inscrições:</strong> ${data.length}</li>
+                        <li><strong>Participaram de edições anteriores:</strong> ${totalParticipou}</li>
+                        <li><strong>Foram vencedores anteriores:</strong> ${totalVencedor}</li>
+                        <li><strong>Com observações:</strong> ${data.filter(i => i.observacoes).length}</li>
+                    </ul>
+                `, 'result');
+                
+            } catch (error) {
+                addResult(`💥 Erro inesperado: ${error.message}`, 'error');
+                console.error('Erro:', error);
+            }
+        }
+        
+        async function testarInsercaoStep5() {
+            addResult('🧪 Testando inserção de dados do Step 5...', 'result');
+            
+            const testData = {
+                nome_completo: 'Teste Step 5 - ' + new Date().toLocaleString(),
+                cargo_funcao: 'Analista de Teste',
+                email_institucional: 'teste@mppi.mp.br',
+                telefone: '(86) 99999-9999',
+                lotacao: 'Setor de Testes',
+                titulo_iniciativa: 'Teste de Validação Step 5',
+                area_atuacao: 'Tecnologia',
+                data_inicio: '2025-01-01',
+                publico_alvo: 'Equipe de desenvolvimento',
+                descricao_iniciativa: 'Teste para verificar se os dados do Step 5 são salvos corretamente.',
+                objetivos: 'Validar funcionamento do Step 5',
+                metodologia: 'Teste automatizado',
+                principais_resultados: 'Dados salvos corretamente',
+                cooperacao: 'Teste cooperação',
+                inovacao: 'Teste inovação',
+                resolutividade: 'Teste resolutividade',
+                impacto_social: 'Teste impacto',
+                alinhamento_ods: 'Teste ODS',
+                replicabilidade: 'Teste replicabilidade',
+                // CAMPOS DO STEP 5 - TESTE ESPECÍFICO
+                participou_edicoes_anteriores: true, // SIM
+                foi_vencedor_anterior: false, // NÃO
+                observacoes: 'Teste de observações do Step 5',
+                declaracao: true
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .insert([testData])
+                    .select('id, participou_edicoes_anteriores, foi_vencedor_anterior, observacoes')
+                    .single();
+                
+                if (error) {
+                    addResult(`❌ Erro na inserção: ${error.message}`, 'error');
+                    console.error('Detalhes do erro:', error);
+                    return;
+                }
+                
+                addResult(`✅ Teste inserido com sucesso! ID: ${data.id}`, 'success');
+                
+                // Verificar se os dados foram salvos corretamente
+                addResult(`
+                    <h3>🔍 Dados salvos:</h3>
+                    <ul>
+                        <li><strong>Participou Edições Anteriores:</strong> <span class="${data.participou_edicoes_anteriores ? 'boolean-true' : 'boolean-false'}">${data.participou_edicoes_anteriores ? 'SIM' : 'NÃO'}</span></li>
+                        <li><strong>Foi Vencedor Anterior:</strong> <span class="${data.foi_vencedor_anterior ? 'boolean-true' : 'boolean-false'}">${data.foi_vencedor_anterior ? 'SIM' : 'NÃO'}</span></li>
+                        <li><strong>Observações:</strong> ${data.observacoes || 'N/A'}</li>
+                    </ul>
+                `, 'success');
+                
+                // Tentar deletar o registro de teste
+                const { error: deleteError } = await supabase
+                    .from('inscricoes')
+                    .delete()
+                    .eq('id', data.id);
+                
+                if (deleteError) {
+                    addResult(`⚠️ Aviso: Não foi possível deletar o registro de teste: ${deleteError.message}`, 'warning');
+                } else {
+                    addResult('🗑️ Registro de teste deletado com sucesso.', 'result');
+                }
+                
+            } catch (error) {
+                addResult(`💥 Erro inesperado: ${error.message}`, 'error');
+                console.error('Erro:', error);
+            }
+        }
+    </script>
+</body>
+</html>

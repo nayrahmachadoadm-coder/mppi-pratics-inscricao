@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Dados do Thiago</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .field-analysis {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .field-box {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug - Dados do Thiago Queiroz de Brito</h1>
+        <p>Este script verifica os dados específicos do usuário para entender por que os campos do Step 5 ainda mostram "Sim".</p>
+        
+        <button onclick="checkThiagoData()">🔍 Verificar Dados do Thiago</button>
+        <button onclick="checkTableStructure()">📋 Verificar Estrutura da Tabela</button>
+        <button onclick="updateThiagoData()">🔧 Corrigir Dados do Thiago</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabaseUrl = 'https://ljbxctmywdpsfmjvmlmh.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYnhjdG15d2Rwc2ZtanZtbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzY5MTYsImV4cCI6MjA3MzUxMjkxNn0.7A5d6_TvKyRV2Csqf43hkXzvaCd-5b2tKKlAU4ucyaY'
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        function displayResults(content, type = 'result') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = content;
+            resultsDiv.appendChild(div);
+        }
+        
+        window.checkThiagoData = async function() {
+            try {
+                displayResults('<h3>🔍 Buscando dados do Thiago...</h3>');
+                
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .ilike('nome_completo', '%THIAGO QUEIROZ DE BRITO%');
+                
+                if (error) {
+                    displayResults(`<h3>❌ Erro ao buscar dados:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const thiago = data[0];
+                    
+                    let resultHtml = `<h3>✅ Dados encontrados para Thiago:</h3>`;
+                    resultHtml += `<p><strong>ID:</strong> ${thiago.id}</p>`;
+                    resultHtml += `<p><strong>Nome:</strong> ${thiago.nome_completo}</p>`;
+                    resultHtml += `<p><strong>Email:</strong> ${thiago.email_institucional}</p>`;
+                    
+                    resultHtml += `<h4>🎯 Campos do Step 5 - Análise Detalhada:</h4>`;
+                    resultHtml += `<div class="field-analysis">`;
+                    
+                    // Participou de edições anteriores
+                    resultHtml += `<div class="field-box">`;
+                    resultHtml += `<strong>participou_edicoes_anteriores</strong><br>`;
+                    resultHtml += `Valor: <code>${thiago.participou_edicoes_anteriores}</code><br>`;
+                    resultHtml += `Tipo: <code>${typeof thiago.participou_edicoes_anteriores}</code><br>`;
+                    resultHtml += `Interpretação JS: <code>${!!thiago.participou_edicoes_anteriores}</code>`;
+                    resultHtml += `</div>`;
+                    
+                    // Foi vencedor anterior
+                    resultHtml += `<div class="field-box">`;
+                    resultHtml += `<strong>foi_vencedor_anterior</strong><br>`;
+                    resultHtml += `Valor: <code>${thiago.foi_vencedor_anterior}</code><br>`;
+                    resultHtml += `Tipo: <code>${typeof thiago.foi_vencedor_anterior}</code><br>`;
+                    resultHtml += `Interpretação JS: <code>${!!thiago.foi_vencedor_anterior}</code>`;
+                    resultHtml += `</div>`;
+                    
+                    // Observações
+                    resultHtml += `<div class="field-box">`;
+                    resultHtml += `<strong>observacoes</strong><br>`;
+                    resultHtml += `Valor: <code>${thiago.observacoes || 'null/undefined'}</code><br>`;
+                    resultHtml += `Tipo: <code>${typeof thiago.observacoes}</code>`;
+                    resultHtml += `</div>`;
+                    
+                    resultHtml += `</div>`;
+                    
+                    resultHtml += `<details><summary>📄 Dados completos do registro</summary><pre>${JSON.stringify(thiago, null, 2)}</pre></details>`;
+                    
+                    displayResults(resultHtml, 'success');
+                } else {
+                    displayResults('<h3>⚠️ Nenhum registro encontrado para Thiago</h3>', 'warning');
+                }
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+        
+        window.checkTableStructure = async function() {
+            try {
+                displayResults('<h3>📋 Verificando estrutura da tabela...</h3>');
+                
+                // Buscar um registro qualquer para ver a estrutura
+                const { data, error } = await supabase
+                    .from('inscricoes')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    displayResults(`<h3>❌ Erro ao verificar estrutura:</h3><pre>${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const fields = Object.keys(data[0]);
+                    const step5Fields = ['participou_edicoes_anteriores', 'foi_vencedor_anterior', 'observacoes'];
+                    
+                    let resultHtml = `<h3>✅ Estrutura da tabela verificada:</h3>`;
+                    resultHtml += `<p><strong>Total de campos:</strong> ${fields.length}</p>`;
+                    
+                    resultHtml += `<h4>🎯 Status dos campos do Step 5:</h4>`;
+                    step5Fields.forEach(field => {
+                        const exists = fields.includes(field);
+                        resultHtml += `<p>${exists ? '✅' : '❌'} <strong>${field}</strong>: ${exists ? 'Presente' : 'Ausente'}</p>`;
+                    });
+                    
+                    resultHtml += `<details><summary>📄 Todos os campos da tabela</summary><pre>${fields.join('\\n')}</pre></details>`;
+                    
+                    displayResults(resultHtml, 'success');
+                } else {
+                    displayResults('<h3>⚠️ Tabela vazia - não é possível verificar estrutura</h3>', 'warning');
+                }
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+        
+        window.updateThiagoData = async function() {
+            try {
+                displayResults('<h3>🔧 Corrigindo dados do Thiago...</h3>');
+                
+                // Primeiro, buscar o registro do Thiago
+                const { data: searchData, error: searchError } = await supabase
+                    .from('inscricoes')
+                    .select('id')
+                    .ilike('nome_completo', '%THIAGO QUEIROZ DE BRITO%');
+                
+                if (searchError) {
+                    displayResults(`<h3>❌ Erro ao buscar Thiago:</h3><pre>${JSON.stringify(searchError, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                if (!searchData || searchData.length === 0) {
+                    displayResults('<h3>⚠️ Registro do Thiago não encontrado</h3>', 'warning');
+                    return;
+                }
+                
+                const thiagoId = searchData[0].id;
+                
+                // Atualizar os campos para false (assumindo que ele respondeu "Não")
+                const { data: updateData, error: updateError } = await supabase
+                    .from('inscricoes')
+                    .update({
+                        participou_edicoes_anteriores: false,
+                        foi_vencedor_anterior: false
+                    })
+                    .eq('id', thiagoId)
+                    .select();
+                
+                if (updateError) {
+                    displayResults(`<h3>❌ Erro ao atualizar dados:</h3><pre>${JSON.stringify(updateError, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                displayResults(`
+                    <h3>✅ Dados do Thiago atualizados com sucesso!</h3>
+                    <p>Os campos foram definidos como:</p>
+                    <ul>
+                        <li><strong>participou_edicoes_anteriores:</strong> false</li>
+                        <li><strong>foi_vencedor_anterior:</strong> false</li>
+                    </ul>
+                    <p>Agora recarregue a página do painel administrativo para ver as mudanças.</p>
+                `, 'success');
+                
+            } catch (error) {
+                displayResults(`<h3>❌ Erro geral:</h3><pre>${error.message}</pre>`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
