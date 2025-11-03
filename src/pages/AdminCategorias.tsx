@@ -51,8 +51,10 @@ const AdminCategorias = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-100 via-white to-amber-50 flex items-center justify-center p-10">
-      <div className="w-full max-w-6xl">
+    <div className="bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="min-h-[72vh] flex items-center justify-center">
+          <main className="w-full">
 
         {error && (
           <div className="mb-4">
@@ -62,20 +64,20 @@ const AdminCategorias = () => {
           </div>
         )}
 
-        <Card className="shadow-2xl bg-white/95 backdrop-blur-sm min-h-[280px]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-600" />
+        <Card className="shadow-lg border rounded-xl">
+          <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] rounded-t-xl pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Award className="w-5 h-5" />
               Categorias de Premiação
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-2">
+          <CardContent className="pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
               {categorias.map(({ key, lines }) => (
                 <Button
                   key={key}
                   variant="default"
-                  className="group relative flex flex-col items-center justify-center h-36 px-5 text-center bg-white shadow-xl hover:shadow-2xl transition-all duration-200 border border-gray-200 rounded-2xl hover:bg-primary"
+                  className="group relative flex flex-col items-center justify-center h-36 px-5 text-center bg-white shadow-md hover:shadow-xl transition-all duration-200 border border-gray-200 rounded-2xl hover:bg-primary"
                   disabled={loading}
                   onClick={() => navigate(`/admin/categoria/${encodeURIComponent(key)}`)}
                 >
@@ -90,6 +92,8 @@ const AdminCategorias = () => {
             </div>
           </CardContent>
         </Card>
+          </main>
+        </div>
       </div>
     </div>
   );

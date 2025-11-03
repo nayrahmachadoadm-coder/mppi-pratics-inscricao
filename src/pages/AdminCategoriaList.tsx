@@ -52,88 +52,112 @@ const AdminCategoriaList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, currentPage]);
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.ico" alt="Ícone" className="h-6 w-6 opacity-80" />
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">Trabalhos da Categoria</h1>
-              <p className="text-sm text-gray-600">{areaLabel}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {area && (
-              <Button variant="secondary" onClick={() => navigate(`/admin/relatorio/${encodeURIComponent(area)}`)} className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" /> Relatório da categoria
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => navigate('/admin/categorias')} className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Voltar às categorias
-            </Button>
-          </div>
-        </div>
-      </header>
+  // Ordenação alfabética por título da iniciativa
+  const sortedInscricoes = useMemo(() => {
+    return [...inscricoes].sort((a, b) => (a.titulo_iniciativa || '').localeCompare(b.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [inscricoes]);
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  return (
+    <div className="bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="min-h-[72vh] flex items-center justify-center">
+          <main className="w-full">
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-base">Inscrições</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="py-10 text-center text-gray-600">Carregando inscrições...</div>
-            ) : inscricoes.length === 0 ? (
-              <div className="py-10 text-center text-gray-600">Nenhum trabalho encontrado nesta categoria.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Proponente</TableHead>
-                      <TableHead>Lotação</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inscricoes.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.titulo_iniciativa}</TableCell>
-                        <TableCell>{item.nome_completo}</TableCell>
-                        <TableCell>{item.lotacao}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="secondary" size="sm" className="inline-flex items-center gap-2" onClick={() => navigate(`/admin/inscricao/${item.id}`)}>
-                              <Eye className="w-4 h-4" /> Ver detalhes
-                            </Button>
-                            <Button variant="default" size="sm" className="inline-flex items-center gap-2" onClick={() => navigate(`/admin/avaliacao/${item.id}`)}>
-                              <Award className="w-4 h-4" /> Avaliar
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        <Card className="shadow-lg border rounded-xl">
+          <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Award className="w-5 h-5" /> Trabalhos da Categoria
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {area && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Relatório da categoria"
+                    className="text-[hsl(var(--primary-foreground))] hover:text-white hover:bg-white/10"
+                    onClick={() => navigate(`/admin/relatorio/${encodeURIComponent(area)}`)}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Voltar às categorias"
+                  className="text-[hsl(var(--primary-foreground))] hover:text-white hover:bg-white/10"
+                  onClick={() => navigate('/admin/categorias')}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
               </div>
-            )}
+            </div>
+            <p className="text-xs opacity-80">{areaLabel}</p>
+          </CardHeader>
+          <CardContent className="pt-4">
+              {loading ? (
+                <div className="py-10 text-center text-gray-600">Carregando inscrições...</div>
+              ) : inscricoes.length === 0 ? (
+                <div className="py-10 text-center text-gray-600">Nenhum trabalho encontrado nesta categoria.</div>
+              ) : (
+                <div className="space-y-3">
+                  {sortedInscricoes.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group border border-gray-100 rounded-md p-3 sm:p-4 bg-white shadow-lg hover:shadow-xl transition-shadow"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 truncate">
+                            {item.titulo_iniciativa}
+                          </div>
+                          <div className="mt-0.5 text-xs text-gray-700 truncate">
+                            <span className="font-medium">Proponente:</span> {item.nome_completo}
+                          </div>
+                          <div className="mt-0.5 text-xs text-gray-600 truncate">
+                            <span className="font-medium">Lotação:</span> {item.lotacao}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Ver detalhes"
+                            className="text-gray-700 hover:text-primary"
+                            onClick={() => navigate(`/admin/inscricao/${item.id}`)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Avaliar"
+                            className="text-gray-700 hover:text-primary"
+                            onClick={() => navigate(`/admin/avaliacao/${item.id}`)}
+                          >
+                            <Award className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
           </CardContent>
         </Card>
-
         {/* Paginação simples */}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>Anterior</Button>
           <Button variant="outline" disabled={loading || inscricoes.length < itemsPerPage} onClick={() => setCurrentPage((p) => p + 1)}>Próxima</Button>
         </div>
-      </main>
+          </main>
+        </div>
+      </div>
     </div>
   );
 };

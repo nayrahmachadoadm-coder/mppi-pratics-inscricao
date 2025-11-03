@@ -26,6 +26,12 @@ const SITE_KEY = (import.meta as any).env?.VITE_RECAPTCHA_SITE_KEY as string | u
 
 const VotoPopular: React.FC = () => {
   const { toast } = useToast();
+  // Controle de janela de votação: mantemos o sistema configurado, mas fechado até o período.
+  const FORCE_OPEN = ((import.meta as any).env?.VITE_VOTO_POPULAR_FORCE_OPEN || '').toString().toLowerCase() === 'true';
+  const start = new Date('2025-11-28T00:00:00');
+  const end = new Date('2025-12-08T23:59:59');
+  const now = new Date();
+  const votingOpen = FORCE_OPEN || (now >= start && now <= end);
   const expandDevText = (text?: string) => {
     const base = text || '';
     if (!(import.meta as any).env?.DEV) return base;
@@ -72,6 +78,7 @@ const VotoPopular: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!votingOpen) return; // Somente carrega dados quando a votação estiver aberta
     const run = async () => {
       setLoading(true);
       setError('');
@@ -184,6 +191,39 @@ const VotoPopular: React.FC = () => {
       setConfirmOpen(false);
     }
   };
+
+  // Página informativa quando a votação estiver fechada
+  if (!votingOpen) {
+    return (
+      <div className="bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="min-h-[72vh] flex items-center justify-center">
+            <main className="w-full max-w-3xl">
+              <Card className="shadow-lg border rounded-xl">
+                <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] rounded-t-xl">
+                  <CardTitle className="text-sm">Voto Popular</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-3 text-sm">
+                    <p>
+                      O público poderá votar eletronicamente em sua iniciativa preferida, no prazo estabelecido no cronograma:
+                      <strong> 28/11/2025 – 08/12/2025</strong>.
+                    </p>
+                    <p>
+                      Até lá, o sistema permanece configurado e pronto, aguardando a finalização do julgamento pelos jurados. Após o término, divulgaremos os <strong>três finalistas de cada categoria</strong> e liberaremos a votação popular.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Fique atento aos comunicados oficiais para saber quando a votação estiver aberta.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white">
