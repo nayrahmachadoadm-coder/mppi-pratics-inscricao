@@ -8,6 +8,7 @@ import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { currentUserMustChangePassword, isUserRole } from '@/lib/userAuth';
 import { Key } from 'lucide-react';
 import { Users } from 'lucide-react';
+import { Award } from 'lucide-react';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -49,56 +50,9 @@ const AdminCategorias = () => {
     load();
   }, []);
 
-  const header = (() => {
-    const isAdmin = isAdminAuthenticated();
-    const isJurado = isUserRole('jurado');
-    const mustChange = currentUserMustChangePassword();
-    return (
-    <div className="text-center mb-8">
-      <div className="mb-4 flex items-center justify-center gap-2">
-        <img src="/favicon.ico" alt="Ícone" className="h-6 w-6 opacity-80" />
-        <h1 className="text-xl font-bold text-gray-900">
-          Sistema de Julgamento e Gestão de Inscrições
-        </h1>
-      </div>
-      <div className="flex items-center justify-center gap-4">
-        <p className="text-gray-600">Selecione uma categoria para visualizar as inscrições</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate('/admin/regulamento')}>
-            Regulamento
-          </Button>
-          {isAdmin && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/admin/jurados')}
-              className="text-gray-500 hover:text-gray-700"
-              title="Gestão de Jurados"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-          )}
-          {isJurado && mustChange && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/jurado/senha')}
-              className="text-gray-500 hover:text-gray-700"
-              title="Trocar senha temporária"
-            >
-              <Key className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-  })();
-
   return (
-    <div className="min-h-screen bg-gray-300 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 via-white to-amber-50 flex items-center justify-center p-10">
       <div className="w-full max-w-6xl">
-        {header}
 
         {error && (
           <div className="mb-4">
@@ -108,25 +62,28 @@ const AdminCategorias = () => {
           </div>
         )}
 
-        <Card className="shadow-xl border border-gray-200 bg-white/90 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-lg">Categorias de Premiação</CardTitle>
+        <Card className="shadow-2xl bg-white/95 backdrop-blur-sm min-h-[280px]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-600" />
+              Categorias de Premiação
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <CardContent className="pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
               {categorias.map(({ key, lines }) => (
                 <Button
                   key={key}
                   variant="default"
-                  className="relative flex flex-col items-center justify-center h-28 px-4 text-center bg-white shadow-md hover:shadow-xl transition-shadow duration-200 border border-gray-200 rounded-xl"
+                  className="group relative flex flex-col items-center justify-center h-36 px-5 text-center bg-white shadow-xl hover:shadow-2xl transition-all duration-200 border border-gray-200 rounded-2xl hover:bg-primary"
                   disabled={loading}
                   onClick={() => navigate(`/admin/categoria/${encodeURIComponent(key)}`)}
                 >
-                  <span className="absolute top-2 right-2 inline-flex items-center justify-center rounded-md bg-blue-100 text-blue-700 text-sm px-2 py-1 shadow">
-                    {counts[key] ?? 0}
-                  </span>
-                  <span className="font-semibold text-gray-900 leading-tight whitespace-normal break-words">
+                  <span className="font-semibold text-gray-900 leading-tight whitespace-normal break-words group-hover:text-white">
                     {lines[0]}<br />{lines[1]}
+                  </span>
+                  <span className="mt-2 text-sm text-gray-500 group-hover:text-primary-foreground">
+                    Inscrições: {counts[key] ?? 0}
                   </span>
                 </Button>
               ))}

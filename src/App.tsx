@@ -7,18 +7,24 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import PublicRedirect from "./pages/PublicRedirect";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminHome from "./pages/AdminHome";
 import AdminInscricaoDetails from "./pages/AdminInscricaoDetails";
 import AdminCategorias from "./pages/AdminCategorias";
 import AdminCategoriaList from "./pages/AdminCategoriaList";
 import AdminRegulamento from "./pages/AdminRegulamento";
+import AdminVotoPopular from "./pages/AdminVotoPopular";
+import VotoPopular from "./pages/VotoPopular";
+import AdminPremiacao from "./pages/AdminPremiacao";
 import AdminAvaliacao from "./pages/AdminAvaliacao";
 import AdminRelatorioCategoria from "./pages/AdminRelatorioCategoria";
+import AdminCronograma from "./pages/AdminCronograma";
+import AdminEdicoesAnteriores from "./pages/AdminEdicoesAnteriores";
 import JuryManagement from "./components/JuryManagement";
 import UserPasswordChange from "./pages/UserPasswordChange";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 import EitherProtectedRoute from "./components/EitherProtectedRoute";
+import TopNav from "./components/TopNav";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +34,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <TopNav />
         <Routes>
           {/* Página principal passa a ser o login do sistema de gestão */}
           <Route path="/" element={<AdminLogin />} />
@@ -61,10 +68,10 @@ const App = () => (
                 <AdminCategoriaList />
               </EitherProtectedRoute>
             } />
-           <Route path="/admin/dashboard" element={
-             <ProtectedRoute>
-               <AdminDashboard />
-             </ProtectedRoute>
+           <Route path="/admin" element={
+             <EitherProtectedRoute>
+               <AdminHome />
+             </EitherProtectedRoute>
            } />
            <Route path="/admin/inscricao/:id" element={
              <ProtectedRoute>
@@ -80,6 +87,28 @@ const App = () => (
            <Route path="/admin/relatorio/:area" element={
              <ProtectedRoute>
                <AdminRelatorioCategoria />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/cronograma" element={
+             <ProtectedRoute>
+               <AdminCronograma />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/edicoes-anteriores" element={
+             <ProtectedRoute>
+               <AdminEdicoesAnteriores />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/voto-popular" element={
+             <ProtectedRoute>
+               <AdminVotoPopular />
+             </ProtectedRoute>
+           } />
+           {/* Rota pública para Voto Popular (divulgação e votação aberta) */}
+           <Route path="/voto-popular" element={<VotoPopular />} />
+           <Route path="/admin/premiacao" element={
+             <ProtectedRoute>
+               <AdminPremiacao />
              </ProtectedRoute>
            } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

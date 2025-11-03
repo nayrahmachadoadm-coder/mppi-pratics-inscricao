@@ -469,3 +469,117 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     resolve();
   });
 };
+
+// Geração de PDF do Regulamento (Edital nº 107/2025)
+export const generateRegulamentoPDF = (elementId: string): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const container = document.getElementById(elementId);
+      if (!container) {
+        reject(new Error(`Elemento com id '${elementId}' não encontrado`));
+        return;
+      }
+
+      const pdf = new jsPDF();
+      const pageHeight = pdf.internal.pageSize.height;
+      const pageWidth = pdf.internal.pageSize.width;
+      const margin = 20;
+      let y = 20;
+
+      const checkPageBreak = (additionalHeight: number = 0) => {
+        if (y + additionalHeight > pageHeight - 20) {
+          pdf.addPage();
+          y = 20;
+        }
+      };
+
+      // Cabeçalho simples com logo e título
+      try {
+        const logoUrl = 'https://i.postimg.cc/pT3rRnwr/logo-mppi.png';
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolveImg) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const width = 80;
+            const height = 15;
+            canvas.width = width * 4;
+            canvas.height = height * 4;
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const imgData = canvas.toDataURL('image/png', 1.0);
+              pdf.addImage(imgData, 'PNG', (pageWidth - width) / 2, y, width, height);
+            }
+            resolveImg();
+          };
+          img.onerror = () => resolveImg();
+          img.src = logoUrl;
+        });
+      } catch {
+        // Prosseguir sem logo caso falhe
+      }
+
+      y += 22;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      const title1 = 'PRÊMIO MELHORES PRÁTICAS MPPI';
+      pdf.text(title1, (pageWidth - pdf.getTextWidth(title1)) / 2, y);
+      y += 8;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      const title2 = 'Regulamento – Edital nº 107/2025';
+      pdf.text(title2, (pageWidth - pdf.getTextWidth(title2)) / 2, y);
+      y += 8;
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 8;
+
+      // Coletar conteúdo textual relevante (exclui navegação e tabelas)
+      const nodes = Array.from(container.querySelectorAll('h3, p, ul li')) as HTMLElement[];
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+
+      const addText = (text: string, isHeading: boolean = false) => {
+        const maxWidth = pageWidth - margin * 2;
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        const lineHeight = isHeading ? 6 : 5;
+        const blockHeight = lines.length * lineHeight;
+        checkPageBreak(blockHeight);
+        if (isHeading) {
+          pdf.setFont('helvetica', 'bold');
+        } else {
+          pdf.setFont('helvetica', 'normal');
+        }
+        lines.forEach((line) => {
+          pdf.text(line, margin, y);
+          y += lineHeight;
+        });
+        y += isHeading ? 3 : 1;
+      };
+
+      nodes.forEach((el) => {
+        const text = el.innerText.trim();
+        if (!text) return;
+        const isHeading = el.tagName.toLowerCase() === 'h3';
+        addText(text, isHeading);
+      });
+
+      // Rodapé com paginação simples
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        const footerText = `Página ${i} de ${pageCount}`;
+        pdf.text(footerText, pageWidth - margin - pdf.getTextWidth(footerText), pageHeight - 10);
+      }
+
+      pdf.save('Regulamento-MPPI-Edital-107-2025.pdf');
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+};

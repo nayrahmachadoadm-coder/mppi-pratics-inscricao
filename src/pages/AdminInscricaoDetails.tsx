@@ -189,8 +189,8 @@ const AdminInscricaoDetails = () => {
               Erro ao carregar inscrição
             </h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => navigate('/admin/dashboard')}>
-              Voltar ao Dashboard
+            <Button onClick={() => navigate('/admin')}>
+              Voltar à Página Inicial
             </Button>
           </CardContent>
         </Card>
@@ -215,10 +215,10 @@ const AdminInscricaoDetails = () => {
                 Voltar
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-lg font-semibold text-gray-900">
                   Detalhes da Inscrição
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   ID: {inscricao.id}
                 </p>
               </div>
@@ -236,43 +236,42 @@ const AdminInscricaoDetails = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Coluna Principal */}
-          <div className="lg:col-span-2 space-y-6">
+        {/* Conteúdo principal sem barra lateral */}
+        <div className="space-y-6">
             {/* Dados Pessoais */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <User className="w-4 h-4" />
                   Dados Pessoais
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Nome Completo</label>
-                    <p className="text-gray-900 font-medium">{inscricao.nome_completo}</p>
+                    <label className="text-xs font-medium text-gray-600">Nome Completo</label>
+                    <p className="text-gray-900">{inscricao.nome_completo}</p>
                   </div>
                   <div>
-                     <label className="text-sm font-medium text-gray-600">Cargo/Função</label>
+                     <label className="text-xs font-medium text-gray-600">Cargo/Função</label>
                      <p className="text-gray-900">{formatCargoFuncao(inscricao.cargo_funcao)}</p>
                    </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Email Institucional</label>
+                    <label className="text-xs font-medium text-gray-600">Email Institucional</label>
                     <p className="text-gray-900 flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       {inscricao.email_institucional}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Telefone</label>
+                    <label className="text-xs font-medium text-gray-600">Telefone</label>
                     <p className="text-gray-900 flex items-center gap-2">
                       <Phone className="w-4 h-4" />
                       {inscricao.telefone}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Lotação</label>
+                    <label className="text-xs font-medium text-gray-600">Lotação</label>
                     <p className="text-gray-900 flex items-center gap-2">
                       <Building className="w-4 h-4" />
                       {inscricao.lotacao}
@@ -280,7 +279,7 @@ const AdminInscricaoDetails = () => {
                   </div>
                   {inscricao.matricula && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Matrícula</label>
+                      <label className="text-xs font-medium text-gray-600">Matrícula</label>
                       <p className="text-gray-900">{inscricao.matricula}</p>
                     </div>
                   )}
@@ -291,25 +290,25 @@ const AdminInscricaoDetails = () => {
             {/* Dados da Iniciativa */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <Target className="w-4 h-4" />
                   Dados da Iniciativa
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 text-sm">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Título da Iniciativa</label>
-                  <p className="text-gray-900 font-medium text-lg">{inscricao.titulo_iniciativa}</p>
+                  <label className="text-xs font-medium text-gray-600">Título da Iniciativa</label>
+                  <p className="text-gray-900 font-medium">{inscricao.titulo_iniciativa}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Área de Atuação</label>
+                    <label className="text-xs font-medium text-gray-600">Área de Atuação</label>
                     <Badge variant="outline" className="mt-1">
                       {formatAreaAtuacao(inscricao.area_atuacao)}
                     </Badge>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Ano de Início</label>
+                    <label className="text-xs font-medium text-gray-600">Ano de Início</label>
                     <p className="text-gray-900 flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {formatDataInicio(inscricao.data_inicio)}
@@ -317,7 +316,7 @@ const AdminInscricaoDetails = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Público Alvo / Equipe Envolvida</label>
+                  <label className="text-xs font-medium text-gray-600">Público Alvo / Equipe Envolvida</label>
                   <p className="text-gray-900 whitespace-pre-wrap">{inscricao.publico_alvo}</p>
                 </div>
               </CardContent>
@@ -326,36 +325,36 @@ const AdminInscricaoDetails = () => {
             {/* Descrição da Prática */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <FileText className="w-4 h-4" />
                   Descrição da Prática
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 text-sm">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Resumo Executivo</label>
+                  <label className="text-xs font-medium text-gray-600">Resumo Executivo</label>
                   <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.descricao_iniciativa}</p>
                 </div>
                 
                 {inscricao.problema_necessidade && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Problema ou Necessidade</label>
+                    <label className="text-xs font-medium text-gray-600">Problema ou Necessidade</label>
                     <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.problema_necessidade}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Objetivo Estratégico</label>
+                  <label className="text-xs font-medium text-gray-600">Objetivo Estratégico</label>
                   <p className="text-gray-900 whitespace-pre-wrap mt-2">{formatObjetivoEstrategico(inscricao.objetivos)}</p>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Metodologia</label>
+                  <label className="text-xs font-medium text-gray-600">Metodologia</label>
                   <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.metodologia}</p>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Principais Resultados</label>
+                  <label className="text-xs font-medium text-gray-600">Principais Resultados</label>
                   <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.principais_resultados}</p>
                 </div>
               </CardContent>
@@ -364,147 +363,40 @@ const AdminInscricaoDetails = () => {
             {/* Critérios de Avaliação */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <Award className="w-4 h-4" />
                   Critérios de Avaliação
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Cooperação</label>
+                    <label className="text-xs font-medium text-gray-600">Cooperação</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.cooperacao}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Inovação</label>
+                    <label className="text-xs font-medium text-gray-600">Inovação</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.inovacao}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Resolutividade</label>
+                    <label className="text-xs font-medium text-gray-600">Resolutividade</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.resolutividade}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Impacto Social</label>
+                    <label className="text-xs font-medium text-gray-600">Impacto Social</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.impacto_social}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Alinhamento ODS</label>
+                    <label className="text-xs font-medium text-gray-600">Alinhamento ODS</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.alinhamento_ods}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Replicabilidade</label>
+                    <label className="text-xs font-medium text-gray-600">Replicabilidade</label>
                     <p className="text-gray-900 whitespace-pre-wrap">{inscricao.replicabilidade}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Informações de Controle */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Informações de Controle</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Data de Inscrição</label>
-                  <p className="text-gray-900 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(inscricao.created_at)}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Última Atualização</label>
-                  <p className="text-gray-900">{formatDate(inscricao.updated_at)}</p>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Declaração Aceita</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {inscricao.declaracao ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-green-600 font-medium">Sim</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        <span className="text-red-600 font-medium">Não</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Informações Adicionais */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Informações Adicionais</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Participou de Edições Anteriores</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {formatBooleanResponse(inscricao.participou_edicoes_anteriores)}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Foi Vencedor Anterior</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {formatBooleanResponse(inscricao.foi_vencedor_anterior)}
-                  </div>
-                </div>
-                
-                {inscricao.observacoes && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Observações</label>
-                    <p className="text-gray-900 whitespace-pre-wrap mt-1">{inscricao.observacoes}</p>
-                  </div>
-                )}
-                
-                {inscricao.local_data && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Local e Data</label>
-                    <p className="text-gray-900 mt-1">{inscricao.local_data}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Avaliações (Médias) removidas conforme política de confidencialidade */}
-
-            {/* Ações Rápidas */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  onClick={handleDownloadPDF}
-                  className="w-full flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Baixar PDF Completo
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`/admin/categoria/${inscricao.area_atuacao}`)}
-                  className="w-full flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar à Categoria
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
     </div>

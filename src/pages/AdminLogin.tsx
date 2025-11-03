@@ -24,14 +24,10 @@ const AdminLogin = () => {
   // Verificar se já está autenticado
   useEffect(() => {
     if (isAdminAuthenticated()) {
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } else if (isUserAuthenticated()) {
-      // Redirecionar baseado no papel do usuário
-      if (isUserRole('admin')) {
-        navigate('/admin/dashboard');
-      } else if (isUserRole('jurado')) {
-        navigate('/admin/categorias');
-      }
+      // Após login, abrir página neutra. A seleção do menu dará acesso.
+      navigate('/admin');
     }
   }, [navigate]);
 
@@ -72,7 +68,7 @@ const AdminLogin = () => {
         });
         
         setTimeout(() => {
-          navigate('/admin/categorias');
+          navigate('/admin');
         }, 1000);
         return;
       }
@@ -87,12 +83,8 @@ const AdminLogin = () => {
         });
         
         setTimeout(() => {
-          // Redirecionar baseado no papel
-          if (isUserRole('admin')) {
-            navigate('/admin/dashboard');
-          } else if (isUserRole('jurado')) {
-            navigate('/admin/categorias');
-          }
+          // Após login, abrir página neutra; o usuário escolhe pelo menu
+          navigate('/admin');
         }, 1000);
       } else {
         setError('Credenciais inválidas. Verifique seu usuário e senha.');

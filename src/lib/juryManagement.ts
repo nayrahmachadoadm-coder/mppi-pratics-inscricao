@@ -9,6 +9,8 @@ export interface JuryMember {
   temporaryPassword: string;
   created_at: number;
   created_by: string;
+  seatCode: string; // código da vaga (ex.: PGJ1, APMP, UFPI, etc.)
+  seatLabel: string; // label amigável da vaga
 }
 
 const JURY_MEMBERS_KEY = 'mppi_jury_members';
@@ -17,10 +19,10 @@ const JURY_MEMBERS_KEY = 'mppi_jury_members';
  * Gera uma senha temporária aleatória
  */
 function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  // Senha temporária com apenas 4 dígitos numéricos
   let password = '';
-  for (let i = 0; i < 8; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 4; i++) {
+    password += Math.floor(Math.random() * 10).toString();
   }
   return password;
 }
@@ -43,11 +45,13 @@ export function listJuryMembers(): JuryMember[] {
 export function registerJuryMember(
   username: string,
   name: string,
-  createdBy: string
+  createdBy: string,
+  seatCode: string,
+  seatLabel: string
 ): { success: boolean; error?: string; temporaryPassword?: string } {
   try {
     // Validar dados
-    if (!username.trim() || !name.trim()) {
+    if (!username.trim() || !name.trim() || !seatCode.trim()) {
       return { success: false, error: 'Todos os campos são obrigatórios' };
     }
 
@@ -78,7 +82,9 @@ export function registerJuryMember(
       name: name.trim(),
       temporaryPassword,
       created_at: Date.now(),
-      created_by: createdBy
+      created_by: createdBy,
+      seatCode: seatCode.trim(),
+      seatLabel: seatLabel.trim(),
     };
 
     const juryMembers = listJuryMembers();

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, Key, Trash2, Copy, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { 
   listJuryMembers, 
   registerJuryMember, 
@@ -17,13 +18,28 @@ import {
   JuryMember 
 } from '@/lib/juryManagement';
 
+// Vagas conforme item 6 do edital
+const SEATS = [
+  { code: 'PGJ1', label: 'Membro escolhido pelo PGJ (1 de 2)' },
+  { code: 'PGJ2', label: 'Membro escolhido pelo PGJ (2 de 2)' },
+  { code: 'APMP', label: 'Associação Piauiense do Ministério Público' },
+  { code: 'SINDICATO', label: 'Sindicato dos Servidores do MPPI' },
+  { code: 'UFPI', label: 'Universidade Federal do Piauí' },
+  { code: 'UESPI', label: 'Universidade Estadual do Piauí' },
+  { code: 'TJPI', label: 'Poder Judiciário do Estado do Piauí' },
+  { code: 'OABPI', label: 'Ordem dos Advogados do Brasil (OAB-PI)' },
+  { code: 'DEFENSORIA', label: 'Defensoria Pública' },
+];
+
 const JuryManagement = () => {
   const [juryMembers, setJuryMembers] = useState<JuryMember[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [newJury, setNewJury] = useState({
     username: '',
-    name: ''
+    name: '',
+    seatCode: '',
+    seatLabel: '',
   });
   const [generatedPassword, setGeneratedPassword] = useState('');
   const { toast } = useToast();
@@ -43,10 +59,10 @@ const JuryManagement = () => {
     setIsLoading(true);
 
     try {
-      if (!newJury.username.trim() || !newJury.name.trim()) {
+      if (!newJury.username.trim() || !newJury.name.trim() || !newJury.seatCode.trim()) {
         toast({
           title: "Erro",
-          description: "Todos os campos são obrigatórios",
+          description: "Todos os campos são obrigatórios (incluindo a vaga)",
           variant: "destructive",
         });
         return;
@@ -55,12 +71,14 @@ const JuryManagement = () => {
       const result = registerJuryMember(
         newJury.username,
         newJury.name,
-        'admin' // Criado pelo administrador
+        'admin', // Criado pelo administrador
+        newJury.seatCode,
+        newJury.seatLabel
       );
 
       if (result.success) {
         setGeneratedPassword(result.temporaryPassword || '');
-        setNewJury({ username: '', name: '' });
+        setNewJury({ username: '', name: '', seatCode: '', seatLabel: '' });
         loadJuryMembers();
         
         toast({
@@ -133,6 +151,9 @@ const JuryManagement = () => {
     });
   };
 
+  // Códigos de vagas já ocupadas, para desabilitar no select
+  const occupiedSeatCodes = new Set(juryMembers.map(j => j.seatCode).filter(Boolean));
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -160,35 +181,66 @@ const JuryManagement = () => {
               </Button>
             </DialogTrigger>
             
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Cadastrar Novo Jurado</DialogTitle>
-                <DialogDescription>
+            <DialogContent className="sm:max-w-sm overflow-hidden pt-0">
+              <DialogHeader className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-primary text-primary-foreground border-b border-primary-dark sm:rounded-t-lg">
+                <DialogTitle className="text-base text-primary-foreground">Cadastrar Novo Jurado</DialogTitle>
+                <DialogDescription className="text-xs text-primary-foreground/90">
                   Preencha os dados do jurado. Uma senha temporária será gerada automaticamente.
                 </DialogDescription>
               </DialogHeader>
               
-              <form onSubmit={handleAddJury} className="space-y-4">
+              <form onSubmit={handleAddJury} className="space-y-3 text-sm">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Nome de usuário</Label>
+                  <Label htmlFor="username" className="text-xs">Nome de usuário</Label>
                   <Input
                     id="username"
                     value={newJury.username}
                     onChange={(e) => setNewJury({ ...newJury, username: e.target.value })}
                     placeholder="Ex: joao.silva"
                     disabled={isLoading}
+                    className="h-9 text-sm"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome completo</Label>
+                  <Label htmlFor="name" className="text-xs">Nome completo</Label>
                   <Input
                     id="name"
                     value={newJury.name}
                     onChange={(e) => setNewJury({ ...newJury, name: e.target.value })}
                     placeholder="Ex: João Silva"
                     disabled={isLoading}
+                    className="h-9 text-sm"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Vaga (Item 6 do Edital)</Label>
+                  <Select
+                    value={newJury.seatCode}
+                    onValueChange={(val) => {
+                      const seat = SEATS.find(s => s.code === val);
+                      setNewJury({
+                        ...newJury,
+                        seatCode: val,
+                        seatLabel: seat ? seat.label : '',
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectValue placeholder="Selecione a vaga" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] max-h-72 p-0 bg-white shadow-lg">
+                      {SEATS.map((s) => (
+                        <SelectItem key={s.code} value={s.code} disabled={occupiedSeatCodes.has(s.code)} className="py-1 text-xs">
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newJury.seatCode && occupiedSeatCodes.has(newJury.seatCode) && (
+                    <p className="text-[11px] text-muted-foreground">Esta vaga já está ocupada.</p>
+                  )}
                 </div>
                 
                 {/* Campo de e-mail removido conforme nova política de cadastro */}
@@ -196,7 +248,7 @@ const JuryManagement = () => {
                 {generatedPassword && (
                   <Alert>
                     <CheckCircle className="w-4 h-4" />
-                    <AlertDescription className="flex items-center justify-between">
+                    <AlertDescription className="flex items-center justify-between text-xs">
                       <span>Senha gerada: <strong>{generatedPassword}</strong></span>
                       <Button
                         type="button"
@@ -211,19 +263,19 @@ const JuryManagement = () => {
                 )}
                 
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={isLoading} className="flex-1">
+                  <Button type="submit" disabled={isLoading} size="sm" className="flex-1 h-9">
                     {isLoading ? 'Cadastrando...' : 'Cadastrar'}
                   </Button>
                   <Button 
                     type="button" 
-                    variant="outline" 
+                    variant="outline" size="sm" className="h-9"
                     onClick={() => {
                       setIsAddDialogOpen(false);
                       setGeneratedPassword('');
-                      setNewJury({ username: '', name: '' });
+                      setNewJury({ username: '', name: '', seatCode: '', seatLabel: '' });
                   }}
                 >
-                  Cancelar
+                  Fechar
                 </Button>
               </div>
             </form>
@@ -245,6 +297,7 @@ const JuryManagement = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Usuário</TableHead>
+                  <TableHead>Vaga</TableHead>
                   <TableHead>Cadastrado em</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -254,6 +307,9 @@ const JuryManagement = () => {
                   <TableRow key={jury.username}>
                     <TableCell className="font-medium">{jury.name}</TableCell>
                     <TableCell>{jury.username}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{(jury as any).seatLabel || '—'}</Badge>
+                    </TableCell>
                     <TableCell>
                       {new Date(jury.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
