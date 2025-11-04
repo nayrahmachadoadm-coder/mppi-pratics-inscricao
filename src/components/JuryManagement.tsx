@@ -19,6 +19,8 @@ import {
 } from '@/lib/juryManagement';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { isUserRole } from '@/lib/userAuth';
+import { getAllInscricoes } from '@/lib/adminService';
+import { getAvaliacoesByJurado } from '@/lib/evaluationService';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -44,17 +46,51 @@ const JuryManagement = () => {
     seatLabel: '',
   });
   const [generatedPassword, setGeneratedPassword] = useState('');
+  const [totalInscricoes, setTotalInscricoes] = useState<number>(0);
+  const [juryPercents, setJuryPercents] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const isAdmin = isAdminAuthenticated() || isUserRole('admin');
 
-  // Carregar lista de jurados
+  // Carregar lista de jurados e estatísticas
   useEffect(() => {
-    loadJuryMembers();
+    const init = async () => {
+      const members = loadJuryMembers();
+      try {
+        const res = await getAllInscricoes(1, 1);
+        if (res.success) {
+          setTotalInscricoes(res.total || 0);
+        } else {
+          setTotalInscricoes(0);
+        }
+      } catch {
+        setTotalInscricoes(0);
+      }
+      await computePercents(members);
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const computePercents = async (membersOverride?: JuryMember[]) => {
+    const denom = totalInscricoes > 0 ? totalInscricoes : 0;
+    const list = membersOverride || juryMembers;
+    const totals: Record<string, number> = {};
+    for (const j of list) {
+      try {
+        const av = await getAvaliacoesByJurado(j.username);
+        const count = av.success && av.data ? av.data.length : 0;
+        totals[j.username] = denom > 0 ? Math.round((count / denom) * 100) : 0;
+      } catch {
+        totals[j.username] = 0;
+      }
+    }
+    setJuryPercents(totals);
+  };
 
   const loadJuryMembers = () => {
     const members = listJuryMembers();
     setJuryMembers(members);
+    return members;
   };
 
   const handleAddJury = async (e: React.FormEvent) => {
@@ -71,7 +107,7 @@ const JuryManagement = () => {
         return;
       }
 
-      const result = registerJuryMember(
+      const result = await registerJuryMember(
         newJury.username,
         newJury.name,
         'admin', // Criado pelo administrador
@@ -159,16 +195,16 @@ const JuryManagement = () => {
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Gestão de Jurados
-        </CardTitle>
-        <CardDescription>
-          {isAdmin
-            ? 'Gerencie os jurados do sistema. Cadastre novos membros e gere senhas temporárias.'
-            : 'Visualize a lista de jurados cadastrados. Sem ações disponíveis para jurados.'}
-        </CardDescription>
+      <CardHeader className="bg-transparent rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-[hsl(var(--primary))]" />
+            Comissão Julgadora
+          </CardTitle>
+          <div className="text-xs text-muted-foreground">
+            {totalInscricoes > 0 ? `Total de inscritos: ${totalInscricoes}` : 'Total de inscritos: —'}
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
@@ -191,18 +227,22 @@ const JuryManagement = () => {
                 <DialogHeader className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-primary text-primary-foreground border-b border-primary-dark sm:rounded-t-lg">
                   <DialogTitle className="text-base text-primary-foreground">Cadastrar Novo Jurado</DialogTitle>
                   <DialogDescription className="text-xs text-primary-foreground/90">
-                    Preencha os dados do jurado. Uma senha temporária será gerada automaticamente.
+                    Informe o e-mail do jurado e dados da vaga. Uma senha temporária será gerada automaticamente.
                   </DialogDescription>
                 </DialogHeader>
                 
                 <form onSubmit={handleAddJury} className="space-y-3 text-sm">
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-xs">Nome de usuário</Label>
+                    <Label htmlFor="username" className="text-xs">E-mail do jurado (login)</Label>
                     <Input
                       id="username"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      required
                       value={newJury.username}
                       onChange={(e) => setNewJury({ ...newJury, username: e.target.value })}
-                      placeholder="Ex: joao.silva"
+                      placeholder="Ex: joao.silva@exemplo.com"
                       disabled={isLoading}
                       className="h-9 text-sm"
                     />
@@ -300,15 +340,16 @@ const JuryManagement = () => {
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-[hsl(var(--primary))] text-white">
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Vaga</TableHead>
-                  <TableHead>Cadastrado em</TableHead>
-                  {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+                  <TableHead className="text-white">Nome</TableHead>
+                  <TableHead className="text-white">Usuário</TableHead>
+                  <TableHead className="text-white">Vaga</TableHead>
+                  <TableHead className="text-white">Avaliações (%)</TableHead>
+                  <TableHead className="text-white">Cadastrado em</TableHead>
+                  {isAdmin && <TableHead className="text-right text-white">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -318,6 +359,9 @@ const JuryManagement = () => {
                     <TableCell>{jury.username}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{(jury as any).seatLabel || '—'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {typeof juryPercents[jury.username] === 'number' ? `${juryPercents[jury.username]}%` : '—'}
                     </TableCell>
                     <TableCell>
                       {new Date(jury.created_at).toLocaleDateString('pt-BR')}

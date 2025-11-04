@@ -50,9 +50,9 @@ const App = () => (
              </EitherProtectedRoute>
            } />
            <Route path="/admin/regulamento" element={
-             <ProtectedRoute>
-               <AdminRegulamento />
-             </ProtectedRoute>
+            <EitherProtectedRoute>
+              <AdminRegulamento />
+            </EitherProtectedRoute>
            } />
            <Route path="/admin/jurados" element={
              <EitherProtectedRoute>
@@ -97,14 +97,14 @@ const App = () => (
              </ProtectedRoute>
            } />
            <Route path="/admin/cronograma" element={
-             <ProtectedRoute>
-               <AdminCronograma />
-             </ProtectedRoute>
+            <EitherProtectedRoute>
+              <AdminCronograma />
+            </EitherProtectedRoute>
            } />
            <Route path="/admin/edicoes-anteriores" element={
-             <ProtectedRoute>
-               <AdminEdicoesAnteriores />
-             </ProtectedRoute>
+            <EitherProtectedRoute>
+              <AdminEdicoesAnteriores />
+            </EitherProtectedRoute>
            } />
            <Route path="/admin/voto-popular" element={
              <ProtectedRoute>
@@ -114,9 +114,9 @@ const App = () => (
            {/* Rota pública para Voto Popular (divulgação e votação aberta) */}
            <Route path="/voto-popular" element={<VotoPopular />} />
            <Route path="/admin/premiacao" element={
-             <ProtectedRoute>
-               <AdminPremiacao />
-             </ProtectedRoute>
+            <EitherProtectedRoute>
+              <AdminPremiacao />
+            </EitherProtectedRoute>
            } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

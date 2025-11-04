@@ -2,6 +2,7 @@
 // Permite cadastrar jurados com senhas temporárias
 
 import { registerUser, listUsers, updateUserPassword } from './userAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface JuryMember {
   username: string;
@@ -45,43 +46,83 @@ export function listJuryMembers(): JuryMember[] {
 /**
  * Cadastra um novo jurado com senha temporária
  */
-export function registerJuryMember(
+export async function registerJuryMember(
   username: string,
   name: string,
   createdBy: string,
   seatCode: string,
   seatLabel: string
-): { success: boolean; error?: string; temporaryPassword?: string } {
+): Promise<{ success: boolean; error?: string; temporaryPassword?: string }> {
   try {
     // Validar dados
-    if (!username.trim() || !name.trim() || !seatCode.trim()) {
+    const normalizedEmail = username.trim().toLowerCase();
+    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!normalizedEmail || !name.trim() || !seatCode.trim()) {
       return { success: false, error: 'Todos os campos são obrigatórios' };
+    }
+
+    // Validar formato de e-mail antes de chamar Supabase
+    if (!isValidEmail(normalizedEmail)) {
+      return { success: false, error: 'E-mail inválido. Informe um e-mail no formato nome@dominio.' };
     }
 
     // Verificar se o username já existe
     const existingUsers = listUsers();
-    if (existingUsers.some(u => u.username === username.trim())) {
+    if (existingUsers.some(u => u.username.toLowerCase() === normalizedEmail)) {
       return { success: false, error: 'Nome de usuário já existe' };
     }
 
     // Verificar se o jurado já foi cadastrado
     const existingJury = listJuryMembers();
-    if (existingJury.some(j => j.username === username.trim())) {
+    if (existingJury.some(j => j.username.toLowerCase() === normalizedEmail)) {
       return { success: false, error: 'Jurado já cadastrado' };
     }
 
     // Gerar senha temporária
     const temporaryPassword = generateTemporaryPassword();
 
-    // Registrar no sistema de usuários
-    const userResult = registerUser(username.trim(), temporaryPassword, 'jurado', true);
+    // Registrar via Supabase Auth (usa "username" como e-mail)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: temporaryPassword,
+    });
+    if (signUpError) {
+      return { success: false, error: `Falha ao criar usuário no Supabase: ${signUpError.message}` };
+    }
+    const supUserId = signUpData.user?.id;
+
+    // Criar perfil e atribuir papel via RPC (SECURITY DEFINER)
+    if (supUserId) {
+      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('register_jurado', {
+        _auth_user_id: supUserId,
+        _username: normalizedEmail,
+        _full_name: name.trim(),
+        _email: normalizedEmail,
+        _seat_code: seatCode.trim(),
+        _seat_label: seatLabel.trim(),
+        _must_change: true,
+      });
+      if (rpcError) {
+        const msg = String(rpcError.message || '');
+        const isMissingRpc = msg.includes('Could not find the function') || msg.includes('schema cache') || msg.toLowerCase().includes('not found');
+        if (isMissingRpc) {
+          // Prosseguir sem bloquear o cadastro: perfil/role ficam pendentes até aplicar a migração
+          console.warn('[JuryManagement] RPC register_jurado ausente. Prosseguindo com cadastro local e Supabase Auth.');
+        } else {
+          return { success: false, error: `Falha ao criar perfil/role: ${rpcError.message}` };
+        }
+      }
+    }
+
+    // Registrar também no sistema local como fallback
+    const userResult = registerUser(normalizedEmail, temporaryPassword, 'jurado', true);
     if (!userResult.success) {
       return { success: false, error: userResult.error };
     }
 
     // Salvar informações do jurado
     const juryMember: JuryMember = {
-      username: username.trim(),
+      username: normalizedEmail,
       name: name.trim(),
       temporaryPassword,
       created_at: Date.now(),

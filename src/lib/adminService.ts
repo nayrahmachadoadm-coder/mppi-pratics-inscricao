@@ -179,59 +179,114 @@ export async function getInscricoesStats(): Promise<{
 }> {
   try {
     console.log('📊 Buscando estatísticas das inscrições...');
-    
-    // Total de inscrições
-    const { count: total, error: totalError } = await supabase
-      .from('inscricoes')
-      .select('*', { count: 'exact', head: true });
-    
-    if (totalError) {
-      throw totalError;
+
+    // Helper para normalizar valores de área (suporta rótulos legados)
+    const normalizeArea = (raw: string): string => {
+      if (!raw) return raw;
+      const s = raw
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, ''); // remove acentos
+
+      // Mapeamentos diretos das chaves atuais
+      const directKeys = [
+        'finalistica-pratica',
+        'finalistica-projeto',
+        'estruturante-pratica',
+        'estruturante-projeto',
+        'categoria-especial-ia',
+      ];
+      if (directKeys.includes(s)) return s;
+
+      // Heurísticas para rótulos legados
+      if (s.includes('categoria') && s.includes('especial')) return 'categoria-especial-ia';
+      if (s.includes('inteligencia') && s.includes('artificial')) return 'categoria-especial-ia';
+
+      const isProjeto = s.includes('projeto');
+      const isPratica = s.includes('pratica');
+      const isFinalistica = s.includes('finalist'); // cobre "finalistica" e variações sem acento
+      const isEstruturante = s.includes('estruturante');
+
+      if (isProjeto && isFinalistica) return 'finalistica-projeto';
+      if (isProjeto && isEstruturante) return 'estruturante-projeto';
+      if (isPratica && isFinalistica) return 'finalistica-pratica';
+      if (isPratica && isEstruturante) return 'estruturante-pratica';
+
+      // Sem correspondência clara: devolver original para não perder informação
+      return raw.trim();
+    };
+    // Primeiro tenta usar RPC com SECURITY DEFINER para contornar RLS em agregações
+    let total = 0;
+    let por_area: { area: string; count: number }[] = [];
+    try {
+      const { data: rpcArea, error: rpcAreaError } = await supabase.rpc('rpc_inscricoes_por_area');
+      if (rpcAreaError) {
+        console.warn('⚠️ Falha na RPC rpc_inscricoes_por_area, voltando ao select padrão:', rpcAreaError.message);
+      } else if (Array.isArray(rpcArea) && rpcArea.length > 0) {
+        // Normaliza chaves e agrega novamente já normalizado
+        const agg: Record<string, number> = {};
+        for (const row of rpcArea as any[]) {
+          const key = normalizeArea(String(row.area || ''));
+          const c = Number(row.count || 0) || 0;
+          agg[key] = (agg[key] || 0) + c;
+        }
+        por_area = Object.entries(agg).map(([area, count]) => ({ area, count }));
+        total = por_area.reduce((sum, it) => sum + it.count, 0);
+      }
+    } catch (e) {
+      console.warn('⚠️ Erro inesperado ao executar RPC de estatísticas por área, usando fallback.', e);
+    }
+
+    // Fallback: se RPC não retornou nada, usa select (pode ser limitado por RLS)
+    if (por_area.length === 0) {
+      // Total de inscrições
+      const { count: totalFallback, error: totalError } = await supabase
+        .from('inscricoes')
+        .select('*', { count: 'exact', head: true });
+      if (totalError) throw totalError;
+      total = totalFallback || 0;
+
+      // Inscrições por área
+      const { data: porAreaData, error: areaError } = await supabase
+        .from('inscricoes')
+        .select('area_atuacao')
+        .order('area_atuacao');
+      if (areaError) throw areaError;
+
+      const agg = porAreaData?.reduce((acc: { [key: string]: number }, item) => {
+        const key = normalizeArea(String(item.area_atuacao || ''));
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      por_area = Object.entries(agg || {}).map(([area, count]) => ({ area, count: count as number }));
     }
     
-    // Inscrições por área
-    const { data: porAreaData, error: areaError } = await supabase
-      .from('inscricoes')
-      .select('area_atuacao')
-      .order('area_atuacao');
-    
-    if (areaError) {
-      throw areaError;
-    }
-    
-    // Contar por área
-    const porArea = porAreaData?.reduce((acc: { [key: string]: number }, item) => {
-      acc[item.area_atuacao] = (acc[item.area_atuacao] || 0) + 1;
-      return acc;
-    }, {});
-    
-    const por_area = Object.entries(porArea || {}).map(([area, count]) => ({
-      area,
-      count: count as number
-    }));
-    
-    // Inscrições das últimas 24 horas
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-    
-    const { count: ultimas_24h, error: recentError } = await supabase
-      .from('inscricoes')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', oneDayAgo.toISOString());
-    
-    if (recentError) {
-      throw recentError;
+    // Inscrições das últimas 24 horas (tenta, mas não falha se RLS bloquear)
+    let ultimas_24h = 0;
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      const { count, error: recentError } = await supabase
+        .from('inscricoes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', oneDayAgo.toISOString());
+      if (!recentError) ultimas_24h = count || 0;
+    } catch (e) {
+      console.warn('⚠️ Falha ao calcular últimas 24h, seguindo com zero.', e);
     }
     
     // Inscrições por mês (últimos 6 meses)
-    const { data: porMesData, error: mesError } = await supabase
-      .from('inscricoes')
-      .select('created_at')
-      .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
-      .order('created_at');
-    
-    if (mesError) {
-      throw mesError;
+    let porMesData: { created_at: string }[] = [];
+    try {
+      const { data, error: mesError } = await supabase
+        .from('inscricoes')
+        .select('created_at')
+        .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at');
+      if (!mesError) porMesData = (data || []) as any[];
+    } catch (e) {
+      console.warn('⚠️ Falha ao calcular por mês, seguindo com vazio.', e);
     }
     
     // Agrupar por mês

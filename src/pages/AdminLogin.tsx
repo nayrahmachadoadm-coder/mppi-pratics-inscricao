@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
 import { authenticateAdmin, isAdminAuthenticated } from '@/lib/adminAuth';
 import { authenticateUser, isUserAuthenticated, isUserRole, currentUserMustChangePassword } from '@/lib/userAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin = () => {
@@ -73,7 +74,7 @@ const AdminLogin = () => {
         return;
       }
 
-      // Se não for admin, tentar autenticar como usuário (sistema novo)
+      // Se não for admin, tentar autenticar como usuário (sistema local legado)
       const userAuth = authenticateUser(username.trim(), password);
       
       if (userAuth.success) {
@@ -83,23 +84,37 @@ const AdminLogin = () => {
         });
         
         setTimeout(() => {
-          // Se for jurado e precisar trocar a senha, obrigar a definição da nova senha
           const isJurado = isUserRole('jurado');
           const mustChange = currentUserMustChangePassword();
           if (isJurado && mustChange) {
             navigate('/jurado/senha');
           } else {
-            // Página neutra após login
             navigate('/admin');
           }
         }, 1000);
       } else {
-        setError('Credenciais inválidas. Verifique seu usuário e senha.');
-        toast({
-          title: "Erro no login",
-          description: "Credenciais inválidas",
-          variant: "destructive",
+        // Fallback: tentar autenticação via Supabase (usar campo Usuário como email)
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: username.trim(),
+          password,
         });
+
+        if (authError) {
+          setError('Credenciais inválidas. Verifique seu usuário e senha.');
+          toast({
+            title: "Erro no login",
+            description: "Credenciais inválidas",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: 'Login realizado com sucesso!',
+            description: 'Redirecionando...',
+          });
+          setTimeout(() => {
+            navigate('/admin');
+          }, 800);
+        }
       }
     } catch (err) {
       console.error('Erro no login:', err);
