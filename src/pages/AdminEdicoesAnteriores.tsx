@@ -84,7 +84,7 @@ const AdminEdicoesAnteriores = () => {
     return Object.keys(grouped).sort((a, b) => {
       const ay = parseInt(a.split(' - ')[0], 10);
       const by = parseInt(b.split(' - ')[0], 10);
-      return by - ay; // mais recentes primeiro
+      return ay - by; // ordem crescente (mais antigos primeiro)
     });
   }, [grouped]);
 
@@ -111,44 +111,67 @@ const AdminEdicoesAnteriores = () => {
             )}
 
             {!loading && !error && editionKeys.length > 0 && (
-              <div className="space-y-8">
-                {editionKeys.map((key) => {
-                  const edition = grouped[key];
-                  const categories = Object.keys(edition.categorias).sort();
+              <>
+                {/* Índice dinâmico de edições */}
+                <nav className="mb-4 rounded-md border bg-muted/40 p-3">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Índice das edições</div>
+                  <div className="flex flex-wrap gap-2">
+                    {editionKeys.map((key) => {
+                      const e = grouped[key];
+                      const slug = slugify(`${e.edicao}-${e.ano}`);
+                      return (
+                        <a
+                          key={`idx-${key}`}
+                          href={`#${slug}`}
+                          className="text-xs px-2 py-1 rounded-md border bg-white hover:bg-muted/50"
+                        >
+                          {e.edicao} ({e.ano})
+                        </a>
+                      );
+                    })}
+                  </div>
+                </nav>
 
-                  return (
-                    <section key={key} className="rounded-xl border bg-white shadow-lg hover:shadow-xl transition-shadow">
-                      <div className="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] border-b border-[hsl(var(--primary-dark))]/30">
-                        <h2 className="text-base font-semibold">
-                          {edition.edicao} ({edition.ano})
-                        </h2>
-                        <span className="text-xs opacity-90">Top 3 por categoria</span>
-                      </div>
+                <div className="space-y-8">
+                  {editionKeys.map((key) => {
+                    const edition = grouped[key];
+                    const categories = Object.keys(edition.categorias).sort();
+                    const sectionId = slugify(`${edition.edicao}-${edition.ano}`);
 
-                      <div className="px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {categories.map((cat) => (
-                          <div key={cat} className="rounded-lg border border-muted bg-background shadow-md hover:shadow-lg transition-shadow">
-                            <div className="px-3 py-2 border-b bg-muted/40">
-                              <h3 className="text-sm font-medium text-foreground">{cat}</h3>
+                    return (
+                      <section id={sectionId} key={key} className="scroll-mt-24 rounded-xl border bg-white shadow-lg hover:shadow-xl transition-shadow">
+                        <div className="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] border-b border-[hsl(var(--primary-dark))]/30">
+                          <h2 className="text-base font-semibold">
+                            {edition.edicao} ({edition.ano})
+                          </h2>
+                          <span className="text-xs opacity-90">Top 3 por categoria</span>
+                        </div>
+
+                        <div className="px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {categories.map((cat) => (
+                            <div key={cat} className="rounded-lg border border-muted bg-background shadow-md hover:shadow-lg transition-shadow">
+                              <div className="px-3 py-2 border-b bg-muted/40">
+                                <h3 className="text-sm font-medium text-foreground">{cat}</h3>
+                              </div>
+                              <ul className="p-3 space-y-3">
+                                {edition.categorias[cat].map((item) => (
+                                  <li key={`${cat}-${item.colocacao}-${item.nome}`} className="flex items-start gap-3">
+                                    <BadgeColocacao value={item.colocacao} />
+                                    <div>
+                                      <p className="text-sm font-medium text-foreground">{item.nome}</p>
+                                      <p className="text-xs text-muted-foreground">{formatCategoria(cat)}</p>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="p-3 space-y-3">
-                              {edition.categorias[cat].map((item) => (
-                                <li key={`${cat}-${item.colocacao}-${item.nome}`} className="flex items-start gap-3">
-                                  <BadgeColocacao value={item.colocacao} />
-                                  <div>
-                                    <p className="text-sm font-medium text-foreground">{item.nome}</p>
-                                    <p className="text-xs text-muted-foreground">{formatCategoria(cat)}</p>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -163,6 +186,15 @@ function sanitizeEdicao(edicao: string) {
 
 function formatCategoria(cat: string) {
   return cat.replace(/\s+/g, ' ').trim();
+}
+
+function slugify(str: string) {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 const BadgeColocacao = ({ value }: { value: string }) => {

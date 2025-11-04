@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllInscricoes, AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
 import { ArrowLeft, Eye, Award, BarChart3 } from 'lucide-react';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 const areaLabelMap: Record<string, string> = {
   'finalistica-projeto': 'Projetos Finalísticos',
@@ -14,6 +15,37 @@ const areaLabelMap: Record<string, string> = {
   'estruturante-pratica': 'Práticas Estruturantes',
   'categoria-especial-ia': 'Categoria Especial (Inteligência Artificial)'
 };
+
+// Geração de logomarca dinâmica com base em um seed (id/título)
+function stringHash(str: string): number {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+function hsl(h: number, s: number, l: number) {
+  return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function getLogoColors(seed: string) {
+  const base = stringHash(seed);
+  const h1 = base % 360;
+  const h2 = (base * 7) % 360;
+  return {
+    c1: hsl(h1, 70, 55),
+    c2: hsl(h2, 70, 45),
+  };
+}
+
+function getInitials(title?: string) {
+  const words = (title || '').trim().split(/\s+/).filter(Boolean);
+  const a = (words[0]?.[0] || 'M').toUpperCase();
+  const b = (words[1]?.[0] || '').toUpperCase();
+  return `${a}${b}`;
+}
 
 const AdminCategoriaList = () => {
   const navigate = useNavigate();
@@ -75,7 +107,7 @@ const AdminCategoriaList = () => {
                 <Award className="w-5 h-5" /> Trabalhos da Categoria
               </CardTitle>
               <div className="flex items-center gap-2">
-                {area && (
+                {area && isAdminAuthenticated() && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -105,44 +137,55 @@ const AdminCategoriaList = () => {
               ) : inscricoes.length === 0 ? (
                 <div className="py-10 text-center text-gray-600">Nenhum trabalho encontrado nesta categoria.</div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {sortedInscricoes.map((item) => (
                     <div
                       key={item.id}
-                      className="group border border-gray-100 rounded-md p-3 sm:p-4 bg-white shadow-lg hover:shadow-xl transition-shadow"
-                    >
+                      className="group border border-gray-100 rounded-md p-3 sm:p-4 bg-white shadow-lg hover:shadow-xl transition-shadow hover:bg-gray-50 cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/admin/inscricao/${item.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/admin/inscricao/${item.id}`);
+                        }
+                      }}
+                      >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-gray-900 truncate">
-                            {item.titulo_iniciativa}
-                          </div>
-                          <div className="mt-0.5 text-xs text-gray-700 truncate">
-                            <span className="font-medium">Proponente:</span> {item.nome_completo}
-                          </div>
-                          <div className="mt-0.5 text-xs text-gray-600 truncate">
-                            <span className="font-medium">Lotação:</span> {item.lotacao}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* Logomarca dinâmica com gradiente e iniciais */}
+                          {(() => {
+                            const seed = item.id || item.titulo_iniciativa || item.nome_completo || 'seed';
+                            const { c1, c2 } = getLogoColors(seed);
+                            const initials = getInitials(item.titulo_iniciativa);
+                            return (
+                              <div
+                                aria-label="Logomarca do trabalho"
+                                title={`Logomarca: ${item.titulo_iniciativa}`}
+                                className="w-16 h-16 border border-gray-200 rounded-md flex-shrink-0 relative overflow-hidden"
+                                style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+                              >
+                                <div className="absolute inset-0 opacity-10" style={{ background: 'radial-gradient(circle at 30% 30%, white, transparent 60%)' }} />
+                                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm tracking-wide drop-shadow-sm select-none">
+                                  {initials}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {item.titulo_iniciativa}
+                            </div>
+                            <div className="mt-0.5 text-xs text-gray-700 truncate">
+                              <span className="font-medium">Proponente:</span> {item.nome_completo}
+                            </div>
+                            <div className="mt-0.5 text-xs text-gray-600 truncate">
+                              <span className="font-medium">Lotação:</span> {item.lotacao}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Ver detalhes"
-                            className="text-gray-700 hover:text-primary"
-                            onClick={() => navigate(`/admin/inscricao/${item.id}`)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Avaliar"
-                            className="text-gray-700 hover:text-primary"
-                            onClick={() => navigate(`/admin/avaliacao/${item.id}`)}
-                          >
-                            <Award className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        {/* Botões removidos: o container inteiro é clicável para ver detalhes */}
                       </div>
                     </div>
                   ))}

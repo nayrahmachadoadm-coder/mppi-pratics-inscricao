@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
-import { isUserAuthenticated, isUserRole, currentUserMustChangePassword, logoutUser } from '@/lib/userAuth';
+import { isUserAuthenticated, isUserRole, logoutUser } from '@/lib/userAuth';
 import { logoutAdmin } from '@/lib/adminAuth';
 
 const TopNav: React.FC = () => {
@@ -10,7 +10,6 @@ const TopNav: React.FC = () => {
   const isAdmin = isAdminAuthenticated() || isUserRole('admin');
   const isLogged = isUserAuthenticated() || isAdmin;
   const isJurado = isUserRole('jurado');
-  const mustChange = currentUserMustChangePassword();
 
   const handleLogout = () => {
     try {
@@ -36,33 +35,33 @@ const TopNav: React.FC = () => {
         {isLogged && (
           <nav className="hidden md:flex items-center gap-2 mx-4 sm:mx-6">
             <NavLink to="/admin/regulamento">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Regulamento</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Regulamento</Button>
             </NavLink>
             <NavLink to="/admin/jurados">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Comissão Julgadora</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Comissão Julgadora</Button>
             </NavLink>
             <NavLink to="/admin/cronograma">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Cronograma</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Cronograma</Button>
             </NavLink>
             <NavLink to="/admin/edicoes-anteriores">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Edições Anteriores</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Edições Anteriores</Button>
             </NavLink>
             <NavLink to="/admin/categorias">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Categorias</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Categorias</Button>
+            </NavLink>
+            <NavLink to="/admin/julgamento">
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Julgamento</Button>
             </NavLink>
             <NavLink to="/voto-popular">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Voto Popular</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Voto Popular</Button>
             </NavLink>
             <NavLink to="/admin/premiacao">
-              <Button variant="ghost" size="sm" className="w-36 whitespace-nowrap justify-center text-primary-foreground text-sm hover:text-base hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all">Premiação</Button>
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Premiação</Button>
             </NavLink>
           </nav>
         )}
 
         <div className="flex items-center gap-2 pl-2 sm:pl-3 ml-auto">
-          {isLogged && isJurado && mustChange && (
-            <Button variant="secondary" size="sm" onClick={() => navigate('/jurado/senha')}>Trocar senha</Button>
-          )}
           <Button
             variant="outline"
             size="sm"

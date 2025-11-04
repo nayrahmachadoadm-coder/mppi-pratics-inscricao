@@ -18,8 +18,9 @@ const UserPasswordChange: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!newPassword || newPassword.length < 6) {
-      setError('A nova senha deve ter ao menos 6 caracteres');
+    const pattern = /^[A-Za-z0-9]{6}$/;
+    if (!pattern.test(newPassword)) {
+      setError('A nova senha deve ter exatamente 6 caracteres alfanuméricos');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -49,7 +50,7 @@ const UserPasswordChange: React.FC = () => {
         <CardHeader>
           <CardTitle>Definir nova senha</CardTitle>
           <CardDescription>
-            Defina sua senha permanente para continuar usando o sistema.
+            Defina sua senha permanente (6 caracteres alfanuméricos) para continuar.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -69,7 +70,6 @@ const UserPasswordChange: React.FC = () => {
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" disabled={loading} className="flex-1">{loading ? 'Salvando...' : 'Salvar'}</Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/admin/categorias')}>Cancelar</Button>
             </div>
           </form>
         </CardContent>

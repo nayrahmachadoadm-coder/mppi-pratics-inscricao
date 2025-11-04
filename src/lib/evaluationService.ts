@@ -172,3 +172,19 @@ export function exportRelatorioCsv(items: CategoriaRankingItem[], areaLabel: str
 function sanitize(v: string) {
   return (v || '').replace(/\n/g,' ').replace(/"/g,'"');
 }
+
+export async function getAvaliacoesByJurado(juradoUsername: string): Promise<{ success: boolean; error?: string; data?: AvaliacaoRecord[] }>{
+  try {
+    const { data, error } = await (supabase as any)
+      .from('avaliacoes')
+      .select('*')
+      .eq('jurado_username', juradoUsername)
+      .order('created_at', { ascending: false });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: (data || []) as AvaliacaoRecord[] };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao buscar avaliações do jurado.' };
+  }
+}

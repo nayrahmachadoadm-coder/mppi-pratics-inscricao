@@ -16,6 +16,7 @@ import AdminVotoPopular from "./pages/AdminVotoPopular";
 import VotoPopular from "./pages/VotoPopular";
 import AdminPremiacao from "./pages/AdminPremiacao";
 import AdminAvaliacao from "./pages/AdminAvaliacao";
+import AdminJulgamento from "./pages/AdminJulgamento";
 import AdminRelatorioCategoria from "./pages/AdminRelatorioCategoria";
 import AdminCronograma from "./pages/AdminCronograma";
 import AdminEdicoesAnteriores from "./pages/AdminEdicoesAnteriores";
@@ -54,20 +55,26 @@ const App = () => (
              </ProtectedRoute>
            } />
            <Route path="/admin/jurados" element={
-             <ProtectedRoute>
+             <EitherProtectedRoute>
                <JuryManagement />
-             </ProtectedRoute>
+             </EitherProtectedRoute>
             } />
             <Route path="/jurado/senha" element={
               <RoleProtectedRoute role="jurado">
                 <UserPasswordChange />
               </RoleProtectedRoute>
             } />
-            <Route path="/admin/categoria/:area" element={
-              <EitherProtectedRoute>
-                <AdminCategoriaList />
-              </EitherProtectedRoute>
-            } />
+           <Route path="/admin/categoria/:area" element={
+             <EitherProtectedRoute>
+               <AdminCategoriaList />
+             </EitherProtectedRoute>
+           } />
+           {/* Página de Julgamento: permitir acesso a jurados e admins para testes */}
+           <Route path="/admin/julgamento" element={
+             <EitherProtectedRoute>
+               <AdminJulgamento />
+             </EitherProtectedRoute>
+           } />
            <Route path="/admin" element={
              <EitherProtectedRoute>
                <AdminHome />

@@ -66,6 +66,20 @@ const AdminRelatorioCategoria = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Atualização automática: refetch periódico para manter ranking em tempo real
+  useEffect(() => {
+    if (!area) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await getRelatorioCategoria(area);
+        setItems(res.data || []);
+      } catch (e) {
+        // silencioso
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [area]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b shadow-sm">
@@ -77,14 +91,7 @@ const AdminRelatorioCategoria = () => {
               <p className="text-sm text-gray-600">{areaLabel}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={handleExportCSV} className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Exportar CSV
-            </Button>
-            <Button variant="outline" onClick={() => navigate(`/admin/categoria/${area}`)} className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Voltar à lista
-            </Button>
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
       </header>
 
@@ -96,8 +103,26 @@ const AdminRelatorioCategoria = () => {
         )}
 
         <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-base">Ranking e Estatísticas</CardTitle>
+          <CardHeader className="bg-[hsl(var(--primary))] text-white rounded-t-md">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Ranking e Estatísticas</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-2 text-white hover:bg-white/20 focus-visible:ring-white/40"
+                >
+                  <Download className="w-4 h-4" /> Exportar CSV
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate(`/admin/categoria/${area}`)}
+                  className="flex items-center gap-2 text-white hover:bg-white/20 focus-visible:ring-white/40"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Voltar à lista
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -113,11 +138,10 @@ const AdminRelatorioCategoria = () => {
                       <TableHead>Título</TableHead>
                       <TableHead>Proponente</TableHead>
                       <TableHead>Lotação</TableHead>
-                      <TableHead className="text-center">Avaliações</TableHead>
+                      <TableHead className="text-center">Número de Avaliações</TableHead>
                       <TableHead className="text-center">Total Geral</TableHead>
-                      <TableHead className="text-center">Média Total</TableHead>
-                      <TableHead className="text-center">Média Resolutividade</TableHead>
-                      <TableHead className="text-center">Média Replicabilidade</TableHead>
+                      <TableHead className="text-center">Total Resolutividade</TableHead>
+                      <TableHead className="text-center">Total Replicabilidade</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -129,9 +153,8 @@ const AdminRelatorioCategoria = () => {
                         <TableCell>{item.inscricao.lotacao}</TableCell>
                         <TableCell className="text-center">{item.avaliacoes_count}</TableCell>
                         <TableCell className="text-center">{Math.round(item.total_geral)}</TableCell>
-                        <TableCell className="text-center">{item.media_total.toFixed(2)}</TableCell>
-                        <TableCell className="text-center">{item.media_resolutividade.toFixed(2)}</TableCell>
-                        <TableCell className="text-center">{item.media_replicabilidade.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">{Math.round((item.media_resolutividade || 0) * (item.avaliacoes_count || 0))}</TableCell>
+                        <TableCell className="text-center">{Math.round((item.media_replicabilidade || 0) * (item.avaliacoes_count || 0))}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
 import { authenticateAdmin, isAdminAuthenticated } from '@/lib/adminAuth';
-import { authenticateUser, isUserAuthenticated, isUserRole } from '@/lib/userAuth';
+import { authenticateUser, isUserAuthenticated, isUserRole, currentUserMustChangePassword } from '@/lib/userAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin = () => {
@@ -83,8 +83,15 @@ const AdminLogin = () => {
         });
         
         setTimeout(() => {
-          // Após login, abrir página neutra; o usuário escolhe pelo menu
-          navigate('/admin');
+          // Se for jurado e precisar trocar a senha, obrigar a definição da nova senha
+          const isJurado = isUserRole('jurado');
+          const mustChange = currentUserMustChangePassword();
+          if (isJurado && mustChange) {
+            navigate('/jurado/senha');
+          } else {
+            // Página neutra após login
+            navigate('/admin');
+          }
         }, 1000);
       } else {
         setError('Credenciais inválidas. Verifique seu usuário e senha.');

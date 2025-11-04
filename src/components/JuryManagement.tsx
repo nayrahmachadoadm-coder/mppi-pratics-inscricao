@@ -17,6 +17,8 @@ import {
   resetJuryPassword,
   JuryMember 
 } from '@/lib/juryManagement';
+import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { isUserRole } from '@/lib/userAuth';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -43,6 +45,7 @@ const JuryManagement = () => {
   });
   const [generatedPassword, setGeneratedPassword] = useState('');
   const { toast } = useToast();
+  const isAdmin = isAdminAuthenticated() || isUserRole('admin');
 
   // Carregar lista de jurados
   useEffect(() => {
@@ -162,7 +165,9 @@ const JuryManagement = () => {
           Gestão de Jurados
         </CardTitle>
         <CardDescription>
-          Gerencie os jurados do sistema. Cadastre novos membros e gere senhas temporárias.
+          {isAdmin
+            ? 'Gerencie os jurados do sistema. Cadastre novos membros e gere senhas temporárias.'
+            : 'Visualize a lista de jurados cadastrados. Sem ações disponíveis para jurados.'}
         </CardDescription>
       </CardHeader>
       
@@ -173,121 +178,125 @@ const JuryManagement = () => {
             Total de jurados: <Badge variant="secondary">{juryMembers.length}</Badge>
           </div>
           
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
-                Cadastrar Jurado
-              </Button>
-            </DialogTrigger>
-            
-            <DialogContent className="sm:max-w-sm overflow-hidden pt-0">
-              <DialogHeader className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-primary text-primary-foreground border-b border-primary-dark sm:rounded-t-lg">
-                <DialogTitle className="text-base text-primary-foreground">Cadastrar Novo Jurado</DialogTitle>
-                <DialogDescription className="text-xs text-primary-foreground/90">
-                  Preencha os dados do jurado. Uma senha temporária será gerada automaticamente.
-                </DialogDescription>
-              </DialogHeader>
+          {isAdmin && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Cadastrar Jurado
+                </Button>
+              </DialogTrigger>
               
-              <form onSubmit={handleAddJury} className="space-y-3 text-sm">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-xs">Nome de usuário</Label>
-                  <Input
-                    id="username"
-                    value={newJury.username}
-                    onChange={(e) => setNewJury({ ...newJury, username: e.target.value })}
-                    placeholder="Ex: joao.silva"
-                    disabled={isLoading}
-                    className="h-9 text-sm"
-                  />
-                </div>
+              <DialogContent className="sm:max-w-sm overflow-hidden pt-0">
+                <DialogHeader className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-primary text-primary-foreground border-b border-primary-dark sm:rounded-t-lg">
+                  <DialogTitle className="text-base text-primary-foreground">Cadastrar Novo Jurado</DialogTitle>
+                  <DialogDescription className="text-xs text-primary-foreground/90">
+                    Preencha os dados do jurado. Uma senha temporária será gerada automaticamente.
+                  </DialogDescription>
+                </DialogHeader>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-xs">Nome completo</Label>
-                  <Input
-                    id="name"
-                    value={newJury.name}
-                    onChange={(e) => setNewJury({ ...newJury, name: e.target.value })}
-                    placeholder="Ex: João Silva"
-                    disabled={isLoading}
-                    className="h-9 text-sm"
-                  />
-                </div>
+                <form onSubmit={handleAddJury} className="space-y-3 text-sm">
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-xs">Nome de usuário</Label>
+                    <Input
+                      id="username"
+                      value={newJury.username}
+                      onChange={(e) => setNewJury({ ...newJury, username: e.target.value })}
+                      placeholder="Ex: joao.silva"
+                      disabled={isLoading}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-xs">Nome completo</Label>
+                    <Input
+                      id="name"
+                      value={newJury.name}
+                      onChange={(e) => setNewJury({ ...newJury, name: e.target.value })}
+                      placeholder="Ex: João Silva"
+                      disabled={isLoading}
+                      className="h-9 text-sm"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs">Vaga (Item 6 do Edital)</Label>
-                  <Select
-                    value={newJury.seatCode}
-                    onValueChange={(val) => {
-                      const seat = SEATS.find(s => s.code === val);
-                      setNewJury({
-                        ...newJury,
-                        seatCode: val,
-                        seatLabel: seat ? seat.label : '',
-                      });
+                  <div className="space-y-2">
+                    <Label className="text-xs">Vaga (Item 6 do Edital)</Label>
+                    <Select
+                      value={newJury.seatCode}
+                      onValueChange={(val) => {
+                        const seat = SEATS.find(s => s.code === val);
+                        setNewJury({
+                          ...newJury,
+                          seatCode: val,
+                          seatLabel: seat ? seat.label : '',
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue placeholder="Selecione a vaga" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] max-h-72 p-0 bg-white shadow-lg">
+                        {SEATS.map((s) => (
+                          <SelectItem key={s.code} value={s.code} disabled={occupiedSeatCodes.has(s.code)} className="py-1 text-xs">
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {newJury.seatCode && occupiedSeatCodes.has(newJury.seatCode) && (
+                      <p className="text-[11px] text-muted-foreground">Esta vaga já está ocupada.</p>
+                    )}
+                  </div>
+                  
+                  {/* Campo de e-mail removido conforme nova política de cadastro */}
+
+                  {generatedPassword && (
+                    <Alert>
+                      <CheckCircle className="w-4 h-4" />
+                      <AlertDescription className="flex items-center justify-between text-xs">
+                        <span>Senha gerada: <strong>{generatedPassword}</strong></span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(generatedPassword)}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button type="submit" disabled={isLoading} size="sm" className="flex-1 h-9">
+                      {isLoading ? 'Cadastrando...' : 'Cadastrar'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" size="sm" className="h-9"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        setGeneratedPassword('');
+                        setNewJury({ username: '', name: '', seatCode: '', seatLabel: '' });
                     }}
                   >
-                    <SelectTrigger className="w-full h-9 text-sm">
-                      <SelectValue placeholder="Selecione a vaga" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999] max-h-72 p-0 bg-white shadow-lg">
-                      {SEATS.map((s) => (
-                        <SelectItem key={s.code} value={s.code} disabled={occupiedSeatCodes.has(s.code)} className="py-1 text-xs">
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {newJury.seatCode && occupiedSeatCodes.has(newJury.seatCode) && (
-                    <p className="text-[11px] text-muted-foreground">Esta vaga já está ocupada.</p>
-                  )}
-                </div>
-                
-                {/* Campo de e-mail removido conforme nova política de cadastro */}
-
-                {generatedPassword && (
-                  <Alert>
-                    <CheckCircle className="w-4 h-4" />
-                    <AlertDescription className="flex items-center justify-between text-xs">
-                      <span>Senha gerada: <strong>{generatedPassword}</strong></span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(generatedPassword)}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={isLoading} size="sm" className="flex-1 h-9">
-                    {isLoading ? 'Cadastrando...' : 'Cadastrar'}
+                    Fechar
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" size="sm" className="h-9"
-                    onClick={() => {
-                      setIsAddDialogOpen(false);
-                      setGeneratedPassword('');
-                      setNewJury({ username: '', name: '', seatCode: '', seatLabel: '' });
-                  }}
-                >
-                  Fechar
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-          </Dialog>
+                </div>
+              </form>
+            </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Lista de jurados */}
         {juryMembers.length === 0 ? (
           <Alert>
             <AlertDescription>
-              Nenhum jurado cadastrado. Use o botão "Cadastrar Jurado" para adicionar membros.
+              {isAdmin
+                ? 'Nenhum jurado cadastrado. Use o botão "Cadastrar Jurado" para adicionar membros.'
+                : 'Nenhum jurado cadastrado.'}
             </AlertDescription>
           </Alert>
         ) : (
@@ -299,7 +308,7 @@ const JuryManagement = () => {
                   <TableHead>Usuário</TableHead>
                   <TableHead>Vaga</TableHead>
                   <TableHead>Cadastrado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  {isAdmin && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -313,26 +322,28 @@ const JuryManagement = () => {
                     <TableCell>
                       {new Date(jury.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleResetPassword(jury.username)}
-                          title="Resetar senha"
-                        >
-                          <Key className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveJury(jury.username, jury.name)}
-                          title="Remover jurado"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResetPassword(jury.username)}
+                            title="Resetar senha"
+                          >
+                            <Key className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveJury(jury.username, jury.name)}
+                            title="Remover jurado"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

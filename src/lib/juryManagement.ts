@@ -19,10 +19,13 @@ const JURY_MEMBERS_KEY = 'mppi_jury_members';
  * Gera uma senha temporária aleatória
  */
 function generateTemporaryPassword(): string {
-  // Senha temporária com apenas 4 dígitos numéricos
+  // Senha temporária com 6 caracteres alfanuméricos
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const length = 6;
   let password = '';
-  for (let i = 0; i < 4; i++) {
-    password += Math.floor(Math.random() * 10).toString();
+  for (let i = 0; i < length; i++) {
+    const idx = Math.floor(Math.random() * charset.length);
+    password += charset[idx];
   }
   return password;
 }

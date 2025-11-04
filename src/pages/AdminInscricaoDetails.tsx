@@ -208,7 +208,7 @@ const AdminInscricaoDetails = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate(`/admin/categoria/${inscricao.area_atuacao}`)}
+                onClick={() => navigate(`/admin/categorias?categoria=${inscricao.area_atuacao}`)}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
