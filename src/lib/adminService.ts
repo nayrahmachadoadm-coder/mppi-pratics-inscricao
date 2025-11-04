@@ -46,8 +46,8 @@ export async function getAllInscricoes(
       console.log('🛰️ Usando RPC rpc_inscricoes_list_by_area para área:', filters.area_atuacao);
       const { data, error } = await (supabase as any).rpc('rpc_inscricoes_list_by_area', {
         area_key: filters.area_atuacao,
-        offset: from,
-        limit_rows: limit,
+        p_offset: from,
+        p_limit_rows: limit,
       });
 
       if (error) {
