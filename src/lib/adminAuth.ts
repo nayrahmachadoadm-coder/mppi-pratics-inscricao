@@ -9,7 +9,7 @@ interface AdminCredentials {
 // Credenciais padrão (ALTERE ESTAS CREDENCIAIS EM PRODUÇÃO)
 const DEFAULT_ADMIN_CREDENTIALS: AdminCredentials = {
   username: 'admin',
-  password: 'admin123'
+  password: 'premio9ed'
 };
 
 // Chave para armazenar o token de sessão no localStorage

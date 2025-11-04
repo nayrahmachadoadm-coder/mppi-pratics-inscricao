@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
+import { Eye, EyeOff, Shield, Crown } from 'lucide-react';
 import { authenticateAdmin, isAdminAuthenticated } from '@/lib/adminAuth';
 import { authenticateUser, isUserAuthenticated, isUserRole, currentUserMustChangePassword } from '@/lib/userAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -158,8 +158,7 @@ const AdminLogin = () => {
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
-              <img src="/favicon.ico" alt="Ícone MPPI" className="h-4 w-4 opacity-80" />
-              <Lock className="w-5 h-5" />
+              <Crown className="w-7 h-7 text-yellow-500 drop-shadow-sm" />
               Login do Sistema
             </CardTitle>
             <CardDescription className="text-center">

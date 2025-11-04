@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { isUserAuthenticated, isUserRole, logoutUser } from '@/lib/userAuth';
@@ -8,6 +8,7 @@ import { isSupabaseAuthenticated, hasSupabaseRole } from '@/lib/supabaseAuth';
 
 const TopNav: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isLogged, setIsLogged] = useState<boolean>(isUserAuthenticated() || isAdminAuthenticated() || isUserRole('admin'));
   const [isJurado, setIsJurado] = useState<boolean>(isUserRole('jurado'));
@@ -25,7 +26,7 @@ const TopNav: React.FC = () => {
       setIsJurado(juradoRole);
     };
     checkAuth();
-  }, []);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     try {
