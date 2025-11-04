@@ -37,19 +37,42 @@ export async function getAllInscricoes(
   try {
     console.log('🔍 Buscando inscrições - Página:', page, 'Limite:', limit, 'Filtros:', filters);
     
-    // Primeiro, vamos testar uma consulta simples
+    // Calcular intervalo de paginação
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    // Se filtro por categoria estiver presente, usar RPC que normaliza áreas legadas
+    if (filters?.area_atuacao) {
+      console.log('🛰️ Usando RPC rpc_inscricoes_list_by_area para área:', filters.area_atuacao);
+      const { data, error } = await (supabase as any).rpc('rpc_inscricoes_list_by_area', {
+        area_key: filters.area_atuacao,
+        offset: from,
+        limit_rows: limit,
+      });
+
+      if (error) {
+        console.error('❌ Erro na RPC de listagem por área:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ RPC retornou inscrições:', (data || []).length);
+      return {
+        success: true,
+        data: (data || []) as AdminInscricaoData[],
+        total: undefined,
+        page,
+        limit,
+      };
+    }
+
+    // Consulta padrão quando não há filtro por categoria
     console.log('🔗 Testando conexão com Supabase...');
-    
     let query = supabase
       .from('inscricoes')
       .select('*', { count: 'exact' });
     
-    // Aplicar filtros se fornecidos
+    // Aplicar outros filtros
     if (filters) {
-      if (filters.area_atuacao) {
-        query = query.eq('area_atuacao', filters.area_atuacao);
-      }
-      
       if (filters.data_inicio_from) {
         query = query.gte('data_inicio', filters.data_inicio_from);
       }
@@ -63,10 +86,6 @@ export async function getAllInscricoes(
         query = query.or(`nome_completo.ilike.%${filters.search}%,email_institucional.ilike.%${filters.search}%,titulo_iniciativa.ilike.%${filters.search}%`);
       }
     }
-    
-    // Aplicar paginação e ordenação
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
     
     query = query
       .order('created_at', { ascending: false })
