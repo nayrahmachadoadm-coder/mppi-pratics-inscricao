@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes: {
+        Row: {
+          alinhamento_ods: number
+          cooperacao: number
+          created_at: string
+          id: string
+          impacto_social: number
+          inovacao: number
+          inscricao_id: string
+          jurado_username: string
+          replicabilidade: number
+          resolutividade: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          alinhamento_ods: number
+          cooperacao: number
+          created_at?: string
+          id?: string
+          impacto_social: number
+          inovacao: number
+          inscricao_id: string
+          jurado_username: string
+          replicabilidade: number
+          resolutividade: number
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          alinhamento_ods?: number
+          cooperacao?: number
+          created_at?: string
+          id?: string
+          impacto_social?: number
+          inovacao?: number
+          inscricao_id?: string
+          jurado_username?: string
+          replicabilidade?: number
+          resolutividade?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inscricoes: {
         Row: {
           alinhamento_ods: string
@@ -21,25 +74,31 @@ export type Database = {
           cargo_funcao: string
           cooperacao: string
           created_at: string
+          data_conclusao: string | null
           data_fim: string | null
           data_inicio: string
-          declaracao: boolean
+          declaracao: boolean | null
           descricao_iniciativa: string
           email_institucional: string
-          foi_vencedor_anterior: boolean
+          foi_vencedor_anterior: boolean | null
           id: string
           impacto_social: string
           inovacao: string
+          local_data: string | null
           lotacao: string
+          matricula: string | null
           metodologia: string
           nome_completo: string
           objetivos: string
           observacoes: string | null
-          participou_edicoes_anteriores: boolean
+          participou_edicoes_anteriores: boolean | null
           principais_resultados: string
+          problema_necessidade: string | null
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          situacao_atual: string | null
+          status: string | null
           telefone: string
           titulo_iniciativa: string
           updated_at: string
@@ -50,25 +109,31 @@ export type Database = {
           cargo_funcao: string
           cooperacao: string
           created_at?: string
+          data_conclusao?: string | null
           data_fim?: string | null
           data_inicio: string
-          declaracao?: boolean
+          declaracao?: boolean | null
           descricao_iniciativa: string
           email_institucional: string
-          foi_vencedor_anterior?: boolean
+          foi_vencedor_anterior?: boolean | null
           id?: string
           impacto_social: string
           inovacao: string
+          local_data?: string | null
           lotacao: string
+          matricula?: string | null
           metodologia: string
           nome_completo: string
           objetivos: string
           observacoes?: string | null
-          participou_edicoes_anteriores?: boolean
+          participou_edicoes_anteriores?: boolean | null
           principais_resultados: string
+          problema_necessidade?: string | null
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          situacao_atual?: string | null
+          status?: string | null
           telefone: string
           titulo_iniciativa: string
           updated_at?: string
@@ -79,40 +144,162 @@ export type Database = {
           cargo_funcao?: string
           cooperacao?: string
           created_at?: string
+          data_conclusao?: string | null
           data_fim?: string | null
           data_inicio?: string
-          declaracao?: boolean
+          declaracao?: boolean | null
           descricao_iniciativa?: string
           email_institucional?: string
-          foi_vencedor_anterior?: boolean
+          foi_vencedor_anterior?: boolean | null
           id?: string
           impacto_social?: string
           inovacao?: string
+          local_data?: string | null
           lotacao?: string
+          matricula?: string | null
           metodologia?: string
           nome_completo?: string
           objetivos?: string
           observacoes?: string | null
-          participou_edicoes_anteriores?: boolean
+          participou_edicoes_anteriores?: boolean | null
           principais_resultados?: string
+          problema_necessidade?: string | null
           publico_alvo?: string
           replicabilidade?: string
           resolutividade?: string
+          situacao_atual?: string | null
+          status?: string | null
           telefone?: string
           titulo_iniciativa?: string
           updated_at?: string
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          must_change_password: boolean | null
+          seat_code: string | null
+          seat_label: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          must_change_password?: boolean | null
+          seat_code?: string | null
+          seat_label?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          must_change_password?: boolean | null
+          seat_code?: string | null
+          seat_label?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votos_populares: {
+        Row: {
+          categoria: string
+          created_at: string
+          email: string | null
+          fingerprint: string
+          id: string
+          inscricao_id: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          email?: string | null
+          fingerprint: string
+          id?: string
+          inscricao_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          email?: string | null
+          fingerprint?: string
+          id?: string
+          inscricao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votos_populares_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      votos_count: {
+        Args: { categoria: string }
+        Returns: {
+          inscricao_id: string
+          votos: number
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "jurado" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -239,6 +426,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "jurado", "user"],
+    },
   },
 } as const
