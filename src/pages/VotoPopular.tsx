@@ -8,7 +8,7 @@ import { FileText } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem } from '@/lib/evaluationService';
-import { getAllInscricoesMock } from '@/lib/adminServiceMock';
+import { getAllInscricoes } from '@/lib/adminService';
 import { getDeviceFingerprint, getStoredVote, storeVote, clearAllVotes } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularService';
 
@@ -92,7 +92,7 @@ const VotoPopular: React.FC = () => {
         };
         for (const cat of categorias) {
           // Para página pública, não consultar avaliações nem endpoints restritos.
-          const mock = await getAllInscricoesMock(1, 1000, { area_atuacao: cat.key });
+          const mock = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
           const list = (mock.data || []).slice(0, 3);
           results[cat.key] = list.map((insc) => ({
             inscricao: insc,

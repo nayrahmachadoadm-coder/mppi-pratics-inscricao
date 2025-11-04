@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria } from '@/lib/evaluationService';
-import { getAllInscricoesMock } from '@/lib/adminServiceMock';
+import { getAllInscricoes } from '@/lib/adminService';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular } from '@/lib/votoPopularService';
 
@@ -54,8 +54,8 @@ const AdminVotoPopular = () => {
           if (res.success && res.data && res.data.length > 0) {
             results[cat.key] = res.data.slice(0, 3);
           } else {
-            // Fallback para ambiente de desenvolvimento sem acesso de leitura (RLS): usa dados mock
-            const mock = await getAllInscricoesMock(1, 1000, { area_atuacao: cat.key });
+            // Fallback para ambiente de desenvolvimento sem acesso de leitura (RLS): usa dados diretos
+            const mock = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
             const list = (mock.data || []).slice(0, 3);
             results[cat.key] = list.map((insc) => ({
               inscricao: insc,
