@@ -38,7 +38,7 @@ const UserPasswordChange: React.FC = () => {
         setError(res.error || 'Erro ao atualizar senha');
         return;
       }
-      navigate('/admin/categorias');
+      navigate('/admin/inscritos');
     } finally {
       setLoading(false);
     }

@@ -49,6 +49,11 @@ const App = () => (
                <AdminCategorias />
              </EitherProtectedRoute>
            } />
+           <Route path="/admin/inscritos" element={
+             <EitherProtectedRoute>
+               <AdminCategorias />
+             </EitherProtectedRoute>
+           } />
            <Route path="/admin/regulamento" element={
             <EitherProtectedRoute>
               <AdminRegulamento />

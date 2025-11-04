@@ -19,7 +19,7 @@ import {
 } from '@/lib/juryManagement';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { isUserRole } from '@/lib/userAuth';
-import { getAllInscricoes } from '@/lib/adminService';
+import { getInscricoesStats } from '@/lib/adminService';
 import { getAvaliacoesByJurado } from '@/lib/evaluationService';
 
 // Vagas conforme item 6 do edital
@@ -56,9 +56,9 @@ const JuryManagement = () => {
     const init = async () => {
       const members = loadJuryMembers();
       try {
-        const res = await getAllInscricoes(1, 1);
-        if (res.success) {
-          setTotalInscricoes(res.total || 0);
+        const res = await getInscricoesStats();
+        if (res.success && res.data) {
+          setTotalInscricoes(res.data.total || 0);
         } else {
           setTotalInscricoes(0);
         }
@@ -70,6 +70,15 @@ const JuryManagement = () => {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recalcular percentuais quando total ou lista de jurados mudar
+  useEffect(() => {
+    const recalc = async () => {
+      await computePercents();
+    };
+    recalc();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalInscricoes, juryMembers]);
 
   const computePercents = async (membersOverride?: JuryMember[]) => {
     const denom = totalInscricoes > 0 ? totalInscricoes : 0;

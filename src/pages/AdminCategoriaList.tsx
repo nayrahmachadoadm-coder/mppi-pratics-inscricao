@@ -121,9 +121,9 @@ const AdminCategoriaList = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  title="Voltar às categorias"
+                  title="Voltar aos inscritos"
                   className="text-[hsl(var(--primary-foreground))] hover:text-white hover:bg-white/10"
-                  onClick={() => navigate('/admin/categorias')}
+                  onClick={() => navigate('/admin/inscritos')}
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </Button>

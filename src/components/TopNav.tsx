@@ -62,8 +62,8 @@ const TopNav: React.FC = () => {
             <NavLink to="/admin/edicoes-anteriores">
               <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Edições Anteriores</Button>
             </NavLink>
-            <NavLink to="/admin/categorias">
-              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Categorias</Button>
+            <NavLink to="/admin/inscritos">
+              <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Inscritos</Button>
             </NavLink>
             <NavLink to="/admin/julgamento">
               <Button variant="ghost" size="sm" className="w-32 whitespace-nowrap justify-center text-primary-foreground text-[12px] px-2 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors">Julgamento</Button>

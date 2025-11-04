@@ -132,7 +132,7 @@ const AdminCategorias = () => {
           <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] rounded-t-xl pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Award className="w-5 h-5" />
-              Categorias de Premiação
+              Inscritos
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
