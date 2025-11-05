@@ -1,7 +1,6 @@
 // Serviço de gerenciamento de jurados pelo administrador
 // Permite cadastrar jurados com senhas temporárias
 
-import { registerUser, listUsers, updateUserPassword } from './userAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface JuryMember {
@@ -66,15 +65,14 @@ export async function registerJuryMember(
       return { success: false, error: 'E-mail inválido. Informe um e-mail no formato nome@dominio.' };
     }
 
-    // Verificar se o username já existe
-    const existingUsers = listUsers();
-    if (existingUsers.some(u => u.username.toLowerCase() === normalizedEmail)) {
-      return { success: false, error: 'Nome de usuário já existe' };
-    }
+    // Verificar se o jurado já foi cadastrado no Supabase
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
 
-    // Verificar se o jurado já foi cadastrado
-    const existingJury = listJuryMembers();
-    if (existingJury.some(j => j.username.toLowerCase() === normalizedEmail)) {
+    if (existingProfile) {
       return { success: false, error: 'Jurado já cadastrado' };
     }
 
@@ -91,9 +89,9 @@ export async function registerJuryMember(
     }
     const supUserId = signUpData.user?.id;
 
-    // Criar perfil e atribuir papel via RPC (SECURITY DEFINER)
+    // Criar perfil e role via RPC (SECURITY DEFINER)
     if (supUserId) {
-      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('register_jurado', {
+      const { error: rpcError } = await supabase.rpc('register_jurado' as any, {
         _auth_user_id: supUserId,
         _username: normalizedEmail,
         _full_name: name.trim(),
@@ -102,25 +100,14 @@ export async function registerJuryMember(
         _seat_label: seatLabel.trim(),
         _must_change: true,
       });
+      
       if (rpcError) {
-        const msg = String(rpcError.message || '');
-        const isMissingRpc = msg.includes('Could not find the function') || msg.includes('schema cache') || msg.toLowerCase().includes('not found');
-        if (isMissingRpc) {
-          // Prosseguir sem bloquear o cadastro: perfil/role ficam pendentes até aplicar a migração
-          console.warn('[JuryManagement] RPC register_jurado ausente. Prosseguindo com cadastro local e Supabase Auth.');
-        } else {
-          return { success: false, error: `Falha ao criar perfil/role: ${rpcError.message}` };
-        }
+        console.error('[JuryManagement] Erro ao criar perfil/role:', rpcError);
+        return { success: false, error: `Falha ao criar perfil/role: ${rpcError.message}` };
       }
     }
 
-    // Registrar também no sistema local como fallback
-    const userResult = registerUser(normalizedEmail, temporaryPassword, 'jurado', true);
-    if (!userResult.success) {
-      return { success: false, error: userResult.error };
-    }
-
-    // Salvar informações do jurado
+    // Salvar informações do jurado localmente
     const juryMember: JuryMember = {
       username: normalizedEmail,
       name: name.trim(),
@@ -144,17 +131,24 @@ export async function registerJuryMember(
 /**
  * Remove um jurado do sistema
  */
-export function removeJuryMember(username: string): { success: boolean; error?: string } {
+export async function removeJuryMember(username: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // Remover da lista de jurados
+    // Remover da lista local de jurados
     const juryMembers = listJuryMembers();
     const filteredJury = juryMembers.filter(j => j.username !== username);
     localStorage.setItem(JURY_MEMBERS_KEY, JSON.stringify(filteredJury));
 
-    // Remover do sistema de usuários
-    const users = listUsers();
-    const filteredUsers = users.filter(u => u.username !== username);
-    localStorage.setItem('mppi_users', JSON.stringify(filteredUsers));
+    // Buscar perfil no Supabase para deletar usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('auth_user_id')
+      .eq('email', username)
+      .maybeSingle();
+
+    if (profile?.auth_user_id) {
+      // Nota: Deletar usuário requer service_role, então apenas removemos localmente
+      console.log('Jurado removido localmente. Admin deve remover do Supabase Auth manualmente.');
+    }
 
     return { success: true };
   } catch (e: any) {
@@ -163,9 +157,9 @@ export function removeJuryMember(username: string): { success: boolean; error?: 
 }
 
 /**
- * Gera nova senha temporária para um jurado
+ * Gera nova senha temporária para um jurado via Supabase
  */
-export function resetJuryPassword(username: string): { success: boolean; error?: string; temporaryPassword?: string } {
+export async function resetJuryPassword(username: string): Promise<{ success: boolean; error?: string; temporaryPassword?: string }> {
   try {
     const juryMembers = listJuryMembers();
     const juryIndex = juryMembers.findIndex(j => j.username === username);
@@ -177,21 +171,33 @@ export function resetJuryPassword(username: string): { success: boolean; error?:
     // Gerar nova senha
     const temporaryPassword = generateTemporaryPassword();
 
-    // Atualizar no sistema de usuários
-    // Atualizar no sistema de usuários e requerer nova troca
-    const updateResult = updateUserPassword(username, temporaryPassword, false);
-    if (!updateResult.success) {
-      return { success: false, error: updateResult.error };
-    }
-    // Marcar que precisa trocar novamente a senha
-    const users = listUsers();
-    const idx = users.findIndex(u => u.username === username);
-    if (idx !== -1) {
-      users[idx].mustChangePassword = true;
-      localStorage.setItem('mppi_users', JSON.stringify(users));
+    // Buscar perfil do jurado
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, auth_user_id')
+      .eq('email', username)
+      .maybeSingle();
+
+    if (!profile?.auth_user_id) {
+      return { success: false, error: 'Perfil do jurado não encontrado no Supabase' };
     }
 
-    // Atualizar informações do jurado
+    // Atualizar senha no Supabase Auth (requer service_role, então usar reset password)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(username, {
+      redirectTo: `${window.location.origin}/jurado/senha`
+    });
+
+    if (resetError) {
+      console.error('Erro ao enviar email de reset:', resetError);
+    }
+
+    // Marcar que precisa trocar senha
+    await supabase.rpc('update_profile_password_flag' as any, {
+      _profile_id: profile.id,
+      _must_change: true
+    });
+
+    // Atualizar informações locais do jurado
     juryMembers[juryIndex].temporaryPassword = temporaryPassword;
     localStorage.setItem(JURY_MEMBERS_KEY, JSON.stringify(juryMembers));
 

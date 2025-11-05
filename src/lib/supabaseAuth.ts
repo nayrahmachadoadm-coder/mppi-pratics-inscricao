@@ -31,7 +31,7 @@ export async function hasSupabaseRole(role: 'admin' | 'jurado'): Promise<boolean
   try {
     const profile = await getCurrentProfile();
     if (!profile?.id) return false;
-    const { data, error } = await (supabase as any).rpc('has_role', {
+    const { data, error } = await supabase.rpc('has_role' as any, {
       _user_id: profile.id,
       _role: role,
     });

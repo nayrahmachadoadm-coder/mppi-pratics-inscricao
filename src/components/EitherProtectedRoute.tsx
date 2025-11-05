@@ -1,8 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
-import { isUserAuthenticated, isUserRole, currentUserMustChangePassword } from '@/lib/userAuth';
-import { isSupabaseAuthenticated, hasSupabaseRole, getSupabaseSession } from '@/lib/supabaseAuth';
+import { isAuthenticated, hasRole, currentUserMustChangePassword } from '@/lib/auth';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface EitherProtectedRouteProps {
@@ -11,33 +9,20 @@ interface EitherProtectedRouteProps {
 
 const EitherProtectedRoute: React.FC<EitherProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const [loading, setLoading] = React.useState(true);
-  const [authed, setAuthed] = React.useState(false);
-  const [isJurado, setIsJurado] = React.useState(false);
-  const [mustChange, setMustChange] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  const [isJurado, setIsJurado] = useState(false);
+  const [mustChange, setMustChange] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const adminAuthed = isAdminAuthenticated();
-      // Sessão local (legado)
-      const userAuthedLocal = isUserAuthenticated();
-      // Sessão Supabase
-      const userAuthedSupabase = await isSupabaseAuthenticated();
-      const anyAuthed = adminAuthed || userAuthedLocal || userAuthedSupabase;
+      const authenticated = await isAuthenticated();
+      const juradoRole = authenticated ? await hasRole('jurado') : false;
+      const mustChangePassword = authenticated ? await currentUserMustChangePassword() : false;
 
-      let juradoRole = false;
-      if (userAuthedLocal) {
-        juradoRole = isUserRole('jurado');
-      } else if (userAuthedSupabase) {
-        juradoRole = await hasSupabaseRole('jurado');
-      }
-
-      // Must change password apenas para fluxo local por enquanto
-      const mustChangeLocal = currentUserMustChangePassword();
-
-      setAuthed(anyAuthed);
+      setAuthed(authenticated);
       setIsJurado(juradoRole);
-      setMustChange(mustChangeLocal);
+      setMustChange(mustChangePassword);
       setLoading(false);
     };
     checkAuth();

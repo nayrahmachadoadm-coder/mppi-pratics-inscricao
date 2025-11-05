@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { isUserAuthenticated, isUserRole } from '@/lib/userAuth';
-import { isSupabaseAuthenticated, hasSupabaseRole } from '@/lib/supabaseAuth';
+import { isAuthenticated, hasRole } from '@/lib/auth';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface RoleProtectedRouteProps {
@@ -11,23 +10,16 @@ interface RoleProtectedRouteProps {
 
 const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children, role }) => {
   const location = useLocation();
-  const [loading, setLoading] = React.useState(true);
-  const [authed, setAuthed] = React.useState(false);
-  const [hasRoleState, setHasRoleState] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  const [hasRoleState, setHasRoleState] = useState(false);
 
   useEffect(() => {
     const check = async () => {
-      const localAuthed = isUserAuthenticated();
-      const supAuthed = await isSupabaseAuthenticated();
-      const anyAuthed = localAuthed || supAuthed;
-      let roleOk = false;
-      if (localAuthed) {
-        roleOk = isUserRole(role);
-      } else if (supAuthed) {
-        roleOk = await hasSupabaseRole(role);
-      }
-      setAuthed(anyAuthed);
-      setHasRoleState(roleOk);
+      const authenticated = await isAuthenticated();
+      const roleCheck = authenticated ? await hasRole(role) : false;
+      setAuthed(authenticated);
+      setHasRoleState(roleCheck);
       setLoading(false);
     };
     check();
@@ -36,8 +28,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ children, role 
   if (loading) return <LoadingSpinner />;
 
   if (!authed || !hasRoleState) {
-    const loginPath = '/admin/login';
-    return <Navigate to={loginPath} state={{ from: location }} replace />;
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

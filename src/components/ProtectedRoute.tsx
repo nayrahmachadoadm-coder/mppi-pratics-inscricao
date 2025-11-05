@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { isAuthenticated } from '@/lib/auth';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,17 +9,23 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const isAuthenticated = isAdminAuthenticated();
+  const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    // Verificar se a sessão ainda é válida
-    if (!isAuthenticated) {
-      console.log('Usuário não autenticado, redirecionando para login');
-    }
-  }, [isAuthenticated]);
+    const checkAuth = async () => {
+      const authenticated = await isAuthenticated();
+      setAuthed(authenticated);
+      setLoading(false);
+    };
+    checkAuth();
+  }, []);
 
-  if (!isAuthenticated) {
-    // Redirecionar para login, salvando a localização atual
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!authed) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 

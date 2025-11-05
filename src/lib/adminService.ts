@@ -263,7 +263,7 @@ export async function getInscricoesStats(): Promise<{
     let total = 0;
     let por_area: { area: string; count: number }[] = [];
     try {
-      const { data: rpcArea, error: rpcAreaError } = await supabase.rpc('rpc_inscricoes_por_area');
+      const { data: rpcArea, error: rpcAreaError } = await supabase.rpc('rpc_inscricoes_por_area' as any);
       if (rpcAreaError) {
         console.warn('⚠️ Falha na RPC rpc_inscricoes_por_area, voltando ao select padrão:', rpcAreaError.message);
       } else if (Array.isArray(rpcArea) && rpcArea.length > 0) {

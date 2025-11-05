@@ -152,7 +152,7 @@ const JuryManagement = () => {
   };
 
   const handleResetPassword = async (username: string) => {
-    const result = resetJuryPassword(username);
+    const result = await resetJuryPassword(username);
     
     if (result.success) {
       loadJuryMembers();
@@ -174,7 +174,7 @@ const JuryManagement = () => {
       return;
     }
 
-    const result = removeJuryMember(username);
+    const result = await removeJuryMember(username);
     
     if (result.success) {
       loadJuryMembers();

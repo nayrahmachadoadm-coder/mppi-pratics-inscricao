@@ -290,6 +290,127 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_admin: {
+        Args: {
+          _auth_user_id: string
+          _email: string
+          _full_name: string
+          _username: string
+        }
+        Returns: string
+      }
+      register_jurado: {
+        Args: {
+          _auth_user_id: string
+          _email: string
+          _full_name: string
+          _must_change?: boolean
+          _seat_code: string
+          _seat_label: string
+          _username: string
+        }
+        Returns: string
+      }
+      rpc_inscricao_by_id: {
+        Args: { _id: string }
+        Returns: {
+          alinhamento_ods: string
+          area_atuacao: string
+          cargo_funcao: string
+          cooperacao: string
+          created_at: string
+          data_conclusao: string | null
+          data_fim: string | null
+          data_inicio: string
+          declaracao: boolean | null
+          descricao_iniciativa: string
+          email_institucional: string
+          foi_vencedor_anterior: boolean | null
+          id: string
+          impacto_social: string
+          inovacao: string
+          local_data: string | null
+          lotacao: string
+          matricula: string | null
+          metodologia: string
+          nome_completo: string
+          objetivos: string
+          observacoes: string | null
+          participou_edicoes_anteriores: boolean | null
+          principais_resultados: string
+          problema_necessidade: string | null
+          publico_alvo: string
+          replicabilidade: string
+          resolutividade: string
+          situacao_atual: string | null
+          status: string | null
+          telefone: string
+          titulo_iniciativa: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "inscricoes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      rpc_inscricoes_list_by_area: {
+        Args: { area_key: string; p_limit_rows?: number; p_offset?: number }
+        Returns: {
+          alinhamento_ods: string
+          area_atuacao: string
+          cargo_funcao: string
+          cooperacao: string
+          created_at: string
+          data_conclusao: string | null
+          data_fim: string | null
+          data_inicio: string
+          declaracao: boolean | null
+          descricao_iniciativa: string
+          email_institucional: string
+          foi_vencedor_anterior: boolean | null
+          id: string
+          impacto_social: string
+          inovacao: string
+          local_data: string | null
+          lotacao: string
+          matricula: string | null
+          metodologia: string
+          nome_completo: string
+          objetivos: string
+          observacoes: string | null
+          participou_edicoes_anteriores: boolean | null
+          principais_resultados: string
+          problema_necessidade: string | null
+          publico_alvo: string
+          replicabilidade: string
+          resolutividade: string
+          situacao_atual: string | null
+          status: string | null
+          telefone: string
+          titulo_iniciativa: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "inscricoes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      rpc_inscricoes_por_area: {
+        Args: never
+        Returns: {
+          area: string
+          count: number
+        }[]
+      }
+      unaccent: { Args: { "": string }; Returns: string }
+      update_profile_password_flag: {
+        Args: { _must_change: boolean; _profile_id: string }
+        Returns: undefined
+      }
       votos_count: {
         Args: { categoria: string }
         Returns: {

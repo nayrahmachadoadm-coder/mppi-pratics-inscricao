@@ -6,9 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Shield, Crown } from 'lucide-react';
-import { authenticateAdmin, isAdminAuthenticated } from '@/lib/adminAuth';
-import { authenticateUser, isUserAuthenticated, isUserRole, currentUserMustChangePassword } from '@/lib/userAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { authenticateUser, isAuthenticated, hasRole, currentUserMustChangePassword } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminLogin = () => {
@@ -24,28 +22,33 @@ const AdminLogin = () => {
 
   // Verificar se já está autenticado
   useEffect(() => {
-    if (isAdminAuthenticated()) {
-      navigate('/admin');
-    } else if (isUserAuthenticated()) {
-      // Após login, abrir página neutra. A seleção do menu dará acesso.
-      navigate('/admin');
-    }
+    const checkAuth = async () => {
+      if (await isAuthenticated()) {
+        navigate('/admin');
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
   // Aviso discreto quando redirecionado de páginas públicas antigas
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const notice = params.get('notice');
-    const from = params.get('from');
-    if (!isAdminAuthenticated() && notice === 'encerradas') {
-      toast({
-        title: 'Inscrições encerradas',
-        description: from
-          ? `Página "${from}" não está mais disponível. Faça login para análise das inscrições.`
-          : 'Página pública não disponível. Faça login para análise das inscrições.',
-      });
-    }
-  }, [location.search]);
+    const checkNotice = async () => {
+      const params = new URLSearchParams(location.search);
+      const notice = params.get('notice');
+      const from = params.get('from');
+      const authenticated = await isAuthenticated();
+      
+      if (!authenticated && notice === 'encerradas') {
+        toast({
+          title: 'Inscrições encerradas',
+          description: from
+            ? `Página "${from}" não está mais disponível. Faça login para análise das inscrições.`
+            : 'Página pública não disponível. Faça login para análise das inscrições.',
+        });
+      }
+    };
+    checkNotice();
+  }, [location.search, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,63 +62,41 @@ const AdminLogin = () => {
         return;
       }
 
-      // Tentar autenticar primeiro como admin (sistema antigo)
-      const isAdminAuth = authenticateAdmin(username.trim(), password);
+      // Autenticar via Supabase
+      const authResult = await authenticateUser(username.trim(), password);
       
-      if (isAdminAuth) {
+      if (!authResult.success) {
+        setError(authResult.error || 'Credenciais inválidas');
         toast({
-          title: "Login realizado com sucesso!",
-          description: "Redirecionando para o painel administrativo...",
+          title: "Erro no login",
+          description: authResult.error || 'Credenciais inválidas',
+          variant: "destructive",
         });
-        
+        return;
+      }
+
+      // Verificar se precisa trocar senha
+      if (authResult.mustChangePassword) {
+        toast({
+          title: "Troca de senha obrigatória",
+          description: "Você precisa alterar sua senha temporária",
+        });
         setTimeout(() => {
-          navigate('/admin');
+          navigate('/jurado/senha');
         }, 1000);
         return;
       }
 
-      // Se não for admin, tentar autenticar como usuário (sistema local legado)
-      const userAuth = authenticateUser(username.trim(), password);
+      // Login bem-sucedido
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Redirecionando...",
+      });
       
-      if (userAuth.success) {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Redirecionando...",
-        });
-        
-        setTimeout(() => {
-          const isJurado = isUserRole('jurado');
-          const mustChange = currentUserMustChangePassword();
-          if (isJurado && mustChange) {
-            navigate('/jurado/senha');
-          } else {
-            navigate('/admin');
-          }
-        }, 1000);
-      } else {
-        // Fallback: tentar autenticação via Supabase (usar campo Usuário como email)
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: username.trim(),
-          password,
-        });
+      setTimeout(() => {
+        navigate('/admin');
+      }, 1000);
 
-        if (authError) {
-          setError('Credenciais inválidas. Verifique seu usuário e senha.');
-          toast({
-            title: "Erro no login",
-            description: "Credenciais inválidas",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: 'Login realizado com sucesso!',
-            description: 'Redirecionando...',
-          });
-          setTimeout(() => {
-            navigate('/admin');
-          }, 800);
-        }
-      }
     } catch (err) {
       console.error('Erro no login:', err);
       setError('Erro interno. Tente novamente.');

@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminInscricaoData, getInscricaoById, getAllInscricoes } from './adminService';
-import { getAdminSession } from './adminAuth';
-import { getUserSession } from './userAuth';
+import { AdminInscricaoData, getAllInscricoes } from './adminService';
+import { getCurrentProfile } from './auth';
 
 export type ScoreEntry = {
   cooperacao: number;
@@ -39,13 +38,12 @@ export const computeTotal = (s: ScoreEntry): number => {
 
 export async function submitAvaliacao(inscricaoId: string, scores: ScoreEntry): Promise<{ success: boolean; error?: string; record?: AvaliacaoRecord }> {
   try {
-    // Aceitar sessão de admin ou sessão de usuário (jurado)
-    const adminSession = getAdminSession();
-    const userSession = getUserSession();
-    const reviewerUsername = adminSession?.username || userSession?.username;
-    if (!reviewerUsername) {
+    // Obter perfil do usuário autenticado
+    const profile = await getCurrentProfile();
+    if (!profile?.username) {
       return { success: false, error: 'Sessão inválida. Faça login como administrador ou jurado.' };
     }
+    const reviewerUsername = profile.username;
 
     const total = computeTotal(scores);
     const payload = {

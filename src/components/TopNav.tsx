@@ -1,37 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
-import { isUserAuthenticated, isUserRole, logoutUser } from '@/lib/userAuth';
-import { logoutAdmin } from '@/lib/adminAuth';
-import { isSupabaseAuthenticated, hasSupabaseRole } from '@/lib/supabaseAuth';
+import { isAuthenticated, hasRole, logoutUser } from '@/lib/auth';
 
 const TopNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isLogged, setIsLogged] = useState<boolean>(isUserAuthenticated() || isAdminAuthenticated() || isUserRole('admin'));
-  const [isJurado, setIsJurado] = useState<boolean>(isUserRole('jurado'));
+  const [isLogged, setIsLogged] = useState<boolean>(false);
+  const [isJurado, setIsJurado] = useState<boolean>(false);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const adminLocal = isAdminAuthenticated() || isUserRole('admin');
-      const userLocal = isUserAuthenticated();
-      const supAuthed = await isSupabaseAuthenticated();
-      let juradoRole = isUserRole('jurado');
-      if (supAuthed) {
-        juradoRole = await hasSupabaseRole('jurado');
-      }
-      setIsLogged(userLocal || adminLocal || supAuthed);
+      const authenticated = await isAuthenticated();
+      const juradoRole = authenticated ? await hasRole('jurado') : false;
+      setIsLogged(authenticated);
       setIsJurado(juradoRole);
     };
     checkAuth();
   }, [location.pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      logoutUser();
-      logoutAdmin();
+      await logoutUser();
     } finally {
       navigate('/');
     }
