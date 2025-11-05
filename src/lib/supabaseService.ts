@@ -229,24 +229,50 @@ export async function salvarInscricao(formData: InscricaoData): Promise<{ succes
  */
 export async function getInscricaoById(id: string): Promise<SupabaseResult> {
   try {
-    const { data, error } = await supabase
+    // 1) Tentar via RPC SECURITY DEFINER para contornar RLS
+    try {
+      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('rpc_inscricao_by_id', { _id: id });
+      if (!rpcError && rpcData) {
+        const first = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+        if (first) {
+          return {
+            success: true,
+            data: first,
+          };
+        }
+      }
+    } catch (e) {
+      // Se RPC falhar, seguir para fallback
+      console.warn('⚠️ Falha na RPC rpc_inscricao_by_id, usando fallback ao select.', e);
+    }
+    // Evitar erro de coerção do PostgREST: não usar .single() com filtros
+    const { data: listData, error: listError } = await supabase
       .from('inscricoes')
       .select('*')
       .eq('id', id)
-      .single();
-    
-    if (error) {
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (listError) {
       return {
         success: false,
-        error: `Erro ao buscar inscrição: ${error.message}`,
+        error: `Erro ao buscar inscrição: ${listError.message}`,
       };
     }
-    
+
+    const first = (listData && listData.length > 0) ? listData[0] : null;
+    if (!first) {
+      return {
+        success: false,
+        error: 'Inscrição não encontrada',
+      };
+    }
+
     return {
       success: true,
-      data,
+      data: first,
     };
-    
+  
   } catch (error) {
     return {
       success: false,

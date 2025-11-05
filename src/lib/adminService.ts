@@ -145,33 +145,57 @@ export async function getAllInscricoes(
 export async function getInscricaoById(id: string): Promise<AdminInscricoesResult> {
   try {
     console.log('🔍 Buscando inscrição por ID:', id);
+
+    // 1) Tentar via RPC SECURITY DEFINER para contornar RLS
+    try {
+      const { data: rpcData, error: rpcError } = await (supabase as any).rpc('rpc_inscricao_by_id', { _id: id });
+      if (!rpcError && rpcData) {
+        const first = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+        if (first) {
+          console.log('✅ Inscrição encontrada via RPC:', first.nome_completo);
+          return {
+            success: true,
+            data: [first as AdminInscricaoData]
+          };
+        }
+      } else if (rpcError) {
+        console.warn('⚠️ RPC rpc_inscricao_by_id falhou, aplicando fallback ao select:', rpcError.message);
+      }
+    } catch (e) {
+      console.warn('⚠️ Erro inesperado ao executar RPC rpc_inscricao_by_id, seguindo para fallback.', e);
+    }
     
-    const { data, error } = await supabase
+    // 2) Fallback: consulta direta (pode ser afetada por RLS)
+    // Evitar erro "Cannot coerce the result to a single JSON object" do PostgREST
+    // Não usar .single(); pegar o primeiro da lista limitada.
+    const { data: listData, error: listError } = await supabase
       .from('inscricoes')
       .select('*')
       .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('❌ Erro ao buscar inscrição:', error);
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (listError) {
+      console.error('❌ Erro ao buscar inscrição:', listError);
       return {
         success: false,
-        error: error.message
+        error: listError.message
       };
     }
-    
-    if (!data) {
+
+    const first = (listData && listData.length > 0) ? listData[0] : null;
+    if (!first) {
       return {
         success: false,
         error: 'Inscrição não encontrada'
       };
     }
-    
-    console.log('✅ Inscrição encontrada:', data.nome_completo);
-    
+
+    console.log('✅ Inscrição encontrada:', first.nome_completo);
+
     return {
       success: true,
-      data: [data as AdminInscricaoData]
+      data: [first as AdminInscricaoData]
     };
     
   } catch (error) {

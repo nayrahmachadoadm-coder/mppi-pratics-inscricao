@@ -1,6 +1,23 @@
 import jsPDF from 'jspdf';
 import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
 
+type GeneratePdfOptions = {
+  maskSensitive?: boolean;
+};
+
+// Máscara para telefone (exibe 2 primeiros e 2 últimos dígitos)
+const maskPhone = (phone: string | undefined): string => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length <= 4) {
+    return '*'.repeat(Math.max(digits.length, 0));
+  }
+  const start = digits.slice(0, 2);
+  const end = digits.slice(-2);
+  const middleLen = digits.length - 4;
+  return `${start}${'•'.repeat(middleLen)}${end}`;
+};
+
 interface InscricaoData {
   nome_completo: string;
   email_institucional: string;
@@ -54,8 +71,9 @@ const formatAreaAtuacao = (area: string) => {
   return areaMap[area] || area;
 };
 
-export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
-  return new Promise(async (resolve) => {
+export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOptions = {}): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
     // Primeira passada: calcular o número total de páginas
     const tempPdf = new jsPDF();
     let tempYPosition = 20;
@@ -91,7 +109,8 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     simulateAddText(`Cargo/Função: ${formatCargoFuncao(inscricaoData.cargo_funcao)}`);
     if (inscricaoData.matricula) simulateAddText(`Matrícula: ${inscricaoData.matricula}`);
     simulateAddText(`Órgão/Unidade: ${inscricaoData.lotacao}`);
-    simulateAddText(`Telefone: ${inscricaoData.telefone}`);
+    const simulatedPhone = options.maskSensitive ? maskPhone(inscricaoData.telefone) : inscricaoData.telefone;
+    simulateAddText(`Telefone: ${simulatedPhone}`);
     simulateAddText(`E-mail: ${inscricaoData.email_institucional}`);
     tempYPosition += 2;
 
@@ -167,7 +186,8 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
     const addHeader = async () => {
       try {
         // Carregar e adicionar logo
-        const logoUrl = 'https://i.postimg.cc/pT3rRnwr/logo-mppi.png';
+        // Usar asset local para confiabilidade e performance
+        const logoUrl = '/logo-mppi.png';
         const logoWidth = 82.5; // Reduzido de 90px para 82.5px (330/4 = 82.5)
         const logoHeight = 15;
         const logoX = (pageWidth - logoWidth) / 2; // Centralizar logo
@@ -373,7 +393,8 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
       addText(`Matrícula: ${inscricaoData.matricula}`);
     }
     addText(`Órgão/Unidade: ${inscricaoData.lotacao}`);
-    addText(`Telefone: ${inscricaoData.telefone}`);
+    const finalPhone = options.maskSensitive ? maskPhone(inscricaoData.telefone) : inscricaoData.telefone;
+    addText(`Telefone: ${finalPhone}`);
     addText(`E-mail: ${inscricaoData.email_institucional}`);
     yPosition += 2; // Espaçamento final da seção
 
@@ -465,8 +486,15 @@ export const generatePDF = (inscricaoData: InscricaoData): Promise<void> => {
 
     // Salvar o PDF
     const fileName = `Inscricao_${inscricaoData.nome_completo.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
-    pdf.save(fileName);
-    resolve();
+    try {
+      pdf.save(fileName);
+      resolve();
+    } catch (e) {
+      reject(e);
+    }
+    } catch (e) {
+      reject(e as Error);
+    }
   });
 };
 

@@ -86,9 +86,9 @@ const App = () => (
              </EitherProtectedRoute>
            } />
            <Route path="/admin/inscricao/:id" element={
-             <ProtectedRoute>
+             <EitherProtectedRoute>
                <AdminInscricaoDetails />
-             </ProtectedRoute>
+             </EitherProtectedRoute>
            } />
            {/* Avaliação pode ser realizada por administrador ou jurado */}
            <Route path="/admin/avaliacao/:id" element={

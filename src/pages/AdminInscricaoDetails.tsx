@@ -20,26 +20,86 @@ import {
   XCircle
 } from 'lucide-react';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { isUserAuthenticated, isUserRole } from '@/lib/userAuth';
+import { isSupabaseAuthenticated, hasSupabaseRole } from '@/lib/supabaseAuth';
 import { getInscricaoById, AdminInscricaoData } from '@/lib/adminService';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
+
+// Utilitário para transformar URLs em links clicáveis com estilo
+const renderTextWithLinks = (text?: string) => {
+  if (!text) return '';
+  // Captura URLs comuns; depois removemos pontuação final anexada (parênteses, vírgulas, pontos, etc.)
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(urlRegex);
+  regex.lastIndex = 0;
+  while ((match = regex.exec(text)) !== null) {
+    const start = match.index;
+    const raw = match[0];
+    // Remove pontuação final comum anexada ao link
+    const visible = raw.replace(/[)\]\}.,;:!?'"”’]+$/, '');
+    const endVisible = start + visible.length;
+
+    if (start > lastIndex) {
+      parts.push(text.slice(lastIndex, start));
+    }
+
+    const href = /^https?:\/\//i.test(visible) ? visible : `http://${visible}`;
+    parts.push(
+      <a
+        key={`link-${start}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 underline break-all"
+      >
+        {visible}
+      </a>
+    );
+
+    // Avança apenas até o fim do URL visível; a pontuação permanece no texto seguinte
+    lastIndex = endVisible;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+};
 
 const AdminInscricaoDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [inscricao, setInscricao] = useState<AdminInscricaoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [viewerIsAdmin, setViewerIsAdmin] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Verificar autenticação
+  // Verificar autenticação (admin OU jurado). A rota já protege,
+  // mas mantemos proteção defensiva aqui para acessos diretos.
   useEffect(() => {
-    if (!isAdminAuthenticated()) {
-      navigate('/admin/login');
-      return;
-    }
+    const checkAuth = async () => {
+      const isAdmin = isAdminAuthenticated();
+      const isLocalJurado = isUserAuthenticated() && isUserRole('jurado');
+      const isSupAuthed = await isSupabaseAuthenticated();
+      const isSupJurado = isSupAuthed ? await hasSupabaseRole('jurado') : false;
+      // Detectar se viewer é admin (local ou Supabase)
+      let adminViewer = isAdmin || isUserRole('admin');
+      if (!adminViewer && isSupAuthed) {
+        adminViewer = await hasSupabaseRole('admin');
+      }
+      setViewerIsAdmin(adminViewer);
+      const allowed = isAdmin || isLocalJurado || isSupJurado;
+      if (!allowed) {
+        navigate('/admin/login');
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
   // Carregar dados da inscrição
@@ -81,7 +141,7 @@ const AdminInscricaoDetails = () => {
         description: "Por favor, aguarde enquanto o PDF é gerado",
       });
       
-      await generatePDF(inscricao);
+      await generatePDF(inscricao, { maskSensitive: !viewerIsAdmin });
       
       toast({
         title: "PDF gerado com sucesso!",
@@ -149,6 +209,19 @@ const AdminInscricaoDetails = () => {
     };
     
     return areaMap[area] || area;
+  };
+
+  // Mascarar telefone para jurados (2 primeiros e 2 últimos dígitos visíveis)
+  const maskPhone = (phone: string | null | undefined) => {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length <= 4) {
+      return '*'.repeat(Math.max(digits.length, 0));
+    }
+    const start = digits.slice(0, 2);
+    const end = digits.slice(-2);
+    const middleLen = digits.length - 4;
+    return `${start}${'•'.repeat(middleLen)}${end}`;
   };
 
   const formatBooleanResponse = (value: boolean | string) => {
@@ -264,12 +337,12 @@ const AdminInscricaoDetails = () => {
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-600">Telefone</label>
-                    <p className="text-gray-900 flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      {inscricao.telefone}
-                    </p>
-                  </div>
+                   <label className="text-xs font-medium text-gray-600">Telefone</label>
+                   <p className="text-gray-900 flex items-center gap-2">
+                     <Phone className="w-4 h-4" />
+                      {viewerIsAdmin ? inscricao.telefone : maskPhone(inscricao.telefone)}
+                   </p>
+                 </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Lotação</label>
                     <p className="text-gray-900 flex items-center gap-2">
@@ -317,7 +390,7 @@ const AdminInscricaoDetails = () => {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600">Público Alvo / Equipe Envolvida</label>
-                  <p className="text-gray-900 whitespace-pre-wrap">{inscricao.publico_alvo}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.publico_alvo)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -333,29 +406,29 @@ const AdminInscricaoDetails = () => {
               <CardContent className="space-y-6 text-sm">
                 <div>
                   <label className="text-xs font-medium text-gray-600">Resumo Executivo</label>
-                  <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.descricao_iniciativa}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-justify mt-2">{renderTextWithLinks(inscricao.descricao_iniciativa)}</p>
                 </div>
                 
                 {inscricao.problema_necessidade && (
                   <div>
                     <label className="text-xs font-medium text-gray-600">Problema ou Necessidade</label>
-                    <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.problema_necessidade}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify mt-2">{renderTextWithLinks(inscricao.problema_necessidade)}</p>
                   </div>
                 )}
                 
                 <div>
                   <label className="text-xs font-medium text-gray-600">Objetivo Estratégico</label>
-                  <p className="text-gray-900 whitespace-pre-wrap mt-2">{formatObjetivoEstrategico(inscricao.objetivos)}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-justify mt-2">{renderTextWithLinks(formatObjetivoEstrategico(inscricao.objetivos))}</p>
                 </div>
                 
                 <div>
                   <label className="text-xs font-medium text-gray-600">Metodologia</label>
-                  <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.metodologia}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-justify mt-2">{renderTextWithLinks(inscricao.metodologia)}</p>
                 </div>
                 
                 <div>
                   <label className="text-xs font-medium text-gray-600">Principais Resultados</label>
-                  <p className="text-gray-900 whitespace-pre-wrap mt-2">{inscricao.principais_resultados}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap text-justify mt-2">{renderTextWithLinks(inscricao.principais_resultados)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -372,27 +445,27 @@ const AdminInscricaoDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-600">Cooperação</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.cooperacao}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.cooperacao)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Inovação</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.inovacao}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.inovacao)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Resolutividade</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.resolutividade}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.resolutividade)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Impacto Social</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.impacto_social}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.impacto_social)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Alinhamento ODS</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.alinhamento_ods}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.alinhamento_ods)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Replicabilidade</label>
-                    <p className="text-gray-900 whitespace-pre-wrap">{inscricao.replicabilidade}</p>
+                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.replicabilidade)}</p>
                   </div>
                 </div>
               </CardContent>
