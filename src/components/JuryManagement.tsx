@@ -17,7 +17,7 @@ import {
   resetJuryPassword,
   JuryMember 
 } from '@/lib/juryManagement';
-import { hasRole } from '@/lib/auth';
+import { hasRole, getCurrentProfile } from '@/lib/auth';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -52,7 +52,13 @@ const JuryManagement = () => {
   useEffect(() => {
     const checkRole = async () => {
       const admin = await hasRole('admin');
-      setIsAdmin(Boolean(admin));
+      if (admin) {
+        setIsAdmin(true);
+        return;
+      }
+      // Fallback: se RPC has_role não estiver aplicado, permitir admin padrão
+      const profile = await getCurrentProfile();
+      setIsAdmin(profile?.username === 'admin');
     };
     checkRole();
   }, []);

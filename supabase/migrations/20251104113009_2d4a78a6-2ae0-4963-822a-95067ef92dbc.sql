@@ -56,6 +56,21 @@ CREATE TABLE IF NOT EXISTS public.inscricoes_new (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Garantir que colunas legadas existam na tabela antiga antes da migração
+-- Isso evita erros quando a consulta de migração referencia nomes alternativos
+ALTER TABLE IF EXISTS public.inscricoes
+  ADD COLUMN IF NOT EXISTS telefone_institucional text,
+  ADD COLUMN IF NOT EXISTS unidade_setor text,
+  ADD COLUMN IF NOT EXISTS area text,
+  ADD COLUMN IF NOT EXISTS ano_inicio_execucao text,
+  ADD COLUMN IF NOT EXISTS equipe_envolvida text,
+  ADD COLUMN IF NOT EXISTS resumo_executivo text,
+  ADD COLUMN IF NOT EXISTS objetivos_estrategicos text,
+  ADD COLUMN IF NOT EXISTS etapas_metodologia text,
+  ADD COLUMN IF NOT EXISTS resultados_alcancados text,
+  ADD COLUMN IF NOT EXISTS concorda_termos boolean,
+  ADD COLUMN IF NOT EXISTS especificar_edicoes_anteriores text;
+
 -- Migrar dados da tabela antiga para nova (se existirem)
 INSERT INTO public.inscricoes_new (
   id, nome_completo, cargo_funcao, matricula, telefone, email_institucional,
