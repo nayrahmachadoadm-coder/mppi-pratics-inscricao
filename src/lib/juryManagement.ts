@@ -16,25 +16,32 @@ function isValidEmail(email: string): boolean {
 // Função para obter membros do júri do Supabase
 export async function getJuryMembers(): Promise<JuryMember[]> {
   try {
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select(`
-        username,
-        full_name,
-        created_at,
-        seat_code,
-        seat_label,
-        user_roles!inner(role)
-      `)
-      .eq('user_roles.role', 'jurado')
-      .order('created_at', { ascending: false });
+    // Primeiro tenta via RPC (se já estiver aplicada no banco)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('rpc_list_jurados');
 
-    if (error) {
-      console.error('Erro ao buscar jurados:', error);
-      return [];
+    let profiles: any[] = [];
+
+    if (!rpcError && Array.isArray(rpcData)) {
+      profiles = rpcData as any[];
+    } else {
+      // Fallback: consulta direta em profiles filtrando por cadeira
+      const { data: profData, error: profError } = await supabase
+        .from('profiles')
+        .select('username, full_name, created_at, seat_code, seat_label')
+        .not('seat_code', 'is', null)
+        .not('seat_label', 'is', null)
+        .neq('seat_code', '')
+        .neq('seat_label', '')
+        .order('created_at', { ascending: false });
+
+      if (profError) {
+        console.error('Erro ao buscar jurados:', rpcError || profError);
+        return [];
+      }
+      profiles = (profData as any[]) || [];
     }
 
-    return (profiles || []).map(p => ({
+    return (profiles || []).map((p: any) => ({
       username: p.username || '',
       name: p.full_name || '',
       created_at: new Date(p.created_at).getTime(),
