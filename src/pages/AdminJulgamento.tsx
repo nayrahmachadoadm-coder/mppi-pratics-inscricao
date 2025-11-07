@@ -264,11 +264,24 @@ const AdminJulgamento = () => {
           <main className="w-full pt-4">
             <Card className="shadow-lg border rounded-xl">
               <CardHeader className="pb-2 bg-[hsl(var(--primary))] text-white rounded-t-xl">
-                <CardTitle className="text-base">Julgamento – Votação dos Jurados</CardTitle>
-                <p className="text-xs text-white/90">Selecione uma categoria e avalie um trabalho por vez.</p>
-                {juradoUsername && (
-                  <p className="text-xs text-white/90 mt-1">Jurado: <span className="font-medium">{juradoUsername}</span></p>
-                )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Julgamento – Votação dos Jurados</CardTitle>
+                    <p className="text-xs text-white/90">Selecione uma categoria e avalie um trabalho por vez.</p>
+                    {juradoUsername && (
+                      <p className="text-xs text-white/90 mt-1">Jurado: <span className="font-medium">{juradoUsername}</span></p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="text-white border-white/40 hover:bg-white/10"
+                      onClick={() => navigate('/jurado/minhas-avaliacoes')}
+                    >
+                      Minhas avaliações
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-3">
                 {/* Resumo por categoria removido: simplificação solicitada */}

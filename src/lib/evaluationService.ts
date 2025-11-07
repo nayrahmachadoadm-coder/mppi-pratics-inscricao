@@ -256,3 +256,65 @@ export function exportJurorAveragesCsv(items: JurorAverageItem[], areaLabel: str
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   return `Relatorio_Jurados_${areaLabel.replace(/\s+/g,'_')}.csv::${csv}`;
 }
+
+export type MinhasAvaliacaoItem = {
+  inscricao: AdminInscricaoData;
+  avaliacao: AvaliacaoRecord;
+};
+
+export async function getMinhasAvaliacoes(juradoUsername: string, areaKey?: string): Promise<{ success: boolean; error?: string; data?: MinhasAvaliacaoItem[] }>{
+  try {
+    let query = (supabase as any)
+      .from('avaliacoes')
+      .select('*, inscricoes!inner(id,titulo_iniciativa,area_atuacao,nome_completo,lotacao)')
+      .eq('jurado_username', juradoUsername)
+      .order('created_at', { ascending: false });
+
+    if (areaKey) {
+      query = query.eq('inscricoes.area_atuacao', areaKey);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    const rows = (data || []) as any[];
+    const items: MinhasAvaliacaoItem[] = rows.map((r) => ({
+      inscricao: r.inscricoes as AdminInscricaoData,
+      avaliacao: {
+        id: r.id,
+        inscricao_id: r.inscricao_id,
+        jurado_username: r.jurado_username,
+        cooperacao: r.cooperacao,
+        inovacao: r.inovacao,
+        resolutividade: r.resolutividade,
+        impacto_social: r.impacto_social,
+        alinhamento_ods: r.alinhamento_ods,
+        replicabilidade: r.replicabilidade,
+        total: r.total,
+        created_at: r.created_at,
+      } as AvaliacaoRecord,
+    }));
+
+    return { success: true, data: items };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao buscar suas avaliações.' };
+  }
+}
+
+export function exportMinhasAvaliacoesCsv(items: MinhasAvaliacaoItem[], areaLabel?: string): string {
+  const headers = ['Titulo','Area','Nome','Lotacao','Total','Resolutividade','Replicabilidade','Data'];
+  const rows = items.map((it) => [
+    sanitize(it.inscricao?.titulo_iniciativa || ''),
+    sanitize(it.inscricao?.area_atuacao || ''),
+    sanitize(it.inscricao?.nome_completo || ''),
+    sanitize(it.inscricao?.lotacao || ''),
+    String((it.avaliacao?.total ?? 0).toFixed(2)),
+    String(it.avaliacao?.resolutividade ?? 0),
+    String(it.avaliacao?.replicabilidade ?? 0),
+    sanitize((it.avaliacao?.created_at || '').slice(0, 19).replace('T',' ')),
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const base = areaLabel ? `Minhas_Avaliacoes_${areaLabel.replace(/\s+/g,'_')}` : 'Minhas_Avaliacoes';
+  return `${base}.csv::${csv}`;
+}

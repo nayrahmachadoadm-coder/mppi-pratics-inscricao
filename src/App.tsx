@@ -19,6 +19,7 @@ import AdminAvaliacao from "./pages/AdminAvaliacao";
 import AdminJulgamento from "./pages/AdminJulgamento";
 import AdminRelatorioCategoria from "./pages/AdminRelatorioCategoria";
 import AdminRelatorioJurados from "./pages/AdminRelatorioJurados";
+import JuradoMinhasAvaliacoes from "./pages/JuradoMinhasAvaliacoes";
 import AdminCronograma from "./pages/AdminCronograma";
 import AdminEdicoesAnteriores from "./pages/AdminEdicoesAnteriores";
 import JuryManagement from "./components/JuryManagement";
@@ -105,6 +106,11 @@ const App = () => (
            <Route path="/admin/relatorio-jurados/:area" element={
              <RoleProtectedRoute role="admin">
                <AdminRelatorioJurados />
+             </RoleProtectedRoute>
+           } />
+           <Route path="/jurado/minhas-avaliacoes" element={
+             <RoleProtectedRoute role="jurado">
+               <JuradoMinhasAvaliacoes />
              </RoleProtectedRoute>
            } />
            <Route path="/admin/cronograma" element={
