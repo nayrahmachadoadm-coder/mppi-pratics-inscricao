@@ -9,8 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, CheckCircle, Award, Info } from 'lucide-react';
 import { AdminInscricaoData, getInscricaoById } from '@/lib/adminService';
-import { getAdminSession } from '@/lib/adminAuth';
-import { getUserSession } from '@/lib/userAuth';
+import { getCurrentProfile, isAuthenticated } from '@/lib/auth';
 import { ScoreEntry, submitAvaliacao } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -77,13 +76,15 @@ const AdminAvaliacao = () => {
   };
 
   useEffect(() => {
-    const adminSession = getAdminSession();
-    const juradoSession = getUserSession();
-    if (!adminSession && !juradoSession) {
-      navigate('/admin/login');
-      return;
-    }
-    load();
+    const checkAuth = async () => {
+      const authed = await isAuthenticated();
+      if (!authed) {
+        navigate('/admin/login');
+        return;
+      }
+      load();
+    };
+    checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

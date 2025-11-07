@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllInscricoes, AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
 import { ArrowLeft, Eye, Award, BarChart3 } from 'lucide-react';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { hasRole } from '@/lib/auth';
 
 const areaLabelMap: Record<string, string> = {
   'finalistica-projeto': 'Projetos Finalísticos',
@@ -54,9 +54,20 @@ const AdminCategoriaList = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isAdmin, setIsAdmin] = useState(false);
   const itemsPerPage = 10;
 
   const areaLabel = useMemo(() => areaLabelMap[area || ''] || (area || ''), [area]);
+
+  useEffect(() => {
+    checkRole();
+    load();
+  }, [area, currentPage]);
+
+  const checkRole = async () => {
+    const admin = await hasRole('admin');
+    setIsAdmin(admin);
+  };
 
   const load = async () => {
     try {
@@ -107,7 +118,7 @@ const AdminCategoriaList = () => {
                 <Award className="w-5 h-5" /> Trabalhos da Categoria
               </CardTitle>
               <div className="flex items-center gap-2">
-                {area && isAdminAuthenticated() && (
+                {area && isAdmin && (
                   <Button
                     variant="ghost"
                     size="icon"

@@ -19,7 +19,6 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getInscricaoById, AdminInscricaoData } from '@/lib/adminService';
 import { generatePDF } from '@/lib/pdfGenerator';
@@ -83,30 +82,19 @@ const AdminInscricaoDetails = () => {
   // mas mantemos proteção defensiva aqui para acessos diretos.
   useEffect(() => {
     const checkAuth = async () => {
-      const localAdmin = isAdminAuthenticated();
       const authed = await isAuthenticated();
-
-      // Se não há sessão Supabase e também não é admin local, redireciona
-      if (!authed && !localAdmin) {
-        navigate('/admin/login');
-        return;
-      }
-
-      // Roles via Supabase
-      const supJurado = authed ? await hasRole('jurado') : false;
-      const supAdmin = authed ? await hasRole('admin') : false;
-
-      // Viewer é admin se for admin local ou tiver role admin no Supabase
-      setViewerIsAdmin(localAdmin || supAdmin);
-
-      // Permitir acesso para qualquer usuário autenticado (jurado/admin) ou admin local
-      const allowed = localAdmin || authed;
-      if (!allowed) {
+      if (!authed) {
         navigate('/admin/login');
       }
     };
     checkAuth();
   }, [navigate]);
+
+  useEffect(() => {
+    if (id) {
+      loadInscricao(id);
+    }
+  }, [id]);
 
   // Carregar dados da inscrição
   useEffect(() => {

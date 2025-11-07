@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
 import { getAllInscricoes, getInscricaoById } from '@/lib/adminService';
@@ -72,6 +72,7 @@ const AdminJulgamento = () => {
   });
   const [saving, setSaving] = useState<boolean>(false);
   const [showValidation, setShowValidation] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -95,6 +96,9 @@ const AdminJulgamento = () => {
 
   useEffect(() => {
     const run = async () => {
+      const admin = await hasRole('admin');
+      setIsAdmin(admin);
+      
       const profile = await getCurrentProfile();
       const username = profile?.username || '';
       setJuradoUsername(username);
@@ -311,7 +315,7 @@ const AdminJulgamento = () => {
                       <div className="text-sm text-gray-700">Progresso: {progressDone} de {progressTotal} avaliados <span className="text-gray-500">({progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0}%)</span></div>
                       <div className="flex items-center gap-1">
                         {/* Botão discreto para relatório/estatísticas da categoria selecionada */}
-                        {selectedArea && isAdminAuthenticated() && (
+                        {selectedArea && isAdmin && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button

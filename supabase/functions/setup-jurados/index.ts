@@ -101,12 +101,16 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Aceitar jurados via body ou usar lista padrão
+    const body = await req.json().catch(() => ({}));
+    const jurorsToProcess = body.jurors || jurors;
+
     const results: any[] = [];
 
     // Obtem todos usuários para checagem por e-mail
     const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
 
-    for (const j of jurors) {
+    for (const j of jurorsToProcess) {
       const username = sanitizeUsernameFromEmail(j.email);
       const existing = allUsers?.users.find(u => u.email === j.email);
 
