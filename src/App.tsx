@@ -98,14 +98,14 @@ const App = () => (
              </EitherProtectedRoute>
            } />
            <Route path="/admin/relatorio/:area" element={
-             <ProtectedRoute>
+             <RoleProtectedRoute role="admin">
                <AdminRelatorioCategoria />
-             </ProtectedRoute>
+             </RoleProtectedRoute>
            } />
            <Route path="/admin/relatorio-jurados/:area" element={
-             <ProtectedRoute>
+             <RoleProtectedRoute role="admin">
                <AdminRelatorioJurados />
-             </ProtectedRoute>
+             </RoleProtectedRoute>
            } />
            <Route path="/admin/cronograma" element={
             <EitherProtectedRoute>
