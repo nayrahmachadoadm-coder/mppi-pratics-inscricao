@@ -186,3 +186,73 @@ export async function getAvaliacoesByJurado(juradoUsername: string): Promise<{ s
     return { success: false, error: e?.message || 'Erro ao buscar avaliações do jurado.' };
   }
 }
+
+export type JurorAverageItem = {
+  jurado_username: string;
+  full_name?: string;
+  seat_label?: string;
+  count: number;
+  media_total: number;
+};
+
+// Consolida médias por jurado em uma categoria (área_atuacao)
+export async function getJurorAveragesByCategoria(areaKey: string): Promise<{ success: boolean; error?: string; data?: JurorAverageItem[] }>{
+  try {
+    const { data, error } = await (supabase as any)
+      .from('avaliacoes')
+      .select('jurado_username,total,inscricoes!inner(area_atuacao)')
+      .eq('inscricoes.area_atuacao', areaKey);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const rows = (data || []) as Array<{ jurado_username: string; total: number; inscricoes: { area_atuacao: string } }>;
+    const acc: Record<string, { sum: number; count: number }> = {};
+    for (const r of rows) {
+      const u = r.jurado_username;
+      if (!acc[u]) acc[u] = { sum: 0, count: 0 };
+      acc[u].sum += (r.total || 0);
+      acc[u].count += 1;
+    }
+
+    const usernames = Object.keys(acc);
+    let profilesMap: Record<string, { full_name?: string; seat_label?: string }> = {};
+    if (usernames.length > 0) {
+      const { data: profilesData } = await (supabase as any)
+        .from('profiles')
+        .select('username, full_name, seat_label')
+        .in('username', usernames);
+      for (const p of (profilesData || [])) {
+        profilesMap[p.username] = { full_name: p.full_name, seat_label: p.seat_label };
+      }
+    }
+
+    const items: JurorAverageItem[] = usernames.map(u => ({
+      jurado_username: u,
+      full_name: profilesMap[u]?.full_name,
+      seat_label: profilesMap[u]?.seat_label,
+      count: acc[u].count,
+      media_total: acc[u].count > 0 ? acc[u].sum / acc[u].count : 0,
+    }));
+
+    items.sort((a, b) => b.media_total - a.media_total);
+    return { success: true, data: items };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao consolidar médias por jurado.' };
+  }
+}
+
+export function exportJurorAveragesCsv(items: JurorAverageItem[], areaLabel: string): string {
+  const headers = ['Posicao','Jurado','Nome','Vaga','Avaliacoes','Media Total'];
+  const rows = items.map((item, idx) => [
+    String(idx + 1),
+    sanitize(item.jurado_username || ''),
+    sanitize(item.full_name || ''),
+    sanitize(item.seat_label || ''),
+    String(item.count),
+    String(item.media_total.toFixed(2)),
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  return `Relatorio_Jurados_${areaLabel.replace(/\s+/g,'_')}.csv::${csv}`;
+}

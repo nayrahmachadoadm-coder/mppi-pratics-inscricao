@@ -11,7 +11,7 @@ import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
 import { getAllInscricoes, getInscricaoById } from '@/lib/adminService';
-import { getUserSession } from '@/lib/userAuth';
+import { getCurrentProfile } from '@/lib/auth';
 import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -95,13 +95,11 @@ const AdminJulgamento = () => {
 
   useEffect(() => {
     const run = async () => {
-      const session = getUserSession();
-      if (!session) {
-        setJuradoUsername('');
-        return;
-      }
-      setJuradoUsername(session.username);
-      const res = await getAvaliacoesByJurado(session.username);
+      const profile = await getCurrentProfile();
+      const username = profile?.username || '';
+      setJuradoUsername(username);
+      if (!username) return;
+      const res = await getAvaliacoesByJurado(username);
       if (res.success) {
         const set = new Set<string>();
         for (const r of res.data || []) {
