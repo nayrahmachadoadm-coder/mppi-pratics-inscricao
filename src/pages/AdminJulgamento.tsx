@@ -403,10 +403,37 @@ const AdminJulgamento: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* indicadores de votado/não votado */}
+                    {/* indicadores de votado/não votado - clicáveis */}
                     <div className="mt-2 flex flex-wrap gap-1">
                       {inscricoes.map((i, idx) => (
-                        <span key={i.id} className={`text-[10px] px-2 py-[2px] rounded-full ${votedIds.has(i.id) ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-700'}`}>{idx + 1}</span>
+                        <button
+                          key={i.id}
+                          type="button"
+                          className={`text-[10px] px-2 py-[2px] rounded-full transition-colors ${
+                            votedIds.has(i.id)
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                          } ${idx === currentIndex ? 'ring-2 ring-[hsl(var(--primary))] ring-offset-1' : ''}`}
+                          title={`Ir ao trabalho #${idx + 1}`}
+                          onClick={() => {
+                            setShowValidation(false);
+                            setScores({
+                              cooperacao: -1,
+                              inovacao: -1,
+                              resolutividade: -1,
+                              impacto_social: -1,
+                              alinhamento_ods: -1,
+                              replicabilidade: -1,
+                            });
+                            setCurrentIndex(idx);
+                            setTimeout(() => {
+                              const el = document.getElementById('avaliacao-card');
+                              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 50);
+                          }}
+                        >
+                          {idx + 1}
+                        </button>
                       ))}
                     </div>
 
@@ -499,7 +526,6 @@ const AdminJulgamento: React.FC = () => {
                               >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}
                               </Button>
-                              <Button variant="outline" onClick={goNextPending} disabled={inscricoes.findIndex((i,pos) => pos > currentIndex && i.id && !votedIds.has(i.id)) < 0}>Ir ao próximo pendente</Button>
                             </div>
                           </CardContent>
                         </Card>
