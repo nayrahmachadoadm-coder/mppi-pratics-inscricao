@@ -302,6 +302,19 @@ export async function getMinhasAvaliacoes(juradoUsername: string, areaKey?: stri
       } as AvaliacaoRecord,
     }));
 
+    items.sort((a, b) => {
+      const ta = a.avaliacao?.total || 0;
+      const tb = b.avaliacao?.total || 0;
+      if (tb !== ta) return tb - ta;
+      const ra = a.avaliacao?.resolutividade || 0;
+      const rb = b.avaliacao?.resolutividade || 0;
+      if (rb !== ra) return rb - ra;
+      const pa = a.avaliacao?.replicabilidade || 0;
+      const pb = b.avaliacao?.replicabilidade || 0;
+      if (pb !== pa) return pb - pa;
+      return (a.inscricao?.titulo_iniciativa || '').localeCompare(b.inscricao?.titulo_iniciativa || '');
+    });
+
     return { success: true, data: items };
   } catch (e: any) {
     return { success: false, error: e?.message || 'Erro ao buscar suas avaliações.' };
