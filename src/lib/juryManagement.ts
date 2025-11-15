@@ -24,14 +24,11 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
     if (!rpcError && Array.isArray(rpcData)) {
       profiles = rpcData as any[];
     } else {
-      // Fallback: consulta direta em profiles filtrando por cadeira
-      const { data: profData, error: profError } = await supabase
+      // Fallback: consulta direta cruzando com user_roles para identificar jurados
+      const { data: profData, error: profError } = await (supabase as any)
         .from('profiles')
-        .select('username, full_name, created_at, seat_code, seat_label')
-        .not('seat_code', 'is', null)
-        .not('seat_label', 'is', null)
-        .neq('seat_code', '')
-        .neq('seat_label', '')
+        .select('username, full_name, created_at, seat_code, seat_label, user_roles!inner(role)')
+        .eq('user_roles.role', 'jurado')
         .order('created_at', { ascending: false });
 
       if (profError) {
