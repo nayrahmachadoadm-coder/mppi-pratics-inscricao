@@ -24,31 +24,37 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
     if (!rpcError && Array.isArray(rpcData)) {
       profiles = rpcData as any[];
     } else {
-      // Fallback robusto: consulta em user_roles com join para profiles
-      const { data: profData, error: profError } = await (supabase as any)
+      // Fallback seguro: buscar ids em user_roles e depois carregar profiles
+      const { data: roleRows, error: roleErr } = await (supabase as any)
         .from('user_roles')
-        .select('role, profiles!inner(username, full_name, created_at, seat_code, seat_label)')
-        .eq('role', 'jurado')
-        .order('profiles.created_at', { ascending: false });
-
+        .select('user_id')
+        .eq('role', 'jurado');
+      if (roleErr) {
+        console.error('Erro ao buscar roles de jurados:', rpcError || roleErr);
+        return [];
+      }
+      const ids = (roleRows || []).map((r: any) => r.user_id).filter(Boolean);
+      if (ids.length === 0) return [];
+      const { data: profData, error: profError } = await (supabase as any)
+        .from('profiles')
+        .select('username, full_name, created_at, seat_code, seat_label')
+        .in('id', ids)
+        .order('created_at', { ascending: false });
       if (profError) {
-        console.error('Erro ao buscar jurados:', rpcError || profError);
+        console.error('Erro ao buscar perfis de jurados:', profError);
         return [];
       }
       profiles = (profData as any[]) || [];
     }
 
-    return (profiles || []).map((p: any) => {
-      const row = p?.profiles ? p.profiles : p;
-      return {
-        username: row?.username || '',
-        name: row?.full_name || '',
-        created_at: new Date(row?.created_at).getTime(),
-        created_by: 'admin',
-        seatCode: row?.seat_code || '',
-        seatLabel: row?.seat_label || '',
-      } as JuryMember;
-    });
+    return (profiles || []).map((row: any) => ({
+      username: row?.username || '',
+      name: row?.full_name || '',
+      created_at: new Date(row?.created_at).getTime(),
+      created_by: 'admin',
+      seatCode: row?.seat_code || '',
+      seatLabel: row?.seat_label || '',
+    }));
   } catch (error) {
     console.error('Erro ao buscar jurados:', error);
     return [];

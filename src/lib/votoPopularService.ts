@@ -1,8 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const client = SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+import { supabase as client } from '@/integrations/supabase/client';
 
 export type SubmitVotoPayload = {
   categoria: string;
