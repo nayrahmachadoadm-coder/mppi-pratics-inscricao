@@ -97,7 +97,8 @@ const JuryManagement = () => {
         const perc: Record<string, number> = {};
         for (const m of members) {
           const c = counts[m.username] || 0;
-          perc[m.username] = total > 0 ? Math.round((c / total) * 100) : 0;
+          const pct = total > 0 ? (c / total) * 100 : 0;
+          perc[m.username] = Number(pct.toFixed(2));
         }
         setProgressMap(perc);
       } catch {}

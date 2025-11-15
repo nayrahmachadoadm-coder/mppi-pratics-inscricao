@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, User, Mail, Building, Calendar, Target, FileText, ArrowLeft, Download } from 'lucide-react';
+import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, ListChecks, ClipboardList, Mail, Building, Calendar, Target, FileText, ArrowLeft, Download } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { getJuryMembers, JuryMember } from '@/lib/juryManagement';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -88,6 +90,12 @@ const AdminJulgamento: React.FC = () => {
   const [myError, setMyError] = useState('');
   const [myItems, setMyItems] = useState<MinhasAvaliacaoItem[]>([]);
   const [isFinalized, setIsFinalized] = useState(false);
+  const [adminVotesOpen, setAdminVotesOpen] = useState(false);
+  const [adminVotesLoading, setAdminVotesLoading] = useState(false);
+  const [adminVotesError, setAdminVotesError] = useState('');
+  const [adminVotesItems, setAdminVotesItems] = useState<MinhasAvaliacaoItem[]>([]);
+  const [juradosList, setJuradosList] = useState<JuryMember[]>([]);
+  const [selectedAdminJurado, setSelectedAdminJurado] = useState<string>('');
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -355,6 +363,44 @@ const AdminJulgamento: React.FC = () => {
                               <BarChart3 className="w-4 h-4" />
                             </Button>
                           )}
+                          {adminState && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    title="Votos por jurado"
+                                    onClick={async () => {
+                                      if (!selectedArea) return;
+                                      setAdminVotesOpen(true);
+                                      setAdminVotesLoading(true);
+                                      setAdminVotesError('');
+                                      try {
+                                        const jurados = await getJuryMembers();
+                                        setJuradosList(jurados);
+                                        const first = jurados[0]?.username || '';
+                                        setSelectedAdminJurado(first);
+                                        if (first) {
+                                          const res = await getMinhasAvaliacoes(first, selectedArea);
+                                          setAdminVotesItems(res.success ? (res.data || []) : []);
+                                          if (!res.success) setAdminVotesError(res.error || 'Erro ao carregar votos');
+                                        }
+                                      } catch (e:any) {
+                                        setAdminVotesError(e?.message || 'Erro ao carregar jurados');
+                                        setAdminVotesItems([]);
+                                      } finally {
+                                        setAdminVotesLoading(false);
+                                      }
+                                    }}
+                                  >
+                                    <ClipboardList className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Votos por jurado</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           {juradoState && (
                             <TooltipProvider>
                               <Tooltip>
@@ -387,7 +433,7 @@ const AdminJulgamento: React.FC = () => {
                                       }
                                     }}
                                   >
-                                    <User className="w-4 h-4" />
+                                    <ListChecks className="w-4 h-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Ver meus votos</TooltipContent>
@@ -664,6 +710,81 @@ const AdminJulgamento: React.FC = () => {
                   Finalizar Votação
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Modal Admin: Votos por Jurado */}
+    <Dialog open={adminVotesOpen} onOpenChange={setAdminVotesOpen}>
+      <DialogContent className="sm:max-w-6xl">
+        <DialogHeader>
+          <DialogTitle>Votos por Jurado – {selectedArea || ''}</DialogTitle>
+        </DialogHeader>
+        {adminVotesLoading ? (
+          <div className="py-6 text-center text-sm text-gray-600">Carregando...</div>
+        ) : adminVotesError ? (
+          <Alert className="mb-2"><AlertDescription>{adminVotesError}</AlertDescription></Alert>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-700">Selecionar jurado:</div>
+              <Select
+                value={selectedAdminJurado}
+                onValueChange={async (val) => {
+                  setSelectedAdminJurado(val);
+                  if (selectedArea) {
+                    setAdminVotesLoading(true);
+                    const res = await getMinhasAvaliacoes(val, selectedArea);
+                    setAdminVotesItems(res.success ? (res.data || []) : []);
+                    if (!res.success) setAdminVotesError(res.error || 'Erro ao carregar votos');
+                    setAdminVotesLoading(false);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-64"><SelectValue placeholder="Escolha o jurado" /></SelectTrigger>
+                <SelectContent>
+                  {juradosList.map(j => (
+                    <SelectItem key={j.username} value={j.username}>{j.name} ({j.username})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm table-fixed">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="text-left p-2 w-[320px]">Título</th>
+                    <th className="text-center p-2">Cooperação</th>
+                    <th className="text-center p-2">Inovação</th>
+                    <th className="text-center p-2">Resolutividade</th>
+                    <th className="text-center p-2">Impacto Social</th>
+                    <th className="text-center p-2">Alinhamento ODS</th>
+                    <th className="text-center p-2">Replicabilidade</th>
+                    <th className="text-center p-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminVotesItems.map((it) => (
+                    <tr key={it.avaliacao.id} className="border-t">
+                      <td className="p-2 w-[320px] break-words">{it.inscricao.titulo_iniciativa}</td>
+                      <td className="p-2 text-center">{it.avaliacao.cooperacao}</td>
+                      <td className="p-2 text-center">{it.avaliacao.inovacao}</td>
+                      <td className="p-2 text-center">{it.avaliacao.resolutividade}</td>
+                      <td className="p-2 text-center">{it.avaliacao.impacto_social}</td>
+                      <td className="p-2 text-center">{it.avaliacao.alinhamento_ods}</td>
+                      <td className="p-2 text-center">{it.avaliacao.replicabilidade}</td>
+                      <td className="p-2 text-center font-medium">{it.avaliacao.total}</td>
+                    </tr>
+                  ))}
+                  {adminVotesItems.length === 0 && (
+                    <tr>
+                      <td className="p-4 text-center text-gray-600" colSpan={8}>Nenhum voto do jurado nesta categoria.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
