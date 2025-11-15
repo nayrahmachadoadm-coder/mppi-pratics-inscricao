@@ -245,6 +245,8 @@ const AdminJulgamento: React.FC = () => {
   const goNextPending = () => {
     const idx = inscricoes.findIndex((i, pos) => pos > currentIndex && i.id && !votedIds.has(i.id));
     const nextIdx = idx >= 0 ? idx : currentIndex;
+    setShowValidation(false);
+    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, alinhamento_ods: -1, replicabilidade: -1 });
     setCurrentIndex(nextIdx);
     // foco no card de avaliação
     setTimeout(() => {

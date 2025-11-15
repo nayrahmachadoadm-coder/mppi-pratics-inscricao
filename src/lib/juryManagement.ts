@@ -16,26 +16,49 @@ function isValidEmail(email: string): boolean {
 // Função para obter membros do júri do Supabase
 export async function getJuryMembers(): Promise<JuryMember[]> {
   try {
-    // Buscar ids em user_roles e depois carregar profiles
+    // Preferir Edge Function (service role) para permitir acesso de jurados
+    const { data: edgeData, error: edgeError } = await supabase.functions.invoke('list-jurados');
+    if (!edgeError && edgeData?.success && Array.isArray(edgeData.data)) {
+      const rows = edgeData.data as any[];
+      return rows.map((p: any) => ({
+        username: p.username || '',
+        name: p.full_name || '',
+        created_at: new Date(p.created_at).getTime(),
+        created_by: 'admin',
+        seatCode: p.seat_code || '',
+        seatLabel: p.seat_label || '',
+      }));
+    }
+    
+    // Tentar RPC (security definer)
+    const { data: rpcData, error: rpcErr } = await (supabase as any).rpc('rpc_list_jurados');
+    if (!rpcErr && Array.isArray(rpcData)) {
+      return (rpcData as any[]).map((p: any) => ({
+        username: p.username || '',
+        name: p.full_name || '',
+        created_at: new Date(p.created_at).getTime(),
+        created_by: 'admin',
+        seatCode: p.seat_code || '',
+        seatLabel: p.seat_label || '',
+      }));
+    }
+    
+    // Último fallback: buscar ids em user_roles e depois carregar profiles
     const { data: roleRows, error: roleErr } = await (supabase as any)
       .from('user_roles')
       .select('user_id')
       .eq('role', 'jurado');
-    
     if (roleErr) {
       console.error('Erro ao buscar roles de jurados:', roleErr);
       return [];
     }
-    
     const ids = (roleRows || []).map((r: any) => r.user_id).filter(Boolean);
     if (ids.length === 0) return [];
-    
     const { data: profiles, error: profError } = await (supabase as any)
       .from('profiles')
       .select('username, full_name, created_at, seat_code, seat_label')
       .in('id', ids)
       .order('created_at', { ascending: false });
-    
     if (profError) {
       console.error('Erro ao buscar perfis de jurados:', profError);
       return [];
