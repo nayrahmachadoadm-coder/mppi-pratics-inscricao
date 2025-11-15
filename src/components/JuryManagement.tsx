@@ -350,7 +350,7 @@ const JuryManagement = () => {
                     <TableCell className="py-2">
                       <Badge variant="outline" className="text-xs">{jury.seatLabel || '—'}</Badge>
                     </TableCell>
-                    <TableCell className="py-2">{progressMap[jury.username] ?? 0}%</TableCell>
+                    <TableCell className="py-2">{Number(progressMap[jury.username] ?? 0).toFixed(2)}%</TableCell>
                     <TableCell className="py-2">
                       {new Date(jury.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>

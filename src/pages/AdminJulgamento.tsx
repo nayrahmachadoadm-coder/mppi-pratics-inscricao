@@ -324,7 +324,7 @@ const AdminJulgamento: React.FC = () => {
                 {selectedArea && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">Progresso: {progressDone} de {progressTotal} avaliados <span className="text-gray-500">({progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0}%)</span></div>
+                      <div className="text-sm text-gray-700">Progresso: {progressDone} de {progressTotal} avaliados <span className="text-gray-500">({progressTotal > 0 ? ((progressDone / progressTotal) * 100).toFixed(2) : '0.00'}%)</span></div>
                       <div className="flex items-center gap-2">
                           {adminState && (
                             <Button
@@ -642,7 +642,7 @@ const AdminJulgamento: React.FC = () => {
                 {(() => {
                   const totalCat = inscricoes.length;
                   const done = myItems.length;
-                  const pct = totalCat > 0 ? Math.round((done / totalCat) * 100) : 0;
+                  const pct = totalCat > 0 ? ((done / totalCat) * 100).toFixed(2) : '0.00';
                   return <span>Progresso da categoria: {done} de {totalCat} ({pct}%)</span>;
                 })()}
               </div>
