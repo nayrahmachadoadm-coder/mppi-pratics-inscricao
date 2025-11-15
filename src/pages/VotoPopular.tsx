@@ -101,6 +101,8 @@ const VotoPopular: React.FC = () => {
             media_total: 0,
             media_resolutividade: 0,
             media_replicabilidade: 0,
+            total_resolutividade: 0,
+            total_replicabilidade: 0,
           }));
         }
         setFinalistas(results);

@@ -70,8 +70,11 @@ export type Database = {
       inscricoes: {
         Row: {
           alinhamento_ods: string
+          ano_inicio_execucao: string | null
+          area: string | null
           area_atuacao: string
           cargo_funcao: string
+          concorda_termos: boolean | null
           cooperacao: string
           created_at: string
           data_conclusao: string | null
@@ -80,6 +83,9 @@ export type Database = {
           declaracao: boolean | null
           descricao_iniciativa: string
           email_institucional: string
+          equipe_envolvida: string | null
+          especificar_edicoes_anteriores: string | null
+          etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
           impacto_social: string
@@ -90,6 +96,7 @@ export type Database = {
           metodologia: string
           nome_completo: string
           objetivos: string
+          objetivos_estrategicos: string | null
           observacoes: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
@@ -97,16 +104,23 @@ export type Database = {
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          resultados_alcancados: string | null
+          resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
           telefone: string
+          telefone_institucional: string | null
           titulo_iniciativa: string
+          unidade_setor: string | null
           updated_at: string
         }
         Insert: {
           alinhamento_ods: string
+          ano_inicio_execucao?: string | null
+          area?: string | null
           area_atuacao: string
           cargo_funcao: string
+          concorda_termos?: boolean | null
           cooperacao: string
           created_at?: string
           data_conclusao?: string | null
@@ -115,6 +129,9 @@ export type Database = {
           declaracao?: boolean | null
           descricao_iniciativa: string
           email_institucional: string
+          equipe_envolvida?: string | null
+          especificar_edicoes_anteriores?: string | null
+          etapas_metodologia?: string | null
           foi_vencedor_anterior?: boolean | null
           id?: string
           impacto_social: string
@@ -125,6 +142,7 @@ export type Database = {
           metodologia: string
           nome_completo: string
           objetivos: string
+          objetivos_estrategicos?: string | null
           observacoes?: string | null
           participou_edicoes_anteriores?: boolean | null
           principais_resultados: string
@@ -132,16 +150,23 @@ export type Database = {
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          resultados_alcancados?: string | null
+          resumo_executivo?: string | null
           situacao_atual?: string | null
           status?: string | null
           telefone: string
+          telefone_institucional?: string | null
           titulo_iniciativa: string
+          unidade_setor?: string | null
           updated_at?: string
         }
         Update: {
           alinhamento_ods?: string
+          ano_inicio_execucao?: string | null
+          area?: string | null
           area_atuacao?: string
           cargo_funcao?: string
+          concorda_termos?: boolean | null
           cooperacao?: string
           created_at?: string
           data_conclusao?: string | null
@@ -150,6 +175,9 @@ export type Database = {
           declaracao?: boolean | null
           descricao_iniciativa?: string
           email_institucional?: string
+          equipe_envolvida?: string | null
+          especificar_edicoes_anteriores?: string | null
+          etapas_metodologia?: string | null
           foi_vencedor_anterior?: boolean | null
           id?: string
           impacto_social?: string
@@ -160,6 +188,7 @@ export type Database = {
           metodologia?: string
           nome_completo?: string
           objetivos?: string
+          objetivos_estrategicos?: string | null
           observacoes?: string | null
           participou_edicoes_anteriores?: boolean | null
           principais_resultados?: string
@@ -167,10 +196,14 @@ export type Database = {
           publico_alvo?: string
           replicabilidade?: string
           resolutividade?: string
+          resultados_alcancados?: string | null
+          resumo_executivo?: string | null
           situacao_atual?: string | null
           status?: string | null
           telefone?: string
+          telefone_institucional?: string | null
           titulo_iniciativa?: string
+          unidade_setor?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -290,6 +323,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role_text: {
+        Args: { _role_text: string; _user_id: string }
+        Returns: boolean
+      }
       register_admin: {
         Args: {
           _auth_user_id: string
@@ -315,8 +352,11 @@ export type Database = {
         Args: { _id: string }
         Returns: {
           alinhamento_ods: string
+          ano_inicio_execucao: string | null
+          area: string | null
           area_atuacao: string
           cargo_funcao: string
+          concorda_termos: boolean | null
           cooperacao: string
           created_at: string
           data_conclusao: string | null
@@ -325,6 +365,9 @@ export type Database = {
           declaracao: boolean | null
           descricao_iniciativa: string
           email_institucional: string
+          equipe_envolvida: string | null
+          especificar_edicoes_anteriores: string | null
+          etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
           impacto_social: string
@@ -335,6 +378,7 @@ export type Database = {
           metodologia: string
           nome_completo: string
           objetivos: string
+          objetivos_estrategicos: string | null
           observacoes: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
@@ -342,10 +386,14 @@ export type Database = {
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          resultados_alcancados: string | null
+          resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
           telefone: string
+          telefone_institucional: string | null
           titulo_iniciativa: string
+          unidade_setor: string | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -359,8 +407,11 @@ export type Database = {
         Args: { area_key: string; p_limit_rows?: number; p_offset?: number }
         Returns: {
           alinhamento_ods: string
+          ano_inicio_execucao: string | null
+          area: string | null
           area_atuacao: string
           cargo_funcao: string
+          concorda_termos: boolean | null
           cooperacao: string
           created_at: string
           data_conclusao: string | null
@@ -369,6 +420,9 @@ export type Database = {
           declaracao: boolean | null
           descricao_iniciativa: string
           email_institucional: string
+          equipe_envolvida: string | null
+          especificar_edicoes_anteriores: string | null
+          etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
           impacto_social: string
@@ -379,6 +433,7 @@ export type Database = {
           metodologia: string
           nome_completo: string
           objetivos: string
+          objetivos_estrategicos: string | null
           observacoes: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
@@ -386,10 +441,14 @@ export type Database = {
           publico_alvo: string
           replicabilidade: string
           resolutividade: string
+          resultados_alcancados: string | null
+          resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
           telefone: string
+          telefone_institucional: string | null
           titulo_iniciativa: string
+          unidade_setor: string | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -404,6 +463,16 @@ export type Database = {
         Returns: {
           area: string
           count: number
+        }[]
+      }
+      rpc_list_jurados: {
+        Args: never
+        Returns: {
+          created_at: string
+          full_name: string
+          seat_code: string
+          seat_label: string
+          username: string
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }
