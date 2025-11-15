@@ -126,14 +126,7 @@ const AdminLogin = () => {
           </p>
         </div>
 
-        {/* Aviso de período encerrado */}
-        <div className="mb-4">
-          <Alert>
-            <AlertDescription>
-              Período de inscrições encerrado. O sistema está disponível para avaliação das inscrições.
-            </AlertDescription>
-          </Alert>
-        </div>
+        {/* Aviso removido */}
 
         {/* Formulário de Login */}
         <Card className="shadow-lg">
