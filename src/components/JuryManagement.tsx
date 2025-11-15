@@ -19,6 +19,7 @@ import {
 } from '@/lib/juryManagement';
 import { hasRole, getCurrentProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -38,6 +39,7 @@ const JuryManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [newJury, setNewJury] = useState({
     username: '',
     name: '',
@@ -79,6 +81,27 @@ const JuryManagement = () => {
     try {
       const members = await getJuryMembers();
       setJuryMembers(members);
+      try {
+        const { count: totalInscricoes } = await supabase
+          .from('inscricoes')
+          .select('*', { count: 'exact', head: true });
+        const total = totalInscricoes || 0;
+        const { data: evalRows } = await supabase
+          .from('avaliacoes')
+          .select('jurado_username');
+        const counts: Record<string, number> = {};
+        for (const r of (evalRows || [])) {
+          const u = (r as any).jurado_username || '';
+          if (!u) continue;
+          counts[u] = (counts[u] || 0) + 1;
+        }
+        const perc: Record<string, number> = {};
+        for (const m of members) {
+          const c = counts[m.username] || 0;
+          perc[m.username] = total > 0 ? Math.round((c / total) * 100) : 0;
+        }
+        setProgressMap(perc);
+      } catch {}
     } catch (error) {
       console.error('Erro ao carregar jurados:', error);
       toast({
@@ -309,29 +332,31 @@ const JuryManagement = () => {
           </Alert>
         ) : (
           <div className="border rounded-lg overflow-hidden">
-            <Table>
+            <Table className="text-sm">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Vaga</TableHead>
-                  <TableHead>Cadastrado em</TableHead>
-                  {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+                  <TableHead className="py-2">Nome</TableHead>
+                  <TableHead className="py-2">Usuário</TableHead>
+                  <TableHead className="py-2">Vaga</TableHead>
+                  <TableHead className="py-2">Julgamentos</TableHead>
+                  <TableHead className="py-2">Cadastrado</TableHead>
+                  {isAdmin && <TableHead className="text-right py-2">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {juryMembers.map((jury) => (
                   <TableRow key={jury.username}>
-                    <TableCell className="font-medium">{jury.name}</TableCell>
-                    <TableCell>{jury.username}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{jury.seatLabel || '—'}</Badge>
+                    <TableCell className="font-medium py-2">{jury.name}</TableCell>
+                    <TableCell className="py-2">{jury.username}</TableCell>
+                    <TableCell className="py-2">
+                      <Badge variant="outline" className="text-xs">{jury.seatLabel || '—'}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">{progressMap[jury.username] ?? 0}%</TableCell>
+                    <TableCell className="py-2">
                       {new Date(jury.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
                     {isAdmin && (
-                      <TableCell className="text-right">
+                      <TableCell className="text-right py-2">
                         <div className="flex gap-1 justify-end">
                           <Button
                             variant="ghost"
