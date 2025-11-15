@@ -103,6 +103,8 @@ export type CategoriaRankingItem = {
   media_total: number; // média do total por jurado
   media_resolutividade: number;
   media_replicabilidade: number;
+  total_resolutividade: number; // soma das notas de resolutividade de todos os jurados
+  total_replicabilidade: number; // soma das notas de replicabilidade de todos os jurados
 };
 
 export async function getRelatorioCategoria(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
@@ -116,14 +118,16 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
 
     const items: CategoriaRankingItem[] = [];
 
-    for (const insc of inscricoes) {
-      const av = await getAvaliacoesByInscricao(insc.id);
-      const list = av.success ? (av.data || []) : [];
-      const count = list.length;
-      const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
-      const mediaTotal = count > 0 ? totalGeral / count : 0;
-      const mediaResol = count > 0 ? list.reduce((sum, r) => sum + (r.resolutividade || 0), 0) / count : 0;
-      const mediaReplic = count > 0 ? list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0) / count : 0;
+  for (const insc of inscricoes) {
+    const av = await getAvaliacoesByInscricao(insc.id);
+    const list = av.success ? (av.data || []) : [];
+    const count = list.length;
+    const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
+    const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
+    const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+    const mediaTotal = count > 0 ? totalGeral / count : 0;
+    const mediaResol = count > 0 ? sumResol / count : 0;
+    const mediaReplic = count > 0 ? sumReplic / count : 0;
 
       items.push({
         inscricao: insc,
@@ -132,16 +136,18 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
         media_total: mediaTotal,
         media_resolutividade: mediaResol,
         media_replicabilidade: mediaReplic,
+        total_resolutividade: sumResol,
+        total_replicabilidade: sumReplic,
       });
-    }
+  }
 
-    // Ordenar aplicando desempate: maior total_geral => maior média resolutividade => maior média replicabilidade
-    items.sort((a, b) => {
-      if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
-      if (b.media_resolutividade !== a.media_resolutividade) return b.media_resolutividade - a.media_resolutividade;
-      if (b.media_replicabilidade !== a.media_replicabilidade) return b.media_replicabilidade - a.media_replicabilidade;
-      return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
-    });
+  // Ordenar aplicando desempate: maior total_geral => maior total resolutividade => maior total replicabilidade
+  items.sort((a, b) => {
+    if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
+    if (b.total_resolutividade !== a.total_resolutividade) return b.total_resolutividade - a.total_resolutividade;
+    if (b.total_replicabilidade !== a.total_replicabilidade) return b.total_replicabilidade - a.total_replicabilidade;
+    return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
+  });
 
     return { success: true, data: items };
   } catch (e: any) {

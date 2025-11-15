@@ -19,6 +19,16 @@ AS $$
 DECLARE
   _profile_id uuid := gen_random_uuid();
 BEGIN
+  IF COALESCE(current_setting('request.jwt.claim.role', true), '') != 'service_role' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      JOIN public.profiles p ON p.id = ur.user_id
+      WHERE p.auth_user_id = auth.uid()
+        AND ur.role = 'admin'
+    ) THEN
+      RAISE EXCEPTION 'permission denied: only admin can register jurado';
+    END IF;
+  END IF;
   INSERT INTO public.profiles (
     id, auth_user_id, username, full_name, email, seat_code, seat_label, must_change_password
   ) VALUES (
@@ -33,4 +43,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.register_jurado(uuid, text, text, text, text, text, boolean) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.register_jurado(uuid, text, text, text, text, text, boolean) TO authenticated;

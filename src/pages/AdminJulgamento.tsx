@@ -9,14 +9,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
-import { getAllInscricoes, getInscricaoById, getAvaliacoesByInscricao, createOrUpdateAvaliacao, getCurrentJuradoId, AvaliacaoData, getVotosTotalizacao } from '@/lib/adminService';
+import { getAllInscricoes, getInscricaoById, getAvaliacoesByInscricao, createOrUpdateAvaliacao, getCurrentJuradoId, AvaliacaoData } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
-import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado } from '@/lib/evaluationService';
+import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem } from '@/lib/evaluationService';
+import { getRelatorioCategoria, CategoriaRankingItem } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -79,6 +81,15 @@ const AdminJulgamento: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [showValidation, setShowValidation] = useState<boolean>(false);
   const [adminState, setAdminState] = useState(false);
+  const [juradoState, setJuradoState] = useState(false);
+  const [totalsOpen, setTotalsOpen] = useState(false);
+  const [totalsLoading, setTotalsLoading] = useState(false);
+  const [totalsError, setTotalsError] = useState('');
+  const [totalsItems, setTotalsItems] = useState<CategoriaRankingItem[]>([]);
+  const [myOpen, setMyOpen] = useState(false);
+  const [myLoading, setMyLoading] = useState(false);
+  const [myError, setMyError] = useState('');
+  const [myItems, setMyItems] = useState<MinhasAvaliacaoItem[]>([]);
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -104,6 +115,8 @@ const AdminJulgamento: React.FC = () => {
     const run = async () => {
       const admin = await hasRole('admin');
       setAdminState(admin);
+      const jurado = await hasRole('jurado');
+      setJuradoState(jurado);
       
       const profile = await getCurrentProfile();
       const username = profile?.username || '';
@@ -268,6 +281,7 @@ const AdminJulgamento: React.FC = () => {
   };
 
   return (
+    <>
     <div className="bg-gray-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="min-h-[72vh]">
@@ -282,15 +296,7 @@ const AdminJulgamento: React.FC = () => {
                       <p className="text-xs text-white/90 mt-1">Jurado: <span className="font-medium">{juradoUsername}</span></p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="text-white border-white/40 hover:bg-white/10"
-                      onClick={() => navigate('/jurado/minhas-avaliacoes')}
-                    >
-                      Minhas avaliações
-                    </Button>
-                  </div>
+                  <div className="flex items-center gap-2"></div>
                 </div>
               </CardHeader>
               <CardContent className="pt-3">
@@ -324,11 +330,67 @@ const AdminJulgamento: React.FC = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setShowVotacaoModal(true)}
+                              onClick={async () => {
+                                if (!selectedArea) return;
+                                setTotalsOpen(true);
+                                setTotalsLoading(true);
+                                setTotalsError('');
+                                try {
+                                  const res = await getRelatorioCategoria(selectedArea);
+                                  if (res.success) {
+                                    setTotalsItems(res.data || []);
+                                  } else {
+                                    setTotalsItems([]);
+                                    setTotalsError(res.error || 'Erro ao carregar totalização');
+                                  }
+                                } catch {
+                                  setTotalsError('Erro inesperado ao carregar totalização');
+                                  setTotalsItems([]);
+                                } finally {
+                                  setTotalsLoading(false);
+                                }
+                              }}
                               title="Ver totalização de votos"
                             >
                               <BarChart3 className="w-4 h-4" />
                             </Button>
+                          )}
+                          {juradoState && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-8 h-8 p-0"
+                                    title="Ver meus votos"
+                                    onClick={async () => {
+                                      if (!juradoUsername || !selectedArea) return;
+                                      setMyOpen(true);
+                                      setMyLoading(true);
+                                      setMyError('');
+                                      try {
+                                        const res = await getMinhasAvaliacoes(juradoUsername, selectedArea);
+                                        if (res.success) {
+                                          setMyItems(res.data || []);
+                                        } else {
+                                          setMyItems([]);
+                                          setMyError(res.error || 'Erro ao carregar avaliações');
+                                        }
+                                      } catch {
+                                        setMyError('Erro inesperado ao carregar avaliações');
+                                        setMyItems([]);
+                                      } finally {
+                                        setMyLoading(false);
+                                      }
+                                    }}
+                                  >
+                                    <User className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Ver meus votos</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           <span className="text-sm text-gray-600">
                             {currentIndex + 1} de {inscricoes.length}
@@ -432,8 +494,8 @@ const AdminJulgamento: React.FC = () => {
                               )}
                               <Button 
                                 onClick={handleSave} 
-                                disabled={saving || !isComplete || isAdmin}
-                                title={isAdmin ? "Administradores não podem salvar avaliações" : (!isComplete ? "Complete todas as categorias para salvar" : "")}
+                                disabled={saving || !isComplete || !juradoState}
+                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (!isComplete ? "Complete todas as categorias para salvar" : "")}
                                 className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}
@@ -454,6 +516,104 @@ const AdminJulgamento: React.FC = () => {
         </div>
       </div>
     </div>
+
+    <Dialog open={totalsOpen} onOpenChange={setTotalsOpen}>
+      <DialogContent className="sm:max-w-6xl">
+        <DialogHeader>
+          <DialogTitle>Totalização de votos da categoria</DialogTitle>
+        </DialogHeader>
+        {totalsLoading ? (
+          <div className="py-6 text-center text-sm text-gray-600">Carregando totalização...</div>
+        ) : totalsError ? (
+          <Alert className="mb-2"><AlertDescription>{totalsError}</AlertDescription></Alert>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="text-left p-2">Posição</th>
+                  <th className="text-left p-2 w-[320px]">Título</th>
+                  <th className="text-left p-2 w-[220px]">Proponente</th>
+                  <th className="text-center p-2">Avaliações</th>
+                  <th className="text-center p-2">Total jurados</th>
+                  <th className="text-center p-2">Total resolutividade</th>
+                  <th className="text-center p-2">Total replicabilidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {totalsItems.map((it, idx) => (
+                  <tr key={it.inscricao.id} className="border-t">
+                    <td className="p-2">{idx + 1}</td>
+                    <td className="p-2 font-medium w-[320px] break-words">{it.inscricao.titulo_iniciativa}</td>
+                    <td className="p-2 w-[220px] break-words">{it.inscricao.nome_completo}</td>
+                    <td className="p-2 text-center">{it.avaliacoes_count}</td>
+                    <td className="p-2 text-center">{it.total_geral.toFixed(2)}</td>
+                    <td className="p-2 text-center">{it.total_resolutividade.toFixed(2)}</td>
+                    <td className="p-2 text-center">{it.total_replicabilidade.toFixed(2)}</td>
+                  </tr>
+                ))}
+                {totalsItems.length === 0 && (
+                  <tr>
+                    <td className="p-4 text-center text-gray-600" colSpan={7}>Nenhum trabalho encontrado na categoria.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <div className="mt-2 text-xs text-gray-600 px-2 pb-2">Ordenação: maior soma de notas dos jurados; desempate por total de resolutividade e total de replicabilidade.</div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={myOpen} onOpenChange={setMyOpen}>
+      <DialogContent className="sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Minhas avaliações da categoria</DialogTitle>
+        </DialogHeader>
+        {myLoading ? (
+          <div className="py-6 text-center text-sm text-gray-600">Carregando...</div>
+        ) : myError ? (
+          <Alert className="mb-2"><AlertDescription>{myError}</AlertDescription></Alert>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm table-fixed">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="text-left p-2 w-[320px]">Título</th>
+                  <th className="text-center p-2">Cooperação</th>
+                  <th className="text-center p-2">Inovação</th>
+                  <th className="text-center p-2">Resolutividade</th>
+                  <th className="text-center p-2">Impacto Social</th>
+                  <th className="text-center p-2">Alinhamento ODS</th>
+                  <th className="text-center p-2">Replicabilidade</th>
+                  <th className="text-center p-2">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myItems.map((it) => (
+                  <tr key={it.avaliacao.id} className="border-t">
+                    <td className="p-2 w-[320px] break-words">{it.inscricao.titulo_iniciativa}</td>
+                    <td className="p-2 text-center">{it.avaliacao.cooperacao}</td>
+                    <td className="p-2 text-center">{it.avaliacao.inovacao}</td>
+                    <td className="p-2 text-center">{it.avaliacao.resolutividade}</td>
+                    <td className="p-2 text-center">{it.avaliacao.impacto_social}</td>
+                    <td className="p-2 text-center">{it.avaliacao.alinhamento_ods}</td>
+                    <td className="p-2 text-center">{it.avaliacao.replicabilidade}</td>
+                    <td className="p-2 text-center font-medium">{it.avaliacao.total}</td>
+                  </tr>
+                ))}
+                {myItems.length === 0 && (
+                  <tr>
+                    <td className="p-4 text-center text-gray-600" colSpan={8}>Nenhuma avaliação registrada nesta categoria.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

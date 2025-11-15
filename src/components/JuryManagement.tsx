@@ -18,6 +18,7 @@ import {
   JuryMember 
 } from '@/lib/juryManagement';
 import { hasRole, getCurrentProfile } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -56,9 +57,19 @@ const JuryManagement = () => {
         setIsAdmin(true);
         return;
       }
-      // Fallback: se RPC has_role não estiver aplicado, permitir admin padrão
+      // Fallback: considerar usuário planejamento como admin
       const profile = await getCurrentProfile();
-      setIsAdmin(profile?.username === 'admin');
+      const isPlanejamento = (
+        profile?.username?.toLowerCase() === 'planejamento' ||
+        profile?.email?.toLowerCase() === 'planejamento@mppi.mp.br'
+      );
+      if (isPlanejamento) {
+        setIsAdmin(true);
+        return;
+      }
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email?.toLowerCase();
+      setIsAdmin(email === 'planejamento@mppi.mp.br');
     };
     checkRole();
   }, []);

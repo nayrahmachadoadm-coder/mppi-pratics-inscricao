@@ -143,28 +143,16 @@ export async function removeJuryMember(username: string): Promise<{ success: boo
 // Função para resetar senha de um jurado (força troca de senha)
 export async function resetJuryPassword(username: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // Buscar o perfil do jurado
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, auth_user_id, email')
-      .eq('username', username)
-      .single();
-
-    if (profileError || !profile) {
-      return { success: false, error: 'Jurado não encontrado' };
-    }
-
-    // Marcar que precisa trocar senha
-    const { error: updateError } = await supabase.rpc('update_profile_password_flag', {
-      _profile_id: profile.id,
-      _must_change: true
+    const { data, error } = await supabase.functions.invoke('reset-jurado-password', {
+      body: { username }
     });
-
-    if (updateError) {
-      console.error('Erro ao marcar reset de senha:', updateError);
-      return { success: false, error: 'Erro ao solicitar troca de senha' };
+    if (error) {
+      console.error('Erro ao resetar senha via Edge Function:', error);
+      return { success: false, error: error.message || 'Erro ao resetar senha' };
     }
-
+    if (!data?.success) {
+      return { success: false, error: data?.error || 'Falha ao resetar senha' };
+    }
     return { success: true };
   } catch (error: any) {
     console.error('Erro ao resetar senha:', error);

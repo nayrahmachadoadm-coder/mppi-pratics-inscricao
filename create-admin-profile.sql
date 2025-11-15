@@ -36,11 +36,12 @@ WITH user_data AS (
 
 -- Inserir o registro na tabela user_roles (se não existir)
 INSERT INTO public.user_roles (user_id, role)
-SELECT profile_id, 'admin'
+SELECT profile_id, 'admin'::app_role
 FROM user_data
 WHERE NOT EXISTS (
   SELECT 1 FROM public.user_roles ur 
   WHERE ur.user_id = (SELECT profile_id FROM user_data)
+    AND ur.role = 'admin'::app_role
 );
 
 -- Verificar se tudo foi criado corretamente

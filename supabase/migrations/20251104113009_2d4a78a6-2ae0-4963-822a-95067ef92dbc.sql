@@ -223,6 +223,9 @@ AS $$
   );
 $$;
 
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, app_role) TO anon;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, app_role) TO authenticated;
+
 -- 10. POLÍTICAS RLS PARA INSCRICOES
 DROP POLICY IF EXISTS "admin_public_select" ON public.inscricoes;
 DROP POLICY IF EXISTS "admin_public_insert" ON public.inscricoes;
