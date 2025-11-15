@@ -8,10 +8,9 @@ import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, U
 import { useNavigate, useParams } from 'react-router-dom';
 import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
-import { getAllInscricoes, getInscricaoById, getAvaliacoesByInscricao, createOrUpdateAvaliacao, getCurrentJuradoId, AvaliacaoData } from '@/lib/adminService';
+import { AdminInscricaoData, getAllInscricoes, getInscricaoById, InscricaoFilters } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
-import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem } from '@/lib/evaluationService';
+import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao } from '@/lib/evaluationService';
 import { getRelatorioCategoria, CategoriaRankingItem } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';

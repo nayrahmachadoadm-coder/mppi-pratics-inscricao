@@ -16,35 +16,29 @@ function isValidEmail(email: string): boolean {
 // Função para obter membros do júri do Supabase
 export async function getJuryMembers(): Promise<JuryMember[]> {
   try {
-    // Primeiro tenta via RPC (se já estiver aplicada no banco)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('rpc_list_jurados');
-
-    let profiles: any[] = [];
-
-    if (!rpcError && Array.isArray(rpcData)) {
-      profiles = rpcData as any[];
-    } else {
-      // Fallback seguro: buscar ids em user_roles e depois carregar profiles
-      const { data: roleRows, error: roleErr } = await (supabase as any)
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'jurado');
-      if (roleErr) {
-        console.error('Erro ao buscar roles de jurados:', rpcError || roleErr);
-        return [];
-      }
-      const ids = (roleRows || []).map((r: any) => r.user_id).filter(Boolean);
-      if (ids.length === 0) return [];
-      const { data: profData, error: profError } = await (supabase as any)
-        .from('profiles')
-        .select('username, full_name, created_at, seat_code, seat_label')
-        .in('id', ids)
-        .order('created_at', { ascending: false });
-      if (profError) {
-        console.error('Erro ao buscar perfis de jurados:', profError);
-        return [];
-      }
-      profiles = (profData as any[]) || [];
+    // Buscar ids em user_roles e depois carregar profiles
+    const { data: roleRows, error: roleErr } = await (supabase as any)
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'jurado');
+    
+    if (roleErr) {
+      console.error('Erro ao buscar roles de jurados:', roleErr);
+      return [];
+    }
+    
+    const ids = (roleRows || []).map((r: any) => r.user_id).filter(Boolean);
+    if (ids.length === 0) return [];
+    
+    const { data: profiles, error: profError } = await (supabase as any)
+      .from('profiles')
+      .select('username, full_name, created_at, seat_code, seat_label')
+      .in('id', ids)
+      .order('created_at', { ascending: false });
+    
+    if (profError) {
+      console.error('Erro ao buscar perfis de jurados:', profError);
+      return [];
     }
 
     return (profiles || []).map((row: any) => ({

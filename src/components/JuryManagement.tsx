@@ -19,7 +19,6 @@ import {
 } from '@/lib/juryManagement';
 import { hasRole, getCurrentProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { supabase } from '@/integrations/supabase/client';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
