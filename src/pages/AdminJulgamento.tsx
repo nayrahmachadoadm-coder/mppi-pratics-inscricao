@@ -378,8 +378,26 @@ const AdminJulgamento: React.FC = () => {
                                       setAdminVotesError('');
                                       try {
                                         const jurados = await getJuryMembers();
-                                        setJuradosList(jurados);
-                                        const first = jurados[0]?.username || '';
+                                        const ord = (label: string) => {
+                                          const s = (label || '').toLowerCase();
+                                          if (s.includes('pgj') || s.includes('procurador-geral')) return 1;
+                                          if (s.includes('associação piauiense') || s.includes('apm')) return 2;
+                                          if (s.includes('sindicato')) return 3;
+                                          if (s.includes('universidade federal') || s.includes('ufpi')) return 4;
+                                          if (s.includes('universidade estadual') || s.includes('uespi')) return 5;
+                                          if (s.includes('poder judiciário')) return 6;
+                                          if (s.includes('oab') || s.includes('advogados')) return 7;
+                                          if (s.includes('defensoria')) return 8;
+                                          return 9;
+                                        };
+                                        const sortedJurados = [...jurados].sort((a,b) => {
+                                          const oa = ord(a.seatLabel || '');
+                                          const ob = ord(b.seatLabel || '');
+                                          if (oa !== ob) return oa - ob;
+                                          return (a.created_at || 0) - (b.created_at || 0);
+                                        });
+                                        setJuradosList(sortedJurados);
+                                        const first = sortedJurados[0]?.username || '';
                                         setSelectedAdminJurado(first);
                                         if (first) {
                                           const res = await getMinhasAvaliacoes(first, selectedArea);

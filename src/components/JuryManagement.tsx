@@ -79,7 +79,25 @@ const JuryManagement = () => {
     setIsLoading(true);
     try {
       const members = await getJuryMembers();
-      setJuryMembers(members);
+      const order = (label: string) => {
+        const s = (label || '').toLowerCase();
+        if (s.includes('pgj') || s.includes('procurador-geral')) return 1;
+        if (s.includes('associação piauiense') || s.includes('apm')) return 2;
+        if (s.includes('sindicato')) return 3;
+        if (s.includes('universidade federal') || s.includes('ufpi')) return 4;
+        if (s.includes('universidade estadual') || s.includes('uespi')) return 5;
+        if (s.includes('poder judiciário')) return 6;
+        if (s.includes('oab') || s.includes('advogados')) return 7;
+        if (s.includes('defensoria')) return 8;
+        return 9;
+      };
+      const sorted = [...members].sort((a, b) => {
+        const oa = order(a.seatLabel || '');
+        const ob = order(b.seatLabel || '');
+        if (oa !== ob) return oa - ob;
+        return (a.created_at || 0) - (b.created_at || 0);
+      });
+      setJuryMembers(sorted);
       try {
         const { count: totalInscricoes } = await supabase
           .from('inscricoes')
