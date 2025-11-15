@@ -485,7 +485,7 @@ const AdminJulgamento: React.FC = () => {
                             </div>
 
                             <div className="flex justify-end gap-2">
-                              {isAdmin && (
+                              {adminState && (
                                 <div className="flex items-center text-yellow-600 text-sm">
                                   <AlertCircle className="w-4 h-4 mr-1" />
                                   Modo visualização - Administrador (sem permissão para salvar)
