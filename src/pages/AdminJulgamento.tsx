@@ -2,18 +2,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, User, Mail, Building, Calendar, Target, FileText, ArrowLeft, Download } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
-import { getAllInscricoes, getInscricaoById } from '@/lib/adminService';
+import { getAllInscricoes, getInscricaoById, getAvaliacoesByInscricao, createOrUpdateAvaliacao, getCurrentJuradoId, AvaliacaoData, getVotosTotalizacao } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
 import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
+import { AlertCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -37,7 +40,10 @@ function stringHash(str: string): number {
   return Math.abs(h);
 }
 
-const AdminJulgamento = () => {
+const AdminJulgamento: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const isAdmin = hasRole('admin');
+  const isJurado = hasRole('jurado');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [juradoUsername, setJuradoUsername] = useState<string>('');
@@ -72,7 +78,7 @@ const AdminJulgamento = () => {
   });
   const [saving, setSaving] = useState<boolean>(false);
   const [showValidation, setShowValidation] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminState, setAdminState] = useState(false);
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -97,7 +103,7 @@ const AdminJulgamento = () => {
   useEffect(() => {
     const run = async () => {
       const admin = await hasRole('admin');
-      setIsAdmin(admin);
+      setAdminState(admin);
       
       const profile = await getCurrentProfile();
       const username = profile?.username || '';
@@ -313,33 +319,27 @@ const AdminJulgamento = () => {
                   <div className="mt-4">
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-700">Progresso: {progressDone} de {progressTotal} avaliados <span className="text-gray-500">({progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0}%)</span></div>
-                      <div className="flex items-center gap-1">
-                        {/* Botão discreto para relatório/estatísticas da categoria selecionada */}
-                        {selectedArea && isAdmin && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Estatísticas da categoria"
-                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                                onClick={() => navigate(`/admin/relatorio/${encodeURIComponent(selectedArea)}`)}
-                              >
-                                <BarChart3 className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="text-[13px] font-normal text-gray-700 border border-gray-300 bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur-sm">
-                              Relatório da categoria: soma de notas e médias
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        <Button variant="outline" size="sm" onClick={goPrev} disabled={currentIndex <= 0} className="w-8 h-8 p-0 flex items-center justify-center" aria-label="Anterior">
-                          <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={goNext} disabled={currentIndex >= inscricoes.length - 1} className="w-8 h-8 p-0 flex items-center justify-center" aria-label="Próximo">
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <div className="flex items-center gap-2">
+                          {isAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowVotacaoModal(true)}
+                              title="Ver totalização de votos"
+                            >
+                              <BarChart3 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <span className="text-sm text-gray-600">
+                            {currentIndex + 1} de {inscricoes.length}
+                          </span>
+                          <Button variant="outline" size="sm" onClick={goPrev} disabled={currentIndex <= 0} className="w-8 h-8 p-0 flex items-center justify-center" aria-label="Anterior">
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={goNext} disabled={currentIndex >= inscricoes.length - 1} className="w-8 h-8 p-0 flex items-center justify-center" aria-label="Próximo">
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
                     </div>
 
                     {/* indicadores de votado/não votado */}
@@ -424,7 +424,18 @@ const AdminJulgamento = () => {
                             </div>
 
                             <div className="flex justify-end gap-2">
-                              <Button onClick={handleSave} disabled={saving || !isComplete}>
+                              {isAdmin && (
+                                <div className="flex items-center text-yellow-600 text-sm">
+                                  <AlertCircle className="w-4 h-4 mr-1" />
+                                  Modo visualização - Administrador (sem permissão para salvar)
+                                </div>
+                              )}
+                              <Button 
+                                onClick={handleSave} 
+                                disabled={saving || !isComplete || isAdmin}
+                                title={isAdmin ? "Administradores não podem salvar avaliações" : (!isComplete ? "Complete todas as categorias para salvar" : "")}
+                                className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}
                               </Button>
                               <Button variant="outline" onClick={goNextPending} disabled={inscricoes.findIndex((i,pos) => pos > currentIndex && i.id && !votedIds.has(i.id)) < 0}>Ir ao próximo pendente</Button>
