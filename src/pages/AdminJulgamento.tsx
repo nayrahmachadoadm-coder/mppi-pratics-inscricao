@@ -560,12 +560,12 @@ const AdminJulgamento: React.FC = () => {
                           <CardContent className="space-y-4">
                             <TooltipProvider>
                               <div className="space-y-3">
-                                <ScoreRadio label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
-                                <ScoreRadio label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
-                                <ScoreRadio label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
-                                <ScoreRadio label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                                <ScoreRadio label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
-                                <ScoreRadio label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
+                                <ScoreRadio disabled={isFinalized || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                               </div>
                             </TooltipProvider>
 
@@ -668,6 +668,13 @@ const AdminJulgamento: React.FC = () => {
           <Alert className="mb-2"><AlertDescription>{myError}</AlertDescription></Alert>
         ) : (
           <div className="border rounded-lg overflow-hidden">
+            {isFinalized && (
+              <Alert className="m-2">
+                <AlertDescription>
+                  Obrigado pela votação. A votação para esta categoria foi finalizada e não é mais permitida a alteração das notas.
+                </AlertDescription>
+              </Alert>
+            )}
             <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-100">
                 <tr>
@@ -812,7 +819,7 @@ const AdminJulgamento: React.FC = () => {
   );
 };
 
-const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; invalid?: boolean; onChange: (v: number) => void }> = ({ label, infoText, value, invalid, onChange }) => {
+const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; invalid?: boolean; disabled?: boolean; onChange: (v: number) => void }> = ({ label, infoText, value, invalid, disabled, onChange }) => {
   const inputIdBase = label.toLowerCase().replace(/\s+/g, '-');
   return (
     <div>
@@ -835,12 +842,12 @@ const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; in
           )}
         </div>
         <div className="flex items-center gap-3">
-          <RadioGroup className="flex items-center gap-2" value={String(value)} onValueChange={(v) => onChange(Number(v))}>
+          <RadioGroup className="flex items-center gap-2" value={String(value)} onValueChange={(v) => { if (!disabled) onChange(Number(v)); }}>
             {scoreOptions.map((opt) => {
               const id = `${inputIdBase}-${opt}`;
               return (
                 <div key={opt} className="flex items-center gap-1">
-                  <RadioGroupItem value={String(opt)} id={id} className="h-3.5 w-3.5" />
+                  <RadioGroupItem value={String(opt)} id={id} className="h-3.5 w-3.5" disabled={disabled} />
                   <Label htmlFor={id} className="text-xs text-gray-700">{opt}</Label>
                 </div>
               );
