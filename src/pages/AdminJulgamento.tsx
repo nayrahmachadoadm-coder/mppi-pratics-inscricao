@@ -743,7 +743,7 @@ const AdminJulgamento: React.FC = () => {
                   }
                 }}
               >
-                <SelectTrigger className="w-64"><SelectValue placeholder="Escolha o jurado" /></SelectTrigger>
+                <SelectTrigger className="min-w-[28rem] w-[28rem]"><SelectValue placeholder="Escolha o jurado" /></SelectTrigger>
                 <SelectContent>
                   {juradosList.map(j => (
                     <SelectItem key={j.username} value={j.username}>{j.name} ({j.username})</SelectItem>
