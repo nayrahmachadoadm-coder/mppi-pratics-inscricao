@@ -10,7 +10,7 @@ import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, getAllInscricoes, getInscricaoById, InscricaoFilters } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
-import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao } from '@/lib/evaluationService';
+import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao, isVotacaoFinalizada, finalizeVotacao } from '@/lib/evaluationService';
 import { getRelatorioCategoria, CategoriaRankingItem } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';
@@ -87,6 +87,7 @@ const AdminJulgamento: React.FC = () => {
   const [myLoading, setMyLoading] = useState(false);
   const [myError, setMyError] = useState('');
   const [myItems, setMyItems] = useState<MinhasAvaliacaoItem[]>([]);
+  const [isFinalized, setIsFinalized] = useState(false);
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -376,6 +377,8 @@ const AdminJulgamento: React.FC = () => {
                                           setMyItems([]);
                                           setMyError(res.error || 'Erro ao carregar avaliações');
                                         }
+                                        const fin = await isVotacaoFinalizada(juradoUsername, selectedArea);
+                                        setIsFinalized(fin);
                                       } catch {
                                         setMyError('Erro inesperado ao carregar avaliações');
                                         setMyItems([]);
@@ -520,8 +523,8 @@ const AdminJulgamento: React.FC = () => {
                               )}
                               <Button 
                                 onClick={handleSave} 
-                                disabled={saving || !isComplete || !juradoState}
-                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (!isComplete ? "Complete todas as categorias para salvar" : "")}
+                                disabled={saving || !isComplete || !juradoState || isFinalized}
+                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (isFinalized ? "Votação finalizada para esta categoria" : (!isComplete ? "Complete todas as categorias para salvar" : ""))}
                                 className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}
@@ -634,6 +637,34 @@ const AdminJulgamento: React.FC = () => {
                 )}
               </tbody>
             </table>
+            <div className="flex items-center justify-between px-2 py-3 text-sm">
+              <div>
+                {(() => {
+                  const totalCat = inscricoes.length;
+                  const done = myItems.length;
+                  const pct = totalCat > 0 ? Math.round((done / totalCat) * 100) : 0;
+                  return <span>Progresso da categoria: {done} de {totalCat} ({pct}%)</span>;
+                })()}
+              </div>
+              <div>
+                <Button
+                  disabled={isFinalized || inscricoes.length === 0 || myItems.length !== inscricoes.length}
+                  title={isFinalized ? 'Votação já finalizada' : (myItems.length !== inscricoes.length ? 'Conclua 100% das avaliações para finalizar' : 'Finalizar votação da categoria')}
+                  onClick={async () => {
+                    if (!juradoUsername || !selectedArea) return;
+                    const res = await finalizeVotacao(juradoUsername, selectedArea);
+                    if (res.success) {
+                      setIsFinalized(true);
+                      toast({ title: 'Votação finalizada', description: 'Você não poderá mais editar os votos desta categoria.' });
+                    } else {
+                      toast({ title: 'Erro ao finalizar', description: res.error || 'Tente novamente', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Finalizar Votação
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </DialogContent>

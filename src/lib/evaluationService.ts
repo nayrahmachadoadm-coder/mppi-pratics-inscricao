@@ -324,3 +324,27 @@ export function exportMinhasAvaliacoesCsv(items: MinhasAvaliacaoItem[], areaLabe
   const base = areaLabel ? `Minhas_Avaliacoes_${areaLabel.replace(/\s+/g,'_')}` : 'Minhas_Avaliacoes';
   return `${base}.csv::${csv}`;
 }
+export async function isVotacaoFinalizada(juradoUsername: string, areaKey: string): Promise<boolean> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('votacao_finalizada')
+      .select('id')
+      .eq('jurado_username', juradoUsername)
+      .eq('categoria', areaKey)
+      .limit(1);
+    if (error) return false;
+    return Array.isArray(data) && data.length > 0;
+  } catch { return false; }
+}
+
+export async function finalizeVotacao(juradoUsername: string, areaKey: string): Promise<{ success: boolean; error?: string }>{
+  try {
+    const { error } = await (supabase as any)
+      .from('votacao_finalizada')
+      .insert({ jurado_username: juradoUsername, categoria: areaKey });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao finalizar votação' };
+  }
+}
