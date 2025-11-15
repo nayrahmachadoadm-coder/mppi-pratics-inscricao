@@ -266,6 +266,10 @@ const AdminJulgamento: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentInscricao) return;
+    if (isFinalized) {
+      toast({ title: 'Votação finalizada', description: 'Você não pode mais editar os votos desta categoria.' });
+      return;
+    }
     if (!isComplete) {
       setShowValidation(true);
       toast({ title: 'Preencha todas as notas', description: 'Selecione uma nota para cada critério.' });
@@ -863,3 +867,12 @@ const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; in
 };
 
 export default AdminJulgamento;
+  useEffect(() => {
+    const checkFinal = async () => {
+      if (juradoUsername && selectedArea) {
+        const fin = await isVotacaoFinalizada(juradoUsername, selectedArea);
+        setIsFinalized(fin);
+      }
+    };
+    checkFinal();
+  }, [juradoUsername, selectedArea]);
