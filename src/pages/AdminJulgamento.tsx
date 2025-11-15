@@ -43,8 +43,6 @@ function stringHash(str: string): number {
 
 const AdminJulgamento: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const isAdmin = hasRole('admin');
-  const isJurado = hasRole('jurado');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [juradoUsername, setJuradoUsername] = useState<string>('');
@@ -325,7 +323,7 @@ const AdminJulgamento: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-700">Progresso: {progressDone} de {progressTotal} avaliados <span className="text-gray-500">({progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0}%)</span></div>
                       <div className="flex items-center gap-2">
-                          {isAdmin && (
+                          {adminState && (
                             <Button
                               variant="outline"
                               size="sm"
