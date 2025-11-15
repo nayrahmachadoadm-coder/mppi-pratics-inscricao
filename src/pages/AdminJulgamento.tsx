@@ -867,12 +867,3 @@ const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; in
 };
 
 export default AdminJulgamento;
-  useEffect(() => {
-    const checkFinal = async () => {
-      if (juradoUsername && selectedArea) {
-        const fin = await isVotacaoFinalizada(juradoUsername, selectedArea);
-        setIsFinalized(fin);
-      }
-    };
-    checkFinal();
-  }, [juradoUsername, selectedArea]);
