@@ -142,13 +142,13 @@ const AdminLogin = () => {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Campo Usuário */}
+              {/* Campo E-mail */}
               <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
+                <Label htmlFor="username">E-mail</Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder="Digite seu usuário"
+                  placeholder="Digite seu e-mail"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isLoading}
