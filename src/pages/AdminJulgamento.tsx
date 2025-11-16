@@ -557,6 +557,14 @@ const AdminJulgamento: React.FC = () => {
                           </CardContent>
                         </Card>
 
+                        {isFinalized && (
+                          <Alert className="bg-green-50 border border-green-300 text-green-800">
+                            <AlertDescription>
+                              Obrigado pela votação. A votação desta categoria foi finalizada e não é mais permitida a alteração das notas.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
                         <Card id="avaliacao-card" className="shadow-md">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5" /> Atribuir Notas</CardTitle>
@@ -673,7 +681,7 @@ const AdminJulgamento: React.FC = () => {
         ) : (
           <div className="border rounded-lg overflow-hidden">
             {isFinalized && (
-              <Alert className="m-2">
+              <Alert className="m-2 bg-green-50 border border-green-300 text-green-800">
                 <AlertDescription>
                   Obrigado pela votação. A votação para esta categoria foi finalizada e não é mais permitida a alteração das notas.
                 </AlertDescription>
