@@ -276,6 +276,27 @@ export type Database = {
           },
         ]
       }
+      votacao_finalizada: {
+        Row: {
+          categoria: string
+          finalized_at: string
+          id: string
+          jurado_username: string
+        }
+        Insert: {
+          categoria: string
+          finalized_at?: string
+          id?: string
+          jurado_username: string
+        }
+        Update: {
+          categoria?: string
+          finalized_at?: string
+          id?: string
+          jurado_username?: string
+        }
+        Relationships: []
+      }
       votos_populares: {
         Row: {
           categoria: string

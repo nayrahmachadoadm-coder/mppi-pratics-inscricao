@@ -89,7 +89,13 @@ const AdminJulgamento: React.FC = () => {
   const [myLoading, setMyLoading] = useState(false);
   const [myError, setMyError] = useState('');
   const [myItems, setMyItems] = useState<MinhasAvaliacaoItem[]>([]);
-  const [isFinalized, setIsFinalized] = useState(false);
+  const [finalizedByArea, setFinalizedByArea] = useState<Record<CategoriaKey, boolean>>({
+    'finalistica-projeto': false,
+    'estruturante-projeto': false,
+    'finalistica-pratica': false,
+    'estruturante-pratica': false,
+    'categoria-especial-ia': false,
+  });
   const [adminVotesOpen, setAdminVotesOpen] = useState(false);
   const [adminVotesLoading, setAdminVotesLoading] = useState(false);
   const [adminVotesError, setAdminVotesError] = useState('');
@@ -106,6 +112,10 @@ const AdminJulgamento: React.FC = () => {
     const vals = Object.values(scores) as number[];
     return vals.every((v) => v >= 0);
   }, [scores]);
+
+  const isFinalizedCurrent = useMemo(() => {
+    return selectedArea ? finalizedByArea[selectedArea] : false;
+  }, [finalizedByArea, selectedArea]);
 
   const currentInscricao = inscricoes[currentIndex] || null;
   const progressTotal = inscricoes.length;
@@ -161,6 +171,20 @@ const AdminJulgamento: React.FC = () => {
       try { localStorage.setItem('julgamento.selectedArea', selectedArea); } catch {}
     }
   }, [selectedArea]);
+
+  // Revalidar finalização ao trocar de categoria
+  useEffect(() => {
+    const checkFinalized = async () => {
+      if (!juradoUsername || !selectedArea) return;
+      try {
+        const fin = await isVotacaoFinalizada(juradoUsername, selectedArea);
+        setFinalizedByArea(prev => ({ ...prev, [selectedArea]: fin }));
+      } catch (error) {
+        console.error('Erro ao verificar finalização:', error);
+      }
+    };
+    checkFinalized();
+  }, [selectedArea, juradoUsername]);
 
   useEffect(() => {
     const load = async () => {
@@ -266,7 +290,7 @@ const AdminJulgamento: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentInscricao) return;
-    if (isFinalized) {
+    if (isFinalizedCurrent) {
       toast({ title: 'Votação finalizada', description: 'Você não pode mais editar os votos desta categoria.' });
       return;
     }
@@ -446,7 +470,9 @@ const AdminJulgamento: React.FC = () => {
                                           setMyError(res.error || 'Erro ao carregar avaliações');
                                         }
                                         const fin = await isVotacaoFinalizada(juradoUsername, selectedArea);
-                                        setIsFinalized(fin);
+                                        if (selectedArea) {
+                                          setFinalizedByArea(prev => ({ ...prev, [selectedArea]: fin }));
+                                        }
                                       } catch {
                                         setMyError('Erro inesperado ao carregar avaliações');
                                         setMyItems([]);
@@ -557,7 +583,7 @@ const AdminJulgamento: React.FC = () => {
                           </CardContent>
                         </Card>
 
-                        {isFinalized && (
+                        {isFinalizedCurrent && (
                           <Alert className="bg-green-50 border border-green-300 text-green-800">
                             <AlertDescription>
                               Obrigado pela votação. A votação desta categoria foi finalizada e não é mais permitida a alteração das notas.
@@ -572,12 +598,12 @@ const AdminJulgamento: React.FC = () => {
                           <CardContent className="space-y-4">
                             <TooltipProvider>
                               <div className="space-y-3">
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
-                                <ScoreRadio disabled={isFinalized || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
+                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                               </div>
                             </TooltipProvider>
 
@@ -599,8 +625,8 @@ const AdminJulgamento: React.FC = () => {
                               )}
                               <Button 
                                 onClick={handleSave} 
-                                disabled={saving || !isComplete || !juradoState || isFinalized}
-                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (isFinalized ? "Votação finalizada para esta categoria" : (!isComplete ? "Complete todas as categorias para salvar" : ""))}
+                                disabled={saving || !isComplete || !juradoState || isFinalizedCurrent}
+                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (isFinalizedCurrent ? "Votação finalizada para esta categoria" : (!isComplete ? "Complete todas as categorias para salvar" : ""))}
                                 className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}
@@ -680,7 +706,7 @@ const AdminJulgamento: React.FC = () => {
           <Alert className="mb-2"><AlertDescription>{myError}</AlertDescription></Alert>
         ) : (
           <div className="border rounded-lg overflow-hidden">
-            {isFinalized && (
+            {isFinalizedCurrent && (
               <Alert className="m-2 bg-green-50 border border-green-300 text-green-800">
                 <AlertDescription>
                   Obrigado pela votação. A votação para esta categoria foi finalizada e não é mais permitida a alteração das notas.
@@ -731,13 +757,15 @@ const AdminJulgamento: React.FC = () => {
               </div>
               <div>
                 <Button
-                  disabled={isFinalized || inscricoes.length === 0 || myItems.length !== inscricoes.length}
-                  title={isFinalized ? 'Votação já finalizada' : (myItems.length !== inscricoes.length ? 'Conclua 100% das avaliações para finalizar' : 'Finalizar votação da categoria')}
+                  disabled={isFinalizedCurrent || inscricoes.length === 0 || myItems.length !== inscricoes.length}
+                  title={isFinalizedCurrent ? 'Votação já finalizada' : (myItems.length !== inscricoes.length ? 'Conclua 100% das avaliações para finalizar' : 'Finalizar votação da categoria')}
                   onClick={async () => {
                     if (!juradoUsername || !selectedArea) return;
                     const res = await finalizeVotacao(juradoUsername, selectedArea);
                     if (res.success) {
-                      setIsFinalized(true);
+                      if (selectedArea) {
+                        setFinalizedByArea(prev => ({ ...prev, [selectedArea]: true }));
+                      }
                       toast({ title: 'Votação finalizada', description: 'Você não poderá mais editar os votos desta categoria.' });
                     } else {
                       toast({ title: 'Erro ao finalizar', description: res.error || 'Tente novamente', variant: 'destructive' });
