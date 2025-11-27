@@ -5,10 +5,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FileText } from 'lucide-react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { useToast } from '@/hooks/use-toast';
-import { CategoriaRankingItem } from '@/lib/evaluationService';
-import { getAllInscricoes } from '@/lib/adminService';
+import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { getDeviceFingerprint, getStoredVote, storeVote, clearAllVotes } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularService';
 
@@ -22,16 +20,10 @@ const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'categoria-especial-ia', label: 'Categoria Especial (IA)' },
 ];
 
-const SITE_KEY = (import.meta as any).env?.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+const SITE_KEY = undefined;
 
 const VotoPopular: React.FC = () => {
   const { toast } = useToast();
-  // Controle de janela de votação: mantemos o sistema configurado, mas fechado até o período.
-  const FORCE_OPEN = ((import.meta as any).env?.VITE_VOTO_POPULAR_FORCE_OPEN || '').toString().toLowerCase() === 'true';
-  const start = new Date('2025-11-28T00:00:00');
-  const end = new Date('2025-12-08T23:59:59');
-  const now = new Date();
-  const votingOpen = FORCE_OPEN || (now >= start && now <= end);
   const expandDevText = (text?: string) => {
     const base = text || '';
     if (!(import.meta as any).env?.DEV) return base;
@@ -62,7 +54,7 @@ const VotoPopular: React.FC = () => {
     'categoria-especial-ia': '',
   });
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  
   const [detalheOpen, setDetalheOpen] = useState(false);
   const [detalheItem, setDetalheItem] = useState<CategoriaRankingItem | null>(null);
 
@@ -78,7 +70,6 @@ const VotoPopular: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!votingOpen) return; // Somente carrega dados quando a votação estiver aberta
     const run = async () => {
       setLoading(true);
       setError('');
@@ -90,21 +81,28 @@ const VotoPopular: React.FC = () => {
           'estruturante-pratica': [],
           'categoria-especial-ia': [],
         };
-        for (const cat of categorias) {
-          // Para página pública, não consultar avaliações nem endpoints restritos.
-          const mock = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
-          const list = (mock.data || []).slice(0, 3);
-          results[cat.key] = list.map((insc) => ({
-            inscricao: insc,
-            avaliacoes_count: 0,
-            total_geral: 0,
-            media_total: 0,
-            media_resolutividade: 0,
-            media_replicabilidade: 0,
-            total_resolutividade: 0,
-            total_replicabilidade: 0,
-          }));
-        }
+        await Promise.all(
+          categorias.map(async (cat) => {
+            try {
+              const viaSql = await getTop3ByCategoriaSql(cat.key);
+              if (viaSql.success && (viaSql.data || []).length > 0) {
+                results[cat.key] = (viaSql.data || []);
+                return;
+              }
+              const rel = await getRelatorioCategoria(cat.key);
+              const list = (rel.data || []);
+              const sorted = list.slice().sort((a, b) => {
+                if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
+                if (b.total_resolutividade !== a.total_resolutividade) return b.total_resolutividade - a.total_resolutividade;
+                if (b.total_replicabilidade !== a.total_replicabilidade) return b.total_replicabilidade - a.total_replicabilidade;
+                return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
+              });
+              results[cat.key] = sorted.slice(0, 3);
+            } catch {
+              results[cat.key] = [];
+            }
+          })
+        );
         setFinalistas(results);
         // Contagem de votos via RPC agregada (se disponível)
         const counts: Record<CategoriaKey, Record<string, number>> = {
@@ -143,32 +141,37 @@ const VotoPopular: React.FC = () => {
   };
 
   const openConfirm = () => {
-    // Bloqueia se alguma categoria estiver sem seleção
     const faltantes = categorias.filter((c) => !selecionados[c.key]);
     if (faltantes.length > 0) {
       toast({ title: 'Selecione um finalista por categoria', description: 'Escolha para todas as categorias antes de confirmar.' });
       return;
     }
-    setConfirmOpen(true);
+    const jaVotou = categorias.some((c) => hasVoted(c.key));
+    if (jaVotou) {
+      toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a uma participação por dispositivo.' });
+      return;
+    }
+    confirmarVotos();
   };
 
   const confirmarVotos = async () => {
     try {
-      if (SITE_KEY && !captchaToken) {
-        toast({ title: 'Valide o captcha', description: 'Complete a verificação antes de confirmar.' });
-        return;
-      }
       const fp = await getDeviceFingerprint();
+      let submetidos = 0;
       for (const cat of categorias) {
         const id = selecionados[cat.key];
         if (!id || hasVoted(cat.key)) continue;
         const res = await submitVotoPopular({ categoria: cat.key, inscricao_id: id, fingerprint: fp });
         storeVote(cat.key, id);
+        submetidos += 1;
         if (!res.success) {
           toast({ title: 'Voto registrado localmente', description: `Categoria: ${cat.label}. Houve um problema ao registrar no servidor.` });
         }
       }
-      // Atualiza a contagem de votos após confirmar
+      if (submetidos === 0) {
+        toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a uma participação por dispositivo.' });
+        return;
+      }
       try {
         const updatedCounts: Record<CategoriaKey, Record<string, number>> = {
           'finalistica-projeto': {},
@@ -190,42 +193,11 @@ const VotoPopular: React.FC = () => {
     } catch (e: any) {
       toast({ title: 'Votos registrados', description: 'Seus votos foram salvos no dispositivo.' });
     } finally {
-      setConfirmOpen(false);
+      
     }
   };
 
-  // Página informativa quando a votação estiver fechada
-  if (!votingOpen) {
-    return (
-      <div className="bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="min-h-[72vh] flex items-center justify-center">
-            <main className="w-full max-w-3xl">
-              <Card className="shadow-lg border rounded-xl">
-                <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] rounded-t-xl">
-                  <CardTitle className="text-sm">Voto Popular</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-3 text-sm">
-                    <p>
-                      O público poderá votar eletronicamente em sua iniciativa preferida, no prazo estabelecido no cronograma:
-                      <strong> 28/11/2025 – 08/12/2025</strong>.
-                    </p>
-                    <p>
-                      Até lá, o sistema permanece configurado e pronto, aguardando a finalização do julgamento pelos jurados. Após o término, divulgaremos os <strong>três finalistas de cada categoria</strong> e liberaremos a votação popular.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Fique atento aos comunicados oficiais para saber quando a votação estiver aberta.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </main>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="bg-white">
@@ -327,34 +299,14 @@ const VotoPopular: React.FC = () => {
               <Button
                 size="sm"
                 onClick={openConfirm}
-                disabled={!categorias.every((c) => !!selecionados[c.key])}
-                aria-disabled={!categorias.every((c) => !!selecionados[c.key])}
+                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
               >
                 Confirmar votos
               </Button>
             </div>
 
-            {/* Confirmação com Captcha */}
-            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-              <DialogContent hideClose>
-                <DialogHeader>
-                  <DialogTitle className="text-sm">Confirme seu voto</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2 text-xs">
-                  <div>Realize a verificação de segurança abaixo para confirmar seus votos.</div>
-                  {/* Integração reCAPTCHA: exige VITE_RECAPTCHA_SITE_KEY configurado */}
-                  {SITE_KEY ? (
-                    <ReCAPTCHA sitekey={SITE_KEY} onChange={(token) => setCaptchaToken(token)} />
-                  ) : (
-                    <div className="text-[11px] text-red-700">Captcha não configurado. Defina VITE_RECAPTCHA_SITE_KEY.</div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="secondary" size="sm" onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-                  <Button size="sm" onClick={confirmarVotos}>Confirmar votos</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            
 
             {/* Detalhes da inscrição */}
             <Dialog open={detalheOpen} onOpenChange={setDetalheOpen}>

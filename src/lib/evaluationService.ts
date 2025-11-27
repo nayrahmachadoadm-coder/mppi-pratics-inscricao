@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminInscricaoData, getAllInscricoes } from './adminService';
+import { AdminInscricaoData, getAllInscricoes, getInscricaoById as getInscricaoDetalheById } from './adminService';
 import { getCurrentProfile } from './auth';
 
 export type ScoreEntry = {
@@ -115,33 +115,30 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
       return { success: false, error: res.error || 'Erro ao buscar inscrições.' };
     }
     const inscricoes = res.data || [];
+    const items: CategoriaRankingItem[] = await Promise.all(
+      inscricoes.map(async (insc) => {
+        const av = await getAvaliacoesByInscricao(insc.id);
+        const list = av.success ? (av.data || []) : [];
+        const count = list.length;
+        const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
+        const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
+        const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+        const mediaTotal = count > 0 ? totalGeral / count : 0;
+        const mediaResol = count > 0 ? sumResol / count : 0;
+        const mediaReplic = count > 0 ? sumReplic / count : 0;
+        return {
+          inscricao: insc,
+          avaliacoes_count: count,
+          total_geral: totalGeral,
+          media_total: mediaTotal,
+          media_resolutividade: mediaResol,
+          media_replicabilidade: mediaReplic,
+          total_resolutividade: sumResol,
+          total_replicabilidade: sumReplic,
+        } as CategoriaRankingItem;
+      })
+    );
 
-    const items: CategoriaRankingItem[] = [];
-
-  for (const insc of inscricoes) {
-    const av = await getAvaliacoesByInscricao(insc.id);
-    const list = av.success ? (av.data || []) : [];
-    const count = list.length;
-    const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
-    const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
-    const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
-    const mediaTotal = count > 0 ? totalGeral / count : 0;
-    const mediaResol = count > 0 ? sumResol / count : 0;
-    const mediaReplic = count > 0 ? sumReplic / count : 0;
-
-      items.push({
-        inscricao: insc,
-        avaliacoes_count: count,
-        total_geral: totalGeral,
-        media_total: mediaTotal,
-        media_resolutividade: mediaResol,
-        media_replicabilidade: mediaReplic,
-        total_resolutividade: sumResol,
-        total_replicabilidade: sumReplic,
-      });
-  }
-
-  // Ordenar aplicando desempate: maior total_geral => maior total resolutividade => maior total replicabilidade
   items.sort((a, b) => {
     if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
     if (b.total_resolutividade !== a.total_resolutividade) return b.total_resolutividade - a.total_resolutividade;
@@ -359,5 +356,77 @@ export async function finalizeVotacao(juradoUsername: string, areaKey: string): 
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e?.message || 'Erro ao finalizar votação' };
+  }
+}
+export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
+  try {
+    const { data, error } = await (supabase as any).rpc('voto_popular_top3_por_categoria', { area_key: areaKey });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    const rows = (data || []) as Array<{
+      categoria: string;
+      inscricao_id: string;
+      titulo_iniciativa: string;
+      nome_completo: string;
+      lotacao: string;
+      avaliacoes_count: number;
+      total_geral: number;
+      total_resolutividade: number;
+      total_replicabilidade: number;
+      posicao: number;
+    }>;
+
+    const items: CategoriaRankingItem[] = [];
+    for (const r of rows) {
+      let inscricao: AdminInscricaoData | undefined;
+      try {
+        const det = await getInscricaoDetalheById(r.inscricao_id);
+        if (det.success && det.data && det.data.length > 0) {
+          inscricao = det.data[0] as AdminInscricaoData;
+        }
+      } catch {}
+      const safeInscricao: AdminInscricaoData = (inscricao || {
+        id: r.inscricao_id,
+        nome_completo: r.nome_completo,
+        cargo_funcao: '',
+        telefone: '',
+        email_institucional: '',
+        lotacao: r.lotacao,
+        area_atuacao: r.categoria,
+        titulo_iniciativa: r.titulo_iniciativa,
+        data_inicio: '',
+        publico_alvo: '',
+        descricao_iniciativa: '',
+        objetivos: '',
+        metodologia: '',
+        principais_resultados: '',
+        cooperacao: '',
+        inovacao: '',
+        resolutividade: '',
+        impacto_social: '',
+        alinhamento_ods: '',
+        replicabilidade: '',
+        participou_edicoes_anteriores: false,
+        foi_vencedor_anterior: false,
+        declaracao: false,
+        created_at: '',
+        updated_at: '',
+      });
+      items.push({
+        inscricao: safeInscricao,
+        avaliacoes_count: Number(r.avaliacoes_count || 0),
+        total_geral: Number(r.total_geral || 0),
+        media_total: 0,
+        media_resolutividade: 0,
+        media_replicabilidade: 0,
+        total_resolutividade: Number(r.total_resolutividade || 0),
+        total_replicabilidade: Number(r.total_replicabilidade || 0),
+      });
+    }
+
+    return { success: true, data: items };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao consolidar top3 via SQL' };
   }
 }
