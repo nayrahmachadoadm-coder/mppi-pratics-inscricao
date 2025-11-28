@@ -228,7 +228,10 @@ const VotoPopular: React.FC = () => {
                     <div className="text-xs text-gray-500">Nenhum finalista disponível.</div>
                   ) : (
                     <div className="space-y-1">
-                      {finalistas[cat.key].map((item) => {
+                      {finalistas[cat.key]
+                        .slice()
+                        .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
+                        .map((item) => {
                         const id = item.inscricao.id;
                         const selected = selecionados[cat.key] === id;
                         const count = votosCount[cat.key]?.[id];
