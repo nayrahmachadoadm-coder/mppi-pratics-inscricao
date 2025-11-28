@@ -505,6 +505,36 @@ export type Database = {
         Args: { _must_change: boolean; _profile_id: string }
         Returns: undefined
       }
+      voto_popular_top3_por_categoria: {
+        Args: { area_key: string }
+        Returns: {
+          alinhamento_ods: string
+          area_atuacao: string
+          avaliacoes_count: number
+          cargo_funcao: string
+          categoria: string
+          cooperacao: string
+          data_inicio: string
+          descricao_iniciativa: string
+          impacto_social: string
+          inovacao: string
+          inscricao_id: string
+          lotacao: string
+          metodologia: string
+          nome_completo: string
+          objetivos: string
+          posicao: number
+          principais_resultados: string
+          problema_necessidade: string
+          publico_alvo: string
+          replicabilidade: string
+          resolutividade: string
+          titulo_iniciativa: string
+          total_geral: number
+          total_replicabilidade: number
+          total_resolutividade: number
+        }[]
+      }
       votos_count: {
         Args: { categoria: string }
         Returns: {

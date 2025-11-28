@@ -370,6 +370,21 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
       titulo_iniciativa: string;
       nome_completo: string;
       lotacao: string;
+      descricao_iniciativa: string;
+      problema_necessidade: string;
+      metodologia: string;
+      principais_resultados: string;
+      publico_alvo: string;
+      objetivos: string;
+      cooperacao: string;
+      inovacao: string;
+      resolutividade: string;
+      impacto_social: string;
+      alinhamento_ods: string;
+      replicabilidade: string;
+      data_inicio: string;
+      cargo_funcao: string;
+      area_atuacao: string;
       avaliacoes_count: number;
       total_geral: number;
       total_resolutividade: number;
@@ -377,44 +392,36 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
       posicao: number;
     }>;
 
-    const items: CategoriaRankingItem[] = [];
-    for (const r of rows) {
-      let inscricao: AdminInscricaoData | undefined;
-      try {
-        const det = await getInscricaoDetalheById(r.inscricao_id);
-        if (det.success && det.data && det.data.length > 0) {
-          inscricao = det.data[0] as AdminInscricaoData;
-        }
-      } catch {}
-      const safeInscricao: AdminInscricaoData = (inscricao || {
+    const items: CategoriaRankingItem[] = rows.map((r) => {
+      const inscricao: AdminInscricaoData = {
         id: r.inscricao_id,
         nome_completo: r.nome_completo,
-        cargo_funcao: '',
+        cargo_funcao: r.cargo_funcao,
         telefone: '',
         email_institucional: '',
         lotacao: r.lotacao,
-        area_atuacao: r.categoria,
+        area_atuacao: r.area_atuacao,
         titulo_iniciativa: r.titulo_iniciativa,
-        data_inicio: '',
-        publico_alvo: '',
-        descricao_iniciativa: '',
-        objetivos: '',
-        metodologia: '',
-        principais_resultados: '',
-        cooperacao: '',
-        inovacao: '',
-        resolutividade: '',
-        impacto_social: '',
-        alinhamento_ods: '',
-        replicabilidade: '',
+        data_inicio: r.data_inicio,
+        publico_alvo: r.publico_alvo,
+        descricao_iniciativa: r.descricao_iniciativa,
+        objetivos: r.objetivos,
+        metodologia: r.metodologia,
+        principais_resultados: r.principais_resultados,
+        cooperacao: r.cooperacao,
+        inovacao: r.inovacao,
+        resolutividade: r.resolutividade,
+        impacto_social: r.impacto_social,
+        alinhamento_ods: r.alinhamento_ods,
+        replicabilidade: r.replicabilidade,
         participou_edicoes_anteriores: false,
         foi_vencedor_anterior: false,
         declaracao: false,
         created_at: '',
         updated_at: '',
-      });
-      items.push({
-        inscricao: safeInscricao,
+      };
+      return {
+        inscricao,
         avaliacoes_count: Number(r.avaliacoes_count || 0),
         total_geral: Number(r.total_geral || 0),
         media_total: 0,
@@ -422,8 +429,8 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
         media_replicabilidade: 0,
         total_resolutividade: Number(r.total_resolutividade || 0),
         total_replicabilidade: Number(r.total_replicabilidade || 0),
-      });
-    }
+      };
+    });
 
     return { success: true, data: items };
   } catch (e: any) {
