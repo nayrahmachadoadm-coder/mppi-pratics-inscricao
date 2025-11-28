@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, ListChecks, ClipboardList, Mail, Building, Calendar, Target, FileText, ArrowLeft, Download } from 'lucide-react';
+import { Award, CheckCircle, ChevronLeft, ChevronRight, Info, BarChart3, Save, ListChecks, ClipboardList, FileDown, Mail, Building, Calendar, Target, FileText, ArrowLeft, Download } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { getJuryMembers, JuryMember } from '@/lib/juryManagement';
+import { exportCategoryVotesPdf } from '@/lib/pdfCategoryVotes';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -102,6 +103,7 @@ const AdminJulgamento: React.FC = () => {
   const [adminVotesItems, setAdminVotesItems] = useState<MinhasAvaliacaoItem[]>([]);
   const [juradosList, setJuradosList] = useState<JuryMember[]>([]);
   const [selectedAdminJurado, setSelectedAdminJurado] = useState<string>('');
+  const votingClosed = true;
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
@@ -116,6 +118,9 @@ const AdminJulgamento: React.FC = () => {
   const isFinalizedCurrent = useMemo(() => {
     return selectedArea ? finalizedByArea[selectedArea] : false;
   }, [finalizedByArea, selectedArea]);
+  const isBlockedCurrent = useMemo(() => {
+    return votingClosed || isFinalizedCurrent;
+  }, [votingClosed, isFinalizedCurrent]);
 
   const currentInscricao = inscricoes[currentIndex] || null;
   const progressTotal = inscricoes.length;
@@ -398,6 +403,32 @@ const AdminJulgamento: React.FC = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    title="Exportar votação da categoria (PDF)"
+                                    onClick={async () => {
+                                      if (!selectedArea) return;
+                                      try {
+                                        toast({ title: 'Gerando PDF...', description: 'Aguarde enquanto preparamos o relatório da categoria.' });
+                                        await exportCategoryVotesPdf(selectedArea);
+                                        toast({ title: 'Exportação concluída', description: 'O download do PDF foi iniciado.' });
+                                      } catch (e:any) {
+                                        toast({ title: 'Erro ao exportar', description: e?.message || 'Não foi possível gerar o PDF', variant: 'destructive' });
+                                      }
+                                    }}
+                                  >
+                                    <FileDown className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Exportar votação (PDF)</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {adminState && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     title="Votos por jurado"
                                     onClick={async () => {
                                       if (!selectedArea) return;
@@ -583,10 +614,10 @@ const AdminJulgamento: React.FC = () => {
                           </CardContent>
                         </Card>
 
-                        {isFinalizedCurrent && (
+                        {isBlockedCurrent && (
                           <Alert className="bg-green-50 border border-green-300 text-green-800">
                             <AlertDescription>
-                              Obrigado pela votação. A votação desta categoria foi finalizada e não é mais permitida a alteração das notas.
+                              Obrigado pela votação. A votação foi concluída e não é mais permitida a alteração das notas.
                             </AlertDescription>
                           </Alert>
                         )}
@@ -598,12 +629,12 @@ const AdminJulgamento: React.FC = () => {
                           <CardContent className="space-y-4">
                             <TooltipProvider>
                               <div className="space-y-3">
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
-                                <ScoreRadio disabled={isFinalizedCurrent || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Cooperação" infoText={currentInscricao?.cooperacao || ''} value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
+                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                               </div>
                             </TooltipProvider>
 
@@ -625,8 +656,8 @@ const AdminJulgamento: React.FC = () => {
                               )}
                               <Button 
                                 onClick={handleSave} 
-                                disabled={saving || !isComplete || !juradoState || isFinalizedCurrent}
-                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (isFinalizedCurrent ? "Votação finalizada para esta categoria" : (!isComplete ? "Complete todas as categorias para salvar" : ""))}
+                                disabled={saving || !isComplete || !juradoState || isBlockedCurrent}
+                                title={!juradoState ? "Apenas jurados podem salvar avaliações" : (isBlockedCurrent ? "Votação concluída" : (!isComplete ? "Complete todas as categorias para salvar" : ""))}
                                 className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {saving ? 'Salvando...' : (votedIds.has(currentInscricao.id) ? 'Atualizar avaliação' : 'Salvar avaliação')}

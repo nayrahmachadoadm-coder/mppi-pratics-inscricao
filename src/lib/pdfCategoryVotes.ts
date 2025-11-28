@@ -1,0 +1,219 @@
+import jsPDF from 'jspdf';
+import { getJuryMembers } from '@/lib/juryManagement';
+import { getMinhasAvaliacoes, MinhasAvaliacaoItem } from '@/lib/evaluationService';
+
+const areaLabel = (area: string) => {
+  const map: Record<string, string> = {
+    'finalistica-projeto': 'Projeto Finalístico',
+    'estruturante-projeto': 'Projeto Estruturante',
+    'finalistica-pratica': 'Prática Finalística',
+    'estruturante-pratica': 'Prática Estruturante',
+    'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial',
+  };
+  return map[area] || area;
+};
+
+export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
+  const juradosRaw = await getJuryMembers();
+  // Ordenar jurados conforme a página Comissão Julgadora (começando pelos indicados pelo PGJ)
+  const ord = (label: string) => {
+    const s = (label || '').toLowerCase();
+    if (s.includes('pgj') || s.includes('procurador-geral')) return 1;
+    if (s.includes('associação piauiense') || s.includes('apm')) return 2;
+    if (s.includes('sindicato')) return 3;
+    if (s.includes('universidade federal') || s.includes('ufpi')) return 4;
+    if (s.includes('universidade estadual') || s.includes('uespi')) return 5;
+    if (s.includes('poder judiciário')) return 6;
+    if (s.includes('oab') || s.includes('advogados')) return 7;
+    if (s.includes('defensoria')) return 8;
+    return 9;
+  };
+  const jurados = juradosRaw.slice().sort((a, b) => {
+    const oa = ord(a.seatLabel || '');
+    const ob = ord(b.seatLabel || '');
+    if (oa !== ob) return oa - ob;
+    return (a.created_at || 0) - (b.created_at || 0);
+  });
+  const pdf = new jsPDF();
+  const pageWidth = pdf.internal.pageSize.width;
+  const margin = 15;
+  let y = 20;
+  let currentPage = 1;
+
+  const addHeader = async () => {
+    // Primeira página: logo no canto superior esquerdo + identificação
+    if (currentPage === 1) {
+      try {
+        const logoUrl = '/logo-mppi.png';
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            // Preservar proporção da imagem e aumentar a visibilidade
+            const targetW = 55; // largura desejada
+            const ratio = img.width && img.height ? (img.width / img.height) : 3.5; // fallback se não disponível
+            const targetH = Math.round(targetW / ratio);
+            canvas.width = targetW * 3; // alta resolução
+            canvas.height = targetH * 3;
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const data = canvas.toDataURL('image/png', 1.0);
+              pdf.addImage(data, 'PNG', margin, 10, targetW, targetH);
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = logoUrl;
+        });
+      } catch {}
+
+      // Identificação do prêmio (centralizada)
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      const hdr1 = 'Prêmio Melhores Práticas – 9ª Edição';
+      const hdr1w = pdf.getTextWidth(hdr1);
+      pdf.text(hdr1, (pageWidth - hdr1w) / 2, 18);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      const hdr2 = 'Relatório por jurado';
+      const hdr2w = pdf.getTextWidth(hdr2);
+      pdf.text(hdr2, (pageWidth - hdr2w) / 2, 24);
+      y = 32;
+    }
+
+    // Título da categoria (centralizado)
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    const title = `Votação por Categoria – ${areaLabel(areaKey)}`;
+    const tw = pdf.getTextWidth(title);
+    pdf.text(title, (pageWidth - tw) / 2, y);
+    y += 8;
+    pdf.setLineWidth(0.4);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 8;
+  };
+
+  const ensureSpace = async (needed: number, onNewPage?: () => Promise<void> | void) => {
+    const pageHeight = pdf.internal.pageSize.height;
+    if (y + needed > pageHeight - 20) {
+      pdf.addPage();
+      y = 20;
+      currentPage++;
+      await addHeader();
+      if (onNewPage) await onNewPage();
+    }
+  };
+
+  await addHeader();
+
+  // Dimensões da tabela
+  const totalWidth = pageWidth - margin * 2;
+  const numColWidth = 15; // largura para colunas numéricas
+  const cols = [
+    { key: 'titulo', label: 'Título', width: totalWidth - numColWidth * 7 },
+    { key: 'coop', label: 'Coop', width: numColWidth },
+    { key: 'inov', label: 'Inov', width: numColWidth },
+    { key: 'resol', label: 'Resol', width: numColWidth },
+    { key: 'impacto', label: 'Imp', width: numColWidth },
+    { key: 'ods', label: 'ODS', width: numColWidth },
+    { key: 'replic', label: 'Rep', width: numColWidth },
+    { key: 'total', label: 'Total', width: numColWidth },
+  ];
+
+  const drawJurorHeader = (j: { name: string; username: string }) => {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.text(`${j.name} (${j.username})`, margin, y);
+    y += 6;
+  };
+
+  const drawTableHeader = () => {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    let x = margin;
+    const headerHeight = 7;
+    pdf.setDrawColor(50);
+    pdf.setFillColor(230, 230, 230);
+    pdf.rect(margin, y, totalWidth, headerHeight, 'F');
+    for (const c of cols) {
+      const label = c.label;
+      pdf.text(label, x + 2, y + 5);
+      x += c.width;
+    }
+    pdf.setDrawColor(150);
+    pdf.rect(margin, y, totalWidth, headerHeight);
+    y += headerHeight;
+  };
+
+  for (const j of jurados) {
+    const res = await getMinhasAvaliacoes(j.username, areaKey);
+    const items: MinhasAvaliacaoItem[] = res.success ? (res.data || []) : [];
+
+    // Cabeçalho do jurado
+    await ensureSpace(18);
+    drawJurorHeader(j);
+
+    // Cabeçalho da tabela
+    await ensureSpace(11);
+    drawTableHeader();
+
+    // Linhas
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    const lineHeight = 4;
+    for (const it of items) {
+      const title = it.inscricao.titulo_iniciativa || '';
+      const titleWrap = pdf.splitTextToSize(title, cols[0].width - 4);
+      const rowHeight = Math.max(titleWrap.length * lineHeight, 8);
+      await ensureSpace(rowHeight, async () => {
+        // Em nova página, repetir cabeçalho do jurado e da tabela para consistência
+        drawJurorHeader(j);
+        drawTableHeader();
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+      });
+      // bordas da linha
+      pdf.rect(margin, y, totalWidth, rowHeight);
+      // células
+      let cx = margin;
+      // título
+      pdf.text(titleWrap, cx + 2, y + 3);
+      cx += cols[0].width;
+      // valores numéricos
+      const vals = [
+        it.avaliacao.cooperacao,
+        it.avaliacao.inovacao,
+        it.avaliacao.resolutividade,
+        it.avaliacao.impacto_social,
+        it.avaliacao.alinhamento_ods,
+        it.avaliacao.replicabilidade,
+        it.avaliacao.total,
+      ];
+      for (let i = 1; i < cols.length; i++) {
+        const v = String(vals[i - 1] ?? '');
+        const cellW = cols[i].width;
+        const txW = pdf.getTextWidth(v);
+        const txX = cx + cellW - txW - 2; // alinhar à direita
+        pdf.text(v, txX, y + 5);
+        // desenhar divisória vertical
+        pdf.line(cx, y, cx, y + rowHeight);
+        cx += cellW;
+      }
+      y += rowHeight;
+    }
+
+    if (items.length === 0) {
+      await ensureSpace(10);
+      pdf.text('Sem votos nesta categoria.', margin + 2, y + 6);
+      y += 12;
+    } else {
+      y += 6;
+    }
+  }
+
+  pdf.save(`votacao_${areaKey}.pdf`);
+}
