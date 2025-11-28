@@ -20,7 +20,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { getJuryMembers, JuryMember } from '@/lib/juryManagement';
-import { exportCategoryVotesPdf } from '@/lib/pdfCategoryVotes';
+import { exportCategoryVotesPdf, exportCategoryVotesByWorkPdf } from '@/lib/pdfCategoryVotes';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -397,30 +398,43 @@ const AdminJulgamento: React.FC = () => {
                             </Button>
                           )}
                           {adminState && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    title="Exportar votação da categoria (PDF)"
-                                    onClick={async () => {
-                                      if (!selectedArea) return;
-                                      try {
-                                        toast({ title: 'Gerando PDF...', description: 'Aguarde enquanto preparamos o relatório da categoria.' });
-                                        await exportCategoryVotesPdf(selectedArea);
-                                        toast({ title: 'Exportação concluída', description: 'O download do PDF foi iniciado.' });
-                                      } catch (e:any) {
-                                        toast({ title: 'Erro ao exportar', description: e?.message || 'Não foi possível gerar o PDF', variant: 'destructive' });
-                                      }
-                                    }}
-                                  >
-                                    <FileDown className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Exportar votação (PDF)</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" title="Exportar PDF">
+                                  <FileDown className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    if (!selectedArea) return;
+                                    try {
+                                      toast({ title: 'Gerando PDF (por jurado)...', description: 'Aguarde enquanto preparamos o relatório.' });
+                                      await exportCategoryVotesPdf(selectedArea);
+                                      toast({ title: 'Exportação concluída', description: 'O download do PDF foi iniciado.' });
+                                    } catch (e:any) {
+                                      toast({ title: 'Erro ao exportar', description: e?.message || 'Não foi possível gerar o PDF', variant: 'destructive' });
+                                    }
+                                  }}
+                                >
+                                  Por jurado
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    if (!selectedArea) return;
+                                    try {
+                                      toast({ title: 'Gerando PDF (por trabalho)...', description: 'Aguarde enquanto preparamos o relatório.' });
+                                      await exportCategoryVotesByWorkPdf(selectedArea);
+                                      toast({ title: 'Exportação concluída', description: 'O download do PDF foi iniciado.' });
+                                    } catch (e:any) {
+                                      toast({ title: 'Erro ao exportar', description: e?.message || 'Não foi possível gerar o PDF', variant: 'destructive' });
+                                    }
+                                  }}
+                                >
+                                  Por trabalho inscrito
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                           {adminState && (
                             <TooltipProvider>

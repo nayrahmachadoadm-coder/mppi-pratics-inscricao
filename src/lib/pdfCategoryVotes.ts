@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { getJuryMembers } from '@/lib/juryManagement';
-import { getMinhasAvaliacoes, MinhasAvaliacaoItem } from '@/lib/evaluationService';
+import { getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao } from '@/lib/evaluationService';
+import { getAllInscricoes } from '@/lib/adminService';
 
 const areaLabel = (area: string) => {
   const map: Record<string, string> = {
@@ -216,4 +217,169 @@ export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
   }
 
   pdf.save(`votacao_${areaKey}.pdf`);
+}
+
+export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<void> {
+  const pdf = new jsPDF();
+  const pageWidth = pdf.internal.pageSize.width;
+  const margin = 15;
+  let y = 20;
+  let currentPage = 1;
+
+  const addHeader = async () => {
+    if (currentPage === 1) {
+      try {
+        const logoUrl = '/logo-mppi.png';
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const targetW = 55;
+            const ratio = img.width && img.height ? (img.width / img.height) : 3.5;
+            const targetH = Math.round(targetW / ratio);
+            canvas.width = targetW * 3;
+            canvas.height = targetH * 3;
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const data = canvas.toDataURL('image/png', 1.0);
+              pdf.addImage(data, 'PNG', margin, 10, targetW, targetH);
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = logoUrl;
+        });
+      } catch {}
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      const hdr1 = 'Prêmio Melhores Práticas – 9ª Edição';
+      const hdr1w = pdf.getTextWidth(hdr1);
+      pdf.text(hdr1, (pageWidth - hdr1w) / 2, 18);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      const hdr2 = 'Relatório por inscrição';
+      const hdr2w = pdf.getTextWidth(hdr2);
+      pdf.text(hdr2, (pageWidth - hdr2w) / 2, 24);
+      y = 32;
+    }
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(13);
+    const title = `Votação por Categoria – ${areaLabel(areaKey)}`;
+    const tw = pdf.getTextWidth(title);
+    pdf.text(title, (pageWidth - tw) / 2, y);
+    y += 8;
+    pdf.setLineWidth(0.4);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 8;
+  };
+
+  const ensureSpace = async (needed: number, onNewPage?: () => Promise<void> | void) => {
+    const pageHeight = pdf.internal.pageSize.height;
+    if (y + needed > pageHeight - 20) {
+      pdf.addPage();
+      y = 20;
+      currentPage++;
+      await addHeader();
+      if (onNewPage) await onNewPage();
+    }
+  };
+
+  await addHeader();
+
+  // colunas: Jurado + critérios
+  const totalWidth = pageWidth - margin * 2;
+  const numW = 15;
+  const cols = [
+    { key: 'jurado', label: 'Jurado', width: totalWidth - numW * 7 },
+    { key: 'coop', label: 'Coop', width: numW },
+    { key: 'inov', label: 'Inov', width: numW },
+    { key: 'resol', label: 'Resol', width: numW },
+    { key: 'imp', label: 'Imp', width: numW },
+    { key: 'ods', label: 'ODS', width: numW },
+    { key: 'rep', label: 'Rep', width: numW },
+    { key: 'total', label: 'Total', width: numW },
+  ];
+
+  const { data: inscricoes } = await getAllInscricoes(1, 1000, { area_atuacao: areaKey } as any);
+  const list = inscricoes || [];
+
+  for (const insc of list.sort((a,b) => (a.titulo_iniciativa || '').localeCompare(b.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))) {
+    await ensureSpace(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    const title = insc.titulo_iniciativa || '';
+    const wrap = pdf.splitTextToSize(title, totalWidth);
+    pdf.text(wrap, margin, y);
+    y += Math.max(wrap.length * 4, 6);
+
+    // cabeçalho da tabela
+    await ensureSpace(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    let x = margin;
+    const headerHeight = 7;
+    pdf.setFillColor(230,230,230);
+    pdf.rect(margin, y, totalWidth, headerHeight, 'F');
+    for (const c of cols) {
+      pdf.text(c.label, x + 2, y + 5);
+      x += c.width;
+    }
+    pdf.setDrawColor(150);
+    pdf.rect(margin, y, totalWidth, headerHeight);
+    y += headerHeight;
+
+    // linhas: avaliações por jurado
+    const avRes = await getAvaliacoesByInscricao(insc.id);
+    const avs = avRes.success ? (avRes.data || []) : [];
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    const lh = 4;
+    for (const r of avs) {
+      const jur = r.jurado_username || '';
+      const jurWrap = pdf.splitTextToSize(jur, cols[0].width - 4);
+      const rowH = Math.max(jurWrap.length * lh, 8);
+      await ensureSpace(rowH, async () => {
+        // repetir cabeçalho da inscrição e da tabela na nova página
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        const title2 = insc.titulo_iniciativa || '';
+        const wrap2 = pdf.splitTextToSize(title2, totalWidth);
+        pdf.text(wrap2, margin, y);
+        y += Math.max(wrap2.length * 4, 6);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        let xx = margin;
+        pdf.setFillColor(230,230,230);
+        pdf.rect(margin, y, totalWidth, headerHeight, 'F');
+        for (const c of cols) { pdf.text(c.label, xx + 2, y + 5); xx += c.width; }
+        pdf.setDrawColor(150);
+        pdf.rect(margin, y, totalWidth, headerHeight);
+        y += headerHeight;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+      });
+      pdf.rect(margin, y, totalWidth, rowH);
+      let cx = margin;
+      pdf.text(jurWrap, cx + 2, y + 3);
+      cx += cols[0].width;
+      const vals = [r.cooperacao, r.inovacao, r.resolutividade, r.impacto_social, r.alinhamento_ods, r.replicabilidade, r.total];
+      for (let i = 1; i < cols.length; i++) {
+        const v = String(vals[i - 1] ?? '');
+        const cw = cols[i].width;
+        const txW = pdf.getTextWidth(v);
+        const txX = cx + cw - txW - 2;
+        pdf.text(v, txX, y + 5);
+        pdf.line(cx, y, cx, y + rowH);
+        cx += cw;
+      }
+      y += rowH;
+    }
+    y += 6;
+  }
+
+  pdf.save(`votacao_por_trabalho_${areaKey}.pdf`);
 }
