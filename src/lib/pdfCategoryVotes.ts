@@ -306,8 +306,28 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
 
   const { data: inscricoes } = await getAllInscricoes(1, 1000, { area_atuacao: areaKey } as any);
   const list = inscricoes || [];
+  const works: Array<{ insc: any; avs: any[]; sumCoop: number; sumInov: number; sumResol: number; sumImp: number; sumOds: number; sumRep: number; totalWork: number }> = [];
+  for (const insc of list) {
+    const avRes = await getAvaliacoesByInscricao(insc.id);
+    const avs = avRes.success ? (avRes.data || []) : [];
+    const sumCoop = avs.reduce((sum, r) => sum + (r.cooperacao || 0), 0);
+    const sumInov = avs.reduce((sum, r) => sum + (r.inovacao || 0), 0);
+    const sumResol = avs.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
+    const sumImp = avs.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
+    const sumOds = avs.reduce((sum, r) => sum + (r.alinhamento_ods || 0), 0);
+    const sumRep = avs.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+    const totalWork = avs.reduce((sum, r) => sum + (r.total || 0), 0);
+    works.push({ insc, avs, sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork });
+  }
 
-  for (const insc of list.sort((a,b) => (a.titulo_iniciativa || '').localeCompare(b.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))) {
+  works.sort((a, b) => {
+    if (b.totalWork !== a.totalWork) return b.totalWork - a.totalWork;
+    if (b.sumResol !== a.sumResol) return b.sumResol - a.sumResol;
+    if (b.sumRep !== a.sumRep) return b.sumRep - a.sumRep;
+    return (a.insc.titulo_iniciativa || '').localeCompare(b.insc.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' });
+  });
+
+  for (const { insc, avs, sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork } of works) {
     await ensureSpace(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
@@ -333,8 +353,6 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     y += headerHeight;
 
     // linhas: avaliações por jurado
-    const avRes = await getAvaliacoesByInscricao(insc.id);
-    const avs = avRes.success ? (avRes.data || []) : [];
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
     const lh = 4;
@@ -378,7 +396,36 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
       }
       y += rowH;
     }
-    y += 6;
+    // Linha de resumo: pontuação total do trabalho
+    const summaryH = 8;
+    await ensureSpace(summaryH, async () => {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+    });
+    pdf.setFillColor(245,245,245);
+    pdf.rect(margin, y, totalWidth, summaryH, 'F');
+    pdf.rect(margin, y, totalWidth, summaryH);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.text('Pontuação total do trabalho', margin + 2, y + 5);
+    // divisórias de células
+    let sx = margin;
+    for (const c of cols) {
+      pdf.line(sx, y, sx, y + summaryH);
+      sx += c.width;
+    }
+    // valores por critério (alinhar à direita)
+    const sums = [sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork];
+    let cxSum = margin + cols[0].width;
+    for (let i = 1; i < cols.length; i++) {
+      const v = String(sums[i - 1]);
+      const cw = cols[i].width;
+      const txW = pdf.getTextWidth(v);
+      const txX = cxSum + cw - txW - 2;
+      pdf.text(v, txX, y + 5);
+      cxSum += cw;
+    }
+    y += summaryH + 6;
   }
 
   pdf.save(`votacao_por_trabalho_${areaKey}.pdf`);

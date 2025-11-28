@@ -86,7 +86,8 @@ const VotoPopular: React.FC = () => {
             try {
               const viaSql = await getTop3ByCategoriaSql(cat.key);
               if (viaSql.success && (viaSql.data || []).length > 0) {
-                results[cat.key] = (viaSql.data || []);
+                const top = (viaSql.data || []).slice(0, 3).sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
+                results[cat.key] = top;
                 return;
               }
               const rel = await getRelatorioCategoria(cat.key);
@@ -213,6 +214,21 @@ const VotoPopular: React.FC = () => {
               </Alert>
             )}
 
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded flex items-center justify-between">
+              <div className="text-[11px] text-blue-900">
+                <div className="font-semibold">Selecione um finalista em todas as categorias para confirmar.</div>
+                <div>• Você escolhe um finalista por categoria e confirma tudo de uma vez. Votos são limitados por dispositivo.</div>
+              </div>
+              <Button
+                size="sm"
+                onClick={openConfirm}
+                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+              >
+                Confirmar votos
+              </Button>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {categorias.map((cat) => (
                 <section key={cat.key} className="p-2">
@@ -255,7 +271,6 @@ const VotoPopular: React.FC = () => {
                               />
                               <div>
                                 <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
-                                <div className="text-[11px] text-gray-600">{item.inscricao.nome_completo}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -295,19 +310,7 @@ const VotoPopular: React.FC = () => {
               ))}
             </div>
 
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-[10px] text-gray-600">
-                Selecione um finalista em todas as categorias para confirmar.
-              </span>
-              <Button
-                size="sm"
-                onClick={openConfirm}
-                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-              >
-                Confirmar votos
-              </Button>
-            </div>
+            
 
             
 
@@ -363,9 +366,7 @@ const VotoPopular: React.FC = () => {
               </DialogContent>
             </Dialog>
 
-            <div className="mt-2 text-[10px] text-gray-600">
-              • Você escolhe um finalista por categoria e confirma tudo de uma vez. Votos são limitados por dispositivo.
-            </div>
+            
             
             {/* Botão de reset para testes - apenas em desenvolvimento */}
             {import.meta.env.DEV && (
