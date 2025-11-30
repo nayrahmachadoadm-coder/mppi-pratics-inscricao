@@ -405,6 +405,7 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
         data_inicio: r.data_inicio,
         publico_alvo: r.publico_alvo,
         descricao_iniciativa: r.descricao_iniciativa,
+        problema_necessidade: r.problema_necessidade,
         objetivos: r.objetivos,
         metodologia: r.metodologia,
         principais_resultados: r.principais_resultados,

@@ -311,7 +311,7 @@ const VotoPopular: React.FC = () => {
                   <DialogTitle className="text-sm text-primary-foreground">Detalhes da inscrição</DialogTitle>
                 </DialogHeader>
                 {detalheItem && (
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-2 text-xs text-justify">
                     <div>
                       <span className="font-semibold">Título: </span>
                       <span>{detalheItem.inscricao.titulo_iniciativa}</span>
@@ -332,20 +332,20 @@ const VotoPopular: React.FC = () => {
                     </div>
                     <div>
                       <span className="font-semibold">Resumo: </span>
-                      <span className="text-gray-700">{expandDevText(detalheItem.inscricao.descricao_iniciativa)}</span>
+                      <span className="text-gray-700 text-justify">{expandDevText(detalheItem.inscricao.descricao_iniciativa)}</span>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       <div>
                         <span className="font-semibold">Problema-Necessidade: </span>
-                        <span className="text-gray-700">{expandDevText(detalheItem.inscricao.problema_necessidade)}</span>
+                        <span className="text-gray-700 text-justify">{expandDevText(detalheItem.inscricao.problema_necessidade)}</span>
                       </div>
                       <div>
                         <span className="font-semibold">Metodologia: </span>
-                        <span className="text-gray-700">{expandDevText(detalheItem.inscricao.metodologia)}</span>
+                        <span className="text-gray-700 text-justify">{expandDevText(detalheItem.inscricao.metodologia)}</span>
                       </div>
                       <div>
                         <span className="font-semibold">Resultados: </span>
-                        <span className="text-gray-700">{expandDevText(detalheItem.inscricao.principais_resultados)}</span>
+                        <span className="text-gray-700 text-justify">{expandDevText(detalheItem.inscricao.principais_resultados)}</span>
                       </div>
                     </div>
                   </div>
