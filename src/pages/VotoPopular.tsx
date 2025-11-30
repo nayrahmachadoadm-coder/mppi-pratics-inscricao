@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { getDeviceFingerprint, getStoredVote, storeVote, clearAllVotes } from '@/utils/fingerprint';
@@ -206,6 +206,7 @@ const VotoPopular: React.FC = () => {
         <Card className="shadow-sm border">
           <CardHeader>
             <CardTitle className="text-sm">Voto Popular</CardTitle>
+            <div className="text-[11px] text-gray-600">Prêmio Melhores Práticas do MPPI - 9ª edição</div>
           </CardHeader>
           <CardContent>
             {error && (
@@ -214,36 +215,26 @@ const VotoPopular: React.FC = () => {
               </Alert>
             )}
 
-            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded flex items-center justify-between">
-              <div className="text-[11px] text-blue-900">
-                <div className="font-semibold">Selecione um finalista em todas as categorias para confirmar.</div>
-                <div>• Você escolhe um finalista por categoria e confirma tudo de uma vez. Votos são limitados por dispositivo.</div>
-              </div>
-              <Button
-                size="sm"
-                onClick={openConfirm}
-                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-              >
-                Confirmar votos
-              </Button>
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
+              Para registrar seu voto, selecione um dos trabalhos finalistas em cada categoria. Você pode consultar os detalhes da inscrição clicando no ícone de visualizar ao lado do título. Após escolher um finalista por categoria, confirme ao final da página. Apenas um voto é registrado por dispositivo.
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {categorias.map((cat) => (
                 <section key={cat.key} className="p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-xs font-semibold text-gray-800">{cat.label}</h2>
-                    {hasVoted(cat.key) && (
-                      <span className="text-[11px] text-green-700">Voto registrado neste dispositivo</span>
-                    )}
-                  </div>
+                  <div className="rounded-md overflow-hidden border shadow-md">
+                    <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
+                      <h2 className="text-xs font-semibold">{cat.label}</h2>
+                      {hasVoted(cat.key) && (
+                        <span className="text-[11px]">Voto registrado neste dispositivo</span>
+                      )}
+                    </div>
                   {loading ? (
                     <div className="text-xs text-gray-500">Carregando finalistas...</div>
                   ) : finalistas[cat.key].length === 0 ? (
                     <div className="text-xs text-gray-500">Nenhum finalista disponível.</div>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-1 px-3 py-2">
                       {finalistas[cat.key]
                         .slice()
                         .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
@@ -277,7 +268,6 @@ const VotoPopular: React.FC = () => {
                               {selected && (
                                 <span className="text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
                               )}
-                              <span className="text-[11px] text-gray-700">{countDisplay} votos</span>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -292,7 +282,7 @@ const VotoPopular: React.FC = () => {
                                       }}
                                       aria-label="Ver detalhes da inscrição"
                                     >
-                                      <FileText className="h-3 w-3" />
+                                      <Eye className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -300,17 +290,17 @@ const VotoPopular: React.FC = () => {
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
+                              <span className="text-[11px] text-gray-700">{countDisplay} votos</span>
                             </div>
                           </label>
                         );
                       })}
                     </div>
                   )}
+                  </div>
                 </section>
               ))}
             </div>
-
-            
 
             
 
@@ -390,6 +380,20 @@ const VotoPopular: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      <div className="fixed bottom-0 left-0 right-0 bg-primary text-primary-foreground px-4 py-3 shadow-inner">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <span className="text-[11px]">Selecione um finalista em todas as categorias para confirmar. Votos são limitados por dispositivo.</span>
+          <Button
+            size="sm"
+            onClick={openConfirm}
+            disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+            aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+            className="bg-white text-[hsl(var(--primary))] hover:bg-white/90"
+          >
+            Confirmar votos
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
