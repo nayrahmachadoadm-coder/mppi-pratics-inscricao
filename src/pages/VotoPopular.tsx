@@ -377,23 +377,20 @@ const VotoPopular: React.FC = () => {
                 </Button>
               </div>
             )}
+
+            <div className="mt-4 flex justify-end">
+              <Button
+                size="sm"
+                onClick={openConfirm}
+                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
+              >
+                Confirmar votos
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
-      <div className="fixed bottom-0 left-0 right-0 bg-primary text-primary-foreground px-4 py-3 shadow-inner">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <span className="text-[11px]">Selecione um finalista em todas as categorias para confirmar. Votos são limitados por dispositivo.</span>
-          <Button
-            size="sm"
-            onClick={openConfirm}
-            disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-            aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-            className="bg-white text-[hsl(var(--primary))] hover:bg-white/90"
-          >
-            Confirmar votos
-          </Button>
-        </div>
-      </div>
     </div>
   );
 };
