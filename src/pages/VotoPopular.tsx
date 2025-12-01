@@ -7,10 +7,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
+import { isAuthenticated } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote, clearAllVotes } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type FinalistasByCategoria = { [K in CategoriaKey]: CategoriaRankingItem[] };
+type VotesByCategoria = { [K in CategoriaKey]: { [id: string]: number } };
+type SelectedByCategoria = { [K in CategoriaKey]: string };
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
@@ -32,21 +36,21 @@ const VotoPopular: React.FC = () => {
   };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [finalistas, setFinalistas] = useState<Record<CategoriaKey, CategoriaRankingItem[]>>({
+  const [finalistas, setFinalistas] = useState<FinalistasByCategoria>({
     'finalistica-projeto': [],
     'estruturante-projeto': [],
     'finalistica-pratica': [],
     'estruturante-pratica': [],
     'categoria-especial-ia': [],
   });
-  const [votosCount, setVotosCount] = useState<Record<CategoriaKey, Record<string, number>>>({
+  const [votosCount, setVotosCount] = useState<VotesByCategoria>({
     'finalistica-projeto': {},
     'estruturante-projeto': {},
     'finalistica-pratica': {},
     'estruturante-pratica': {},
     'categoria-especial-ia': {},
   });
-  const [selecionados, setSelecionados] = useState<Record<CategoriaKey, string>>({
+  const [selecionados, setSelecionados] = useState<SelectedByCategoria>({
     'finalistica-projeto': '',
     'estruturante-projeto': '',
     'finalistica-pratica': '',
@@ -54,6 +58,7 @@ const VotoPopular: React.FC = () => {
     'categoria-especial-ia': '',
   });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isLogged, setIsLogged] = useState<boolean>(false);
   
   const [detalheOpen, setDetalheOpen] = useState(false);
   const [detalheItem, setDetalheItem] = useState<CategoriaRankingItem | null>(null);
@@ -74,7 +79,9 @@ const VotoPopular: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        const results: Record<CategoriaKey, CategoriaRankingItem[]> = {
+        const logged = await isAuthenticated();
+        setIsLogged(logged);
+        const results: FinalistasByCategoria = {
           'finalistica-projeto': [],
           'estruturante-projeto': [],
           'finalistica-pratica': [],
@@ -105,22 +112,31 @@ const VotoPopular: React.FC = () => {
           })
         );
         setFinalistas(results);
-        // Contagem de votos via RPC agregada (se disponível)
-        const counts: Record<CategoriaKey, Record<string, number>> = {
-          'finalistica-projeto': {},
-          'estruturante-projeto': {},
-          'finalistica-pratica': {},
-          'estruturante-pratica': {},
-          'categoria-especial-ia': {},
-        };
-        for (const cat of categorias) {
-          try {
-            counts[cat.key] = await getVotosCountByCategoria(cat.key);
-          } catch {
-            counts[cat.key] = {};
+        if (logged) {
+          const counts: VotesByCategoria = {
+            'finalistica-projeto': {},
+            'estruturante-projeto': {},
+            'finalistica-pratica': {},
+            'estruturante-pratica': {},
+            'categoria-especial-ia': {},
+          };
+          for (const cat of categorias) {
+            try {
+              counts[cat.key] = await getVotosCountByCategoria(cat.key);
+            } catch {
+              counts[cat.key] = {};
+            }
           }
+          setVotosCount(counts);
+        } else {
+          setVotosCount({
+            'finalistica-projeto': {},
+            'estruturante-projeto': {},
+            'finalistica-pratica': {},
+            'estruturante-pratica': {},
+            'categoria-especial-ia': {},
+          });
         }
-        setVotosCount(counts);
       } catch (e: any) {
         setError(e?.message || 'Erro ao carregar os finalistas.');
       } finally {
@@ -142,14 +158,9 @@ const VotoPopular: React.FC = () => {
   };
 
   const openConfirm = () => {
-    const faltantes = categorias.filter((c) => !selecionados[c.key]);
-    if (faltantes.length > 0) {
-      toast({ title: 'Selecione um finalista por categoria', description: 'Escolha para todas as categorias antes de confirmar.' });
-      return;
-    }
-    const jaVotou = categorias.some((c) => hasVoted(c.key));
-    if (jaVotou) {
-      toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a uma participação por dispositivo.' });
+    const selecionaveis = categorias.filter((c) => !!selecionados[c.key] && !hasVoted(c.key));
+    if (selecionaveis.length === 0) {
+      toast({ title: 'Selecione pelo menos uma categoria', description: 'Escolha um finalista em alguma categoria ainda não votada.' });
       return;
     }
     confirmarVotos();
@@ -163,33 +174,38 @@ const VotoPopular: React.FC = () => {
         const id = selecionados[cat.key];
         if (!id || hasVoted(cat.key)) continue;
         const res = await submitVotoPopular({ categoria: cat.key, inscricao_id: id, fingerprint: fp });
-        storeVote(cat.key, id);
-        submetidos += 1;
-        if (!res.success) {
-          toast({ title: 'Voto registrado localmente', description: `Categoria: ${cat.label}. Houve um problema ao registrar no servidor.` });
+        if (res.success) {
+          storeVote(cat.key, id);
+          submetidos += 1;
+          setSelecionados((prev) => ({ ...prev, [cat]: '' } as any));
+        } else {
+          const duplicated = String(res.error || '').includes('duplicado_por_ip_ou_fingerprint');
+          toast({ title: duplicated ? 'Voto já registrado' : 'Falha ao registrar voto', description: duplicated ? `Este dispositivo/IP já votou na categoria: ${cat.label}.` : `Categoria: ${cat.label}. Houve um problema ao registrar no servidor.` });
         }
       }
       if (submetidos === 0) {
         toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a uma participação por dispositivo.' });
         return;
       }
-      try {
-        const updatedCounts: Record<CategoriaKey, Record<string, number>> = {
-          'finalistica-projeto': {},
-          'estruturante-projeto': {},
-          'finalistica-pratica': {},
-          'estruturante-pratica': {},
-          'categoria-especial-ia': {},
-        };
-        for (const c of categorias) {
-          try {
-            updatedCounts[c.key] = await getVotosCountByCategoria(c.key);
-          } catch {
-            updatedCounts[c.key] = votosCount[c.key];
+      if (isLogged) {
+        try {
+          const updatedCounts: VotesByCategoria = {
+            'finalistica-projeto': {},
+            'estruturante-projeto': {},
+            'finalistica-pratica': {},
+            'estruturante-pratica': {},
+            'categoria-especial-ia': {},
+          };
+          for (const c of categorias) {
+            try {
+              updatedCounts[c.key] = await getVotosCountByCategoria(c.key);
+            } catch {
+              updatedCounts[c.key] = votosCount[c.key];
+            }
           }
-        }
-        setVotosCount(updatedCounts);
-      } catch {}
+          setVotosCount(updatedCounts);
+        } catch {}
+      }
       toast({ title: 'Votos confirmados', description: 'Obrigado por participar do Voto Popular!' });
     } catch (e: any) {
       toast({ title: 'Votos registrados', description: 'Seus votos foram salvos no dispositivo.' });
@@ -205,8 +221,13 @@ const VotoPopular: React.FC = () => {
       <main className="max-w-6xl mx-auto px-3 py-3">
         <Card className="shadow-sm border">
           <CardHeader>
-            <CardTitle className="text-sm">Voto Popular</CardTitle>
-            <div className="text-[11px] text-gray-600">Prêmio Melhores Práticas do MPPI - 9ª edição</div>
+            <div className="flex items-center gap-2">
+              <img src="/favicon.ico" alt="Ícone" className="h-10 w-10 opacity-80" />
+              <div>
+                <CardTitle className="text-sm">Voto Popular</CardTitle>
+                <div className="text-[11px] text-gray-600">Prêmio Melhores Práticas do MPPI - 9ª edição</div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {error && (
@@ -216,7 +237,7 @@ const VotoPopular: React.FC = () => {
             )}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Para registrar seu voto, selecione um dos trabalhos finalistas em cada categoria. Você pode consultar os detalhes da inscrição clicando no ícone de visualizar ao lado do título. Após escolher um finalista por categoria, confirme ao final da página. Apenas um voto é registrado por dispositivo.
+              Para votar, selecione um trabalho finalista nas categorias desejadas e clique em <strong>Confirmar votos</strong>. Os votos são enviados apenas para as categorias selecionadas e ainda não votadas. Cada categoria permite <strong>apenas um voto por dispositivo</strong>; após votar, aquela categoria fica bloqueada para novo voto, enquanto as demais continuam disponíveis. Você pode ver os detalhes do trabalho no ícone de visualizar ao lado do título.
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -259,6 +280,7 @@ const VotoPopular: React.FC = () => {
                                 checked={selected}
                                 onChange={() => onSelect(cat.key, id)}
                                 className="h-3 w-3"
+                                disabled={hasVoted(cat.key)}
                               />
                               <div>
                                 <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
@@ -290,7 +312,9 @@ const VotoPopular: React.FC = () => {
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                              <span className="text-[11px] text-gray-700">{countDisplay} votos</span>
+                              {isLogged && (
+                                <span className="text-[11px] text-gray-700">{countDisplay} votos</span>
+                              )}
                             </div>
                           </label>
                         );
@@ -379,14 +403,14 @@ const VotoPopular: React.FC = () => {
             )}
 
             <div className="mt-4 flex justify-end">
-              <Button
-                size="sm"
-                onClick={openConfirm}
-                disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-                aria-disabled={!categorias.every((c) => !!selecionados[c.key]) || categorias.some((c) => hasVoted(c.key))}
-              >
-                Confirmar votos
-              </Button>
+                <Button
+                  size="sm"
+                  onClick={openConfirm}
+                disabled={!categorias.some((c) => !!selecionados[c.key] && !hasVoted(c.key))}
+                aria-disabled={!categorias.some((c) => !!selecionados[c.key] && !hasVoted(c.key))}
+                >
+                  Confirmar votos
+                </Button>
             </div>
           </CardContent>
         </Card>
