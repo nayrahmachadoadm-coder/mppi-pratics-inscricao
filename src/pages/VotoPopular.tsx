@@ -14,7 +14,7 @@ import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularSe
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 type FinalistasByCategoria = { [K in CategoriaKey]: CategoriaRankingItem[] };
 type VotesByCategoria = { [K in CategoriaKey]: { [id: string]: number } };
-type SelectedByCategoria = { [K in CategoriaKey]: string };
+type VotesById = { [id: string]: number };
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
@@ -30,33 +30,16 @@ const VotoPopular: React.FC = () => {
   const { toast } = useToast();
   const expandDevText = (text?: string) => {
     const base = text || '';
-    if (!(import.meta as any).env?.DEV) return base;
+    const isDev = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV;
+    if (!isDev) return base;
     const filler = ' Este projeto foi concebido para atender a demandas reais identificadas ao longo de análises internas e externas, contemplando aspectos de usabilidade, acessibilidade, governança e integração de dados. A iniciativa considera riscos, premissas e dependências, adotando abordagem iterativa com validação contínua junto aos usuários e gestores. O desenho das soluções prioriza simplicidade na experiência, transparência nos resultados e rastreabilidade das decisões, com foco em impacto institucional e atendimento qualificado ao cidadão.';
     return `${base} ${filler} ${filler}`;
   };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [finalistas, setFinalistas] = useState<FinalistasByCategoria>({
-    'finalistica-projeto': [],
-    'estruturante-projeto': [],
-    'finalistica-pratica': [],
-    'estruturante-pratica': [],
-    'categoria-especial-ia': [],
-  });
-  const [votosCount, setVotosCount] = useState<VotesByCategoria>({
-    'finalistica-projeto': {},
-    'estruturante-projeto': {},
-    'finalistica-pratica': {},
-    'estruturante-pratica': {},
-    'categoria-especial-ia': {},
-  });
-  const [selecionados, setSelecionados] = useState<SelectedByCategoria>({
-    'finalistica-projeto': '',
-    'estruturante-projeto': '',
-    'finalistica-pratica': '',
-    'estruturante-pratica': '',
-    'categoria-especial-ia': '',
-  });
+  const [allFinalistas, setAllFinalistas] = useState<CategoriaRankingItem[]>([]);
+  const [votosCountById, setVotosCountById] = useState<VotesById>({});
+  const [selectedId, setSelectedId] = useState<string>('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLogged, setIsLogged] = useState<boolean>(false);
   
@@ -81,63 +64,40 @@ const VotoPopular: React.FC = () => {
       try {
         const logged = await isAuthenticated();
         setIsLogged(logged);
-        const results: FinalistasByCategoria = {
-          'finalistica-projeto': [],
-          'estruturante-projeto': [],
-          'finalistica-pratica': [],
-          'estruturante-pratica': [],
-          'categoria-especial-ia': [],
-        };
-        await Promise.all(
-          categorias.map(async (cat) => {
-            try {
-              const viaSql = await getTop3ByCategoriaSql(cat.key);
-              if (viaSql.success && (viaSql.data || []).length > 0) {
-                const top = (viaSql.data || []).slice(0, 3).sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
-                results[cat.key] = top;
-                return;
-              }
-              const rel = await getRelatorioCategoria(cat.key);
-              const list = (rel.data || []);
-              const sorted = list.slice().sort((a, b) => {
-                if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
-                if (b.total_resolutividade !== a.total_resolutividade) return b.total_resolutividade - a.total_resolutividade;
-                if (b.total_replicabilidade !== a.total_replicabilidade) return b.total_replicabilidade - a.total_replicabilidade;
-                return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
-              });
-              results[cat.key] = sorted.slice(0, 3);
-            } catch {
-              results[cat.key] = [];
+        const collected: CategoriaRankingItem[] = [];
+        for (const cat of categorias) {
+          try {
+            const viaSql = await getTop3ByCategoriaSql(cat.key);
+            if (viaSql.success && (viaSql.data || []).length > 0) {
+              const top = (viaSql.data || []).slice(0, 3);
+              collected.push(...top);
+              continue;
             }
-          })
-        );
-        setFinalistas(results);
+            const rel = await getRelatorioCategoria(cat.key);
+            const list = (rel.data || []);
+            collected.push(...list.slice(0, 3));
+          } catch {
+            void 0;
+          }
+        }
+        const sortedAll = collected.slice().sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
+        setAllFinalistas(sortedAll);
+
         if (logged) {
-          const counts: VotesByCategoria = {
-            'finalistica-projeto': {},
-            'estruturante-projeto': {},
-            'finalistica-pratica': {},
-            'estruturante-pratica': {},
-            'categoria-especial-ia': {},
-          };
+          const merged: VotesById = {};
           for (const cat of categorias) {
             try {
-              counts[cat.key] = await getVotosCountByCategoria(cat.key);
+              const byCat = await getVotosCountByCategoria(cat.key);
+              Object.entries(byCat).forEach(([id, count]) => { merged[id] = count; });
             } catch {
-              counts[cat.key] = {};
+              void 0;
             }
           }
-          setVotosCount(counts);
+          setVotosCountById(merged);
         } else {
-          setVotosCount({
-            'finalistica-projeto': {},
-            'estruturante-projeto': {},
-            'finalistica-pratica': {},
-            'estruturante-pratica': {},
-            'categoria-especial-ia': {},
-          });
+          setVotosCountById({});
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         setError(e?.message || 'Erro ao carregar os finalistas.');
       } finally {
         setLoading(false);
@@ -147,9 +107,10 @@ const VotoPopular: React.FC = () => {
   }, []);
 
   const hasVoted = (cat: CategoriaKey) => Boolean(getStoredVote(cat));
+  const hasVotedAny = () => categorias.some((c) => hasVoted(c.key));
 
-  const onSelect = (cat: CategoriaKey, inscricaoId: string) => {
-    setSelecionados((prev) => ({ ...prev, [cat]: inscricaoId }));
+  const onSelectOne = (inscricaoId: string) => {
+    setSelectedId(inscricaoId);
   };
 
   const openDetalhes = (item: CategoriaRankingItem) => {
@@ -158,9 +119,12 @@ const VotoPopular: React.FC = () => {
   };
 
   const openConfirm = () => {
-    const selecionaveis = categorias.filter((c) => !!selecionados[c.key] && !hasVoted(c.key));
-    if (selecionaveis.length === 0) {
-      toast({ title: 'Selecione pelo menos uma categoria', description: 'Escolha um finalista em alguma categoria ainda não votada.' });
+    if (!selectedId) {
+      toast({ title: 'Selecione um finalista', description: 'Escolha um dos 15 trabalhos antes de confirmar.' });
+      return;
+    }
+    if (hasVotedAny()) {
+      toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a um voto por dispositivo.' });
       return;
     }
     confirmarVotos();
@@ -169,48 +133,39 @@ const VotoPopular: React.FC = () => {
   const confirmarVotos = async () => {
     try {
       const fp = await getDeviceFingerprint();
-      let submetidos = 0;
-      for (const cat of categorias) {
-        const id = selecionados[cat.key];
-        if (!id || hasVoted(cat.key)) continue;
-        const res = await submitVotoPopular({ categoria: cat.key, inscricao_id: id, fingerprint: fp });
-        if (res.success) {
-          storeVote(cat.key, id);
-          submetidos += 1;
-          setSelecionados((prev) => ({ ...prev, [cat]: '' } as any));
-        } else {
-          const duplicated = String(res.error || '').includes('duplicado_por_ip_ou_fingerprint');
-          toast({ title: duplicated ? 'Voto já registrado' : 'Falha ao registrar voto', description: duplicated ? `Este dispositivo/IP já votou na categoria: ${cat.label}.` : `Categoria: ${cat.label}. Houve um problema ao registrar no servidor.` });
-        }
-      }
-      if (submetidos === 0) {
-        toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a uma participação por dispositivo.' });
+      const item = allFinalistas.find((f) => f.inscricao.id === selectedId);
+      if (!item) {
+        toast({ title: 'Seleção inválida', description: 'Escolha um dos finalistas e tente novamente.' });
         return;
       }
-      if (isLogged) {
-        try {
-          const updatedCounts: VotesByCategoria = {
-            'finalistica-projeto': {},
-            'estruturante-projeto': {},
-            'finalistica-pratica': {},
-            'estruturante-pratica': {},
-            'categoria-especial-ia': {},
-          };
-          for (const c of categorias) {
-            try {
-              updatedCounts[c.key] = await getVotosCountByCategoria(c.key);
-            } catch {
-              updatedCounts[c.key] = votosCount[c.key];
-            }
-          }
-          setVotosCount(updatedCounts);
-        } catch {}
+      const categoria = item.inscricao.area_atuacao as CategoriaKey;
+      if (hasVotedAny()) {
+        toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a um voto por dispositivo.' });
+        return;
       }
-      toast({ title: 'Votos confirmados', description: 'Obrigado por participar do Voto Popular!' });
-    } catch (e: any) {
-      toast({ title: 'Votos registrados', description: 'Seus votos foram salvos no dispositivo.' });
-    } finally {
-      
+      const res = await submitVotoPopular({ categoria, inscricao_id: selectedId, fingerprint: fp });
+      if (res.success) {
+        storeVote(categoria, selectedId);
+        setSelectedId('');
+        if (isLogged) {
+          try {
+            const merged: VotesById = { ...votosCountById };
+            for (const c of categorias) {
+              try {
+                const byCat = await getVotosCountByCategoria(c.key);
+                Object.entries(byCat).forEach(([id, count]) => { merged[id] = count; });
+              } catch { void 0; }
+            }
+            setVotosCountById(merged);
+          } catch { void 0; }
+        }
+        toast({ title: 'Voto confirmado', description: 'Obrigado por participar do Voto Popular!' });
+      } else {
+        const duplicated = String(res.error || '').includes('duplicado_por_ip_ou_fingerprint');
+        toast({ title: duplicated ? 'Voto já registrado' : 'Falha ao registrar voto', description: duplicated ? 'Este dispositivo/IP já registrou um voto.' : 'Houve um problema ao registrar seu voto no servidor.' });
+      }
+    } catch (e: unknown) {
+      toast({ title: 'Voto registrado localmente', description: 'Seu voto foi salvo no dispositivo.' });
     }
   };
 
@@ -237,50 +192,46 @@ const VotoPopular: React.FC = () => {
             )}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Para votar, selecione um trabalho finalista nas categorias desejadas e clique em <strong>Confirmar votos</strong>. Os votos são enviados apenas para as categorias selecionadas e ainda não votadas. Cada categoria permite <strong>apenas um voto por dispositivo</strong>; após votar, aquela categoria fica bloqueada para novo voto, enquanto as demais continuam disponíveis. Você pode ver os detalhes do trabalho no ícone de visualizar ao lado do título.
+              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>ordem alfabética</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {categorias.map((cat) => (
-                <section key={cat.key} className="p-2">
-                  <div className="rounded-md overflow-hidden border shadow-md">
-                    <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
-                      <h2 className="text-xs font-semibold">{cat.label}</h2>
-                      {hasVoted(cat.key) && (
-                        <span className="text-[11px]">Voto registrado neste dispositivo</span>
-                      )}
-                    </div>
-                  {loading ? (
-                    <div className="text-xs text-gray-500">Carregando finalistas...</div>
-                  ) : finalistas[cat.key].length === 0 ? (
-                    <div className="text-xs text-gray-500">Nenhum finalista disponível.</div>
-                  ) : (
-                    <div className="space-y-1 px-3 py-2">
-                      {finalistas[cat.key]
-                        .slice()
-                        .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
-                        .map((item) => {
+            <div className="p-2">
+              <div className="rounded-md overflow-hidden border shadow-md">
+                <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
+                  <h2 className="text-xs font-semibold">Finalistas</h2>
+                  {hasVotedAny() && (
+                    <span className="text-[11px]">Voto registrado neste dispositivo</span>
+                  )}
+                </div>
+                {loading ? (
+                  <div className="text-xs text-gray-500 px-3 py-2">Carregando finalistas...</div>
+                ) : allFinalistas.length === 0 ? (
+                  <div className="text-xs text-gray-500 px-3 py-2">Nenhum finalista disponível.</div>
+                ) : (
+                  <div className="space-y-1 px-3 py-2">
+                    {allFinalistas
+                      .slice()
+                      .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
+                      .map((item) => {
                         const id = item.inscricao.id;
-                        const selected = selecionados[cat.key] === id;
-                        const count = votosCount[cat.key]?.[id];
+                        const selected = selectedId === id;
+                        const count = votosCountById[id];
                         const countDisplay = typeof count === 'number' ? count : 0;
                         return (
                           <label
                             key={id}
                             className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
-                              selected
-                                ? 'border-black bg-gray-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                              selected ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'
                             }`}
                           >
                             <div className="flex items-center gap-2">
                               <input
                                 type="radio"
-                                name={`sel-${cat.key}`}
+                                name={`sel-all`}
                                 checked={selected}
-                                onChange={() => onSelect(cat.key, id)}
+                                onChange={() => onSelectOne(id)}
                                 className="h-3 w-3"
-                                disabled={hasVoted(cat.key)}
+                                disabled={hasVotedAny()}
                               />
                               <div>
                                 <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
@@ -319,11 +270,9 @@ const VotoPopular: React.FC = () => {
                           </label>
                         );
                       })}
-                    </div>
-                  )}
                   </div>
-                </section>
-              ))}
+                )}
+              </div>
             </div>
 
             
@@ -403,14 +352,14 @@ const VotoPopular: React.FC = () => {
             )}
 
             <div className="mt-4 flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={openConfirm}
-                disabled={!categorias.some((c) => !!selecionados[c.key] && !hasVoted(c.key))}
-                aria-disabled={!categorias.some((c) => !!selecionados[c.key] && !hasVoted(c.key))}
-                >
-                  Confirmar votos
-                </Button>
+              <Button
+                size="sm"
+                onClick={openConfirm}
+                disabled={!selectedId || hasVotedAny()}
+                aria-disabled={!selectedId || hasVotedAny()}
+              >
+                Confirmar voto
+              </Button>
             </div>
           </CardContent>
         </Card>
