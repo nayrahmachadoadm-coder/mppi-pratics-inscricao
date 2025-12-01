@@ -221,7 +221,7 @@ const VotoPopular: React.FC = () => {
                           <label
                             key={id}
                             className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
-                              selected ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'
+                              selected ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
                             }`}
                           >
                             <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ const VotoPopular: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               {selected && (
-                                <span className="text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
+                                <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
                               )}
                               <TooltipProvider>
                                 <Tooltip>
