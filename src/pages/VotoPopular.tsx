@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Eye } from 'lucide-react';
+import { Eye, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { isAuthenticated } from '@/lib/auth';
@@ -169,7 +170,129 @@ const VotoPopular: React.FC = () => {
     }
   };
 
-  
+  const totalVotos = isLogged ? Object.values(votosCountById).reduce((sum, n) => sum + (n || 0), 0) : 0;
+
+  const loadImageDataUrl = async (url: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
+  const exportVotoPopularPdf = async () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    // Header com favicon, título e subtítulo
+    const iconDataUrl = await loadImageDataUrl('/favicon.ico');
+    const headerY = 18;
+    if (iconDataUrl) {
+      doc.addImage(iconDataUrl, 'PNG', margin, headerY - 6, 8, 8);
+    } else {
+      doc.setFillColor(118, 10, 37);
+      doc.circle(margin + 4, headerY - 2, 3, 'F');
+    }
+    doc.setFontSize(14);
+    doc.text('Prêmio Melhores Práticas do MPPI - 9ª Edição', margin + 12, headerY);
+    doc.setFontSize(11);
+    doc.text('Resultado - Voto Popular', margin + 12, headerY + 7);
+    doc.setDrawColor(180);
+    doc.line(margin, headerY + 10, pageWidth - margin, headerY + 10);
+
+    // Preparar ranking (ordem decrescente de votos)
+    const ranked = allFinalistas
+      .map((f) => {
+        const id = f.inscricao.id;
+        const votes = votosCountById[id] || 0;
+        const pct = totalVotos > 0 ? (votes / totalVotos) * 100 : 0;
+        return { pos: 0, name: f.inscricao.titulo_iniciativa || '', votes, pct };
+      })
+      .sort((a, b) => b.votes - a.votes)
+      .map((item, idx) => ({ ...item, pos: idx + 1 }));
+
+    // Tabela: colunas (pos, trabalho, votos, %)
+    const colPosW = 16;
+    const colVotesW = 28;
+    const colPctW = 26;
+    const tableWidth = pageWidth - margin * 2;
+    const colWorkW = tableWidth - (colPosW + colVotesW + colPctW);
+    const xPos = margin;
+    const xWork = xPos + colPosW;
+    const xVotes = xWork + colWorkW;
+    const xPct = xVotes + colVotesW;
+
+    let y = headerY + 16;
+    const rowH = 8;
+
+    // Cabeçalho da tabela
+    doc.setFontSize(10);
+    // bg vermelho igual ao header principal (aproximação de hsl(345 85% 25%) -> rgb(118,10,37))
+    doc.setTextColor(255);
+    doc.setFillColor(118, 10, 37);
+    doc.rect(margin, y, tableWidth, rowH, 'F');
+    doc.text('Pos', xPos + 2, y + 5);
+    doc.text('Trabalho', xWork + 2, y + 5);
+    doc.text('Votos', xVotes + 2, y + 5);
+    doc.text('%', xPct + 2, y + 5);
+    y += rowH;
+
+    doc.setTextColor(20);
+    ranked.forEach((r) => {
+      // Quebra de página
+      if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
+        doc.addPage();
+        y = margin;
+      }
+      // Linhas
+      doc.setDrawColor(230);
+      doc.line(margin, y, margin + tableWidth, y);
+
+      // Pos
+      doc.text(String(r.pos).padStart(2, '0'), xPos + 2, y + 6);
+
+      // Trabalho (quebra para caber na coluna)
+      const wrapped = doc.splitTextToSize(r.name, colWorkW - 4);
+      doc.text(wrapped, xWork + 2, y + 6);
+      const lines = Array.isArray(wrapped) ? wrapped.length : 1;
+
+      // Votos e % (primeira linha da célula)
+      doc.text(r.votes.toLocaleString('pt-BR'), xVotes + 2, y + 6);
+      doc.text(`${r.pct.toFixed(1)}%`, xPct + 2, y + 6);
+
+      // Avança pela altura utilizada
+      y += Math.max(rowH, lines * 6);
+    });
+
+    // Linha total
+    if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
+      doc.addPage();
+      y = margin;
+    }
+    doc.setDrawColor(0);
+    doc.line(margin, y, margin + tableWidth, y);
+    y += 4;
+    doc.setFontSize(10);
+    doc.text('Total de votos', xWork + 2, y);
+    doc.text(totalVotos.toLocaleString('pt-BR'), xVotes + 2, y);
+    doc.text(totalVotos > 0 ? '100,0%' : '0,0%', xPct + 2, y);
+
+    doc.save('voto-popular.pdf');
+  };
 
   return (
     <div className="bg-white">
@@ -199,10 +322,29 @@ const VotoPopular: React.FC = () => {
               <div className="rounded-md overflow-hidden border shadow-md">
                 <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
                   <h2 className="text-xs font-semibold">Finalistas</h2>
-                  {hasVotedAny() && (
-                    <span className="text-[11px]">Voto registrado neste dispositivo</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {hasVotedAny() && (
+                      <span className="text-[11px]">Voto registrado neste dispositivo</span>
+                    )}
+                    {isLogged && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button type="button" variant="ghost" size="sm" className="h-6 px-2" aria-label="Exportar PDF" onClick={exportVotoPopularPdf}>
+                              <FileDown className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <span className="text-xs">Exportar resultado em PDF</span>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 </div>
+                {isLogged && (
+                  <div className="px-3 py-2 text-[11px] text-gray-700">Total de votos: {totalVotos.toLocaleString('pt-BR')}</div>
+                )}
                 {loading ? (
                   <div className="text-xs text-gray-500 px-3 py-2">Carregando finalistas...</div>
                 ) : allFinalistas.length === 0 ? (
@@ -264,7 +406,7 @@ const VotoPopular: React.FC = () => {
                                 </Tooltip>
                               </TooltipProvider>
                               {isLogged && (
-                                <span className="text-[11px] text-gray-700">{countDisplay} votos</span>
+                                <span className="text-[11px] text-gray-700">{countDisplay.toLocaleString('pt-BR')} votos {totalVotos > 0 ? `(${((countDisplay / totalVotos) * 100).toFixed(1)}%)` : ''}</span>
                               )}
                             </div>
                           </label>
