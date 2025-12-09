@@ -26,6 +26,7 @@ const categorias: { key: CategoriaKey; label: string }[] = [
 ];
 
 const SITE_KEY = undefined;
+const VOTACAO_ENCERRADA = true;
 
 const VotoPopular: React.FC = () => {
   const { toast } = useToast();
@@ -120,6 +121,10 @@ const VotoPopular: React.FC = () => {
   };
 
   const openConfirm = () => {
+    if (VOTACAO_ENCERRADA) {
+      toast({ title: 'Votação encerrada', description: 'A votação popular foi encerrada.' });
+      return;
+    }
     if (!selectedId) {
       toast({ title: 'Selecione um finalista', description: 'Escolha um dos 15 trabalhos antes de confirmar.' });
       return;
@@ -314,6 +319,12 @@ const VotoPopular: React.FC = () => {
               </Alert>
             )}
 
+            {VOTACAO_ENCERRADA && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-[11px] text-red-900">
+                A votação popular foi <strong>encerrada</strong>. Agradecemos a participação de todos. Os campos de seleção foram bloqueados e novos votos não podem ser registrados.
+              </div>
+            )}
+
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
               Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>ordem alfabética</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
@@ -367,14 +378,14 @@ const VotoPopular: React.FC = () => {
                             }`}
                           >
                             <div className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name={`sel-all`}
-                                checked={selected}
-                                onChange={() => onSelectOne(id)}
-                                className="h-3 w-3"
-                                disabled={hasVotedAny()}
-                              />
+                          <input
+                            type="radio"
+                            name={`sel-all`}
+                            checked={selected}
+                            onChange={() => onSelectOne(id)}
+                            className="h-3 w-3"
+                            disabled={VOTACAO_ENCERRADA || hasVotedAny()}
+                          />
                               <div>
                                 <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
                               </div>
@@ -497,8 +508,8 @@ const VotoPopular: React.FC = () => {
               <Button
                 size="sm"
                 onClick={openConfirm}
-                disabled={!selectedId || hasVotedAny()}
-                aria-disabled={!selectedId || hasVotedAny()}
+                disabled={VOTACAO_ENCERRADA || !selectedId || hasVotedAny()}
+                aria-disabled={VOTACAO_ENCERRADA || !selectedId || hasVotedAny()}
               >
                 Confirmar voto
               </Button>
