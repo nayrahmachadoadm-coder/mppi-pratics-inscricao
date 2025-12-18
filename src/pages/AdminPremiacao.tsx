@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
-import { Medal } from 'lucide-react';
+import { Medal, Crown } from 'lucide-react';
 import { useCallback } from 'react';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
@@ -31,6 +31,7 @@ const AdminPremiacao = () => {
   const [finalistas, setFinalistas] = useState<CategoriaRankingItem[]>([]);
   const [ranking, setRanking] = useState<CategoriaRankingItem[]>([]);
   const [showResultado, setShowResultado] = useState<boolean>(false);
+  const winnerId = showResultado && ranking.length > 0 ? ranking[0]?.inscricao?.id : undefined;
 
   const sortedFinalistasAlpha = useMemo(() => {
     return [...finalistas].sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
@@ -231,7 +232,12 @@ const AdminPremiacao = () => {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {sortedFinalistasAlpha.map((it) => (
-                          <div key={it.inscricao.id} className="rounded-md border bg-red-50 border-red-200 p-3 shadow-sm">
+                          <div key={it.inscricao.id} className="relative rounded-md border bg-red-50 border-red-200 p-3 shadow-sm">
+                            {winnerId === it.inscricao.id && (
+                              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/90 border border-yellow-300 rounded-full p-2 shadow-md ring-2 ring-yellow-300/40 pointer-events-none z-10">
+                                <Crown className="w-8 h-8 text-yellow-500" />
+                              </div>
+                            )}
                             <div className="text-xs font-semibold text-gray-900">{it.inscricao.titulo_iniciativa}</div>
                             <div className="mt-1 text-[11px] text-gray-700"><span className="font-medium">Proponente:</span> {it.inscricao.nome_completo}</div>
                             <div className="mt-1 text-[11px] text-gray-600"><span className="font-medium">Lotação:</span> {it.inscricao.lotacao}</div>
