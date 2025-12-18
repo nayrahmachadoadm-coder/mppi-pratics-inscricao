@@ -16,7 +16,7 @@ const AdminCronograma = () => {
     { date: '2025-11-07', label: 'Divulgação das práticas inscritas deferidas' },
     { date: '2025-11-17', label: 'Divulgação da lista definitiva dos inscritos' },
     { date: '2025-11-28', label: 'Divulgação dos finalistas' },
-    { date: '2025-12-12', label: 'Cerimônia de Premiação (a confirmar)' }, // conforme solicitado: 12 de dezembro
+    { date: '2025-12-18', label: 'Cerimônia de Premiação' },
   ];
 
   const rangeEvents: { start: string; end: string; label: string }[] = [
@@ -133,7 +133,7 @@ const AdminCronograma = () => {
                 <li>17/11/2025 — Divulgação da lista definitiva dos inscritos</li>
                 <li>28/11/2025 — Divulgação dos finalistas</li>
                 <li>28/11/2025 – 08/12/2025 — Voto Popular</li>
-                <li>12/12/2025 — Cerimônia de Premiação (a confirmar)</li>
+                <li>18/12/2025 — Cerimônia de Premiação</li>
               </ul>
             </div>
           </CardContent>
