@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { isAuthenticated } from '@/lib/auth';
-import { getDeviceFingerprint, getStoredVote, storeVote, clearAllVotes } from '@/utils/fingerprint';
+import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
@@ -326,7 +326,7 @@ const VotoPopular: React.FC = () => {
             )}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>ordem alfabética</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
+              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem alfabética'}</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
 
             <div className="p-2">
@@ -361,68 +361,96 @@ const VotoPopular: React.FC = () => {
                 ) : allFinalistas.length === 0 ? (
                   <div className="text-xs text-gray-500 px-3 py-2">Nenhum finalista disponível.</div>
                 ) : (
-                  <div className="space-y-1 px-3 py-2">
-                    {allFinalistas
-                      .slice()
-                      .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
-                      .map((item) => {
-                        const id = item.inscricao.id;
-                        const selected = selectedId === id;
-                        const count = votosCountById[id];
-                        const countDisplay = typeof count === 'number' ? count : 0;
-                        return (
-                          <label
-                            key={id}
-                            className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
-                              selected ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name={`sel-all`}
-                            checked={selected}
-                            onChange={() => onSelectOne(id)}
-                            className="h-3 w-3"
-                            disabled={VOTACAO_ENCERRADA || hasVotedAny()}
-                          />
-                              <div>
-                                <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {selected && (
-                                <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
-                              )}
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        openDetalhes(item);
-                                      }}
-                                      aria-label="Ver detalhes da inscrição"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <span className="text-xs">Ver detalhes da inscrição</span>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              {isLogged && (
-                                <span className="text-[11px] text-gray-700">{countDisplay.toLocaleString('pt-BR')} votos {totalVotos > 0 ? `(${((countDisplay / totalVotos) * 100).toFixed(1)}%)` : ''}</span>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
+                  <div className="px-3 py-2">
+                    {isLogged ? (
+                      <div className="rounded border overflow-hidden">
+                        <div className="grid grid-cols-12 bg-gray-100 px-3 py-2 text-[11px] font-semibold">
+                          <div className="col-span-8">Trabalho</div>
+                          <div className="col-span-2 text-right">Votos</div>
+                          <div className="col-span-2 text-right">%</div>
+                        </div>
+                        <div className="divide-y">
+                          {allFinalistas
+                            .slice()
+                            .sort((a, b) => {
+                              const va = votosCountById[a.inscricao.id] || 0;
+                              const vb = votosCountById[b.inscricao.id] || 0;
+                              return vb - va;
+                            })
+                            .map((item) => {
+                              const id = item.inscricao.id;
+                              const votes = votosCountById[id] || 0;
+                              const pct = totalVotos > 0 ? (votes / totalVotos) * 100 : 0;
+                              return (
+                                <div key={id} className="grid grid-cols-12 items-center px-3 py-2 text-xs">
+                                  <div className="col-span-8 text-gray-900">{item.inscricao.titulo_iniciativa}</div>
+                                  <div className="col-span-2 text-right text-gray-700">{votes.toLocaleString('pt-BR')}</div>
+                                  <div className="col-span-2 text-right text-gray-700">{pct.toFixed(1)}%</div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {allFinalistas
+                          .slice()
+                          .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
+                          .map((item) => {
+                            const id = item.inscricao.id;
+                            const selected = selectedId === id;
+                            return (
+                              <label
+                                key={id}
+                                className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
+                                  selected ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`sel-all`}
+                                    checked={selected}
+                                    onChange={() => onSelectOne(id)}
+                                    className="h-3 w-3"
+                                    disabled={VOTACAO_ENCERRADA || hasVotedAny()}
+                                  />
+                                  <div>
+                                    <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {selected && (
+                                    <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
+                                  )}
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            openDetalhes(item);
+                                          }}
+                                          aria-label="Ver detalhes da inscrição"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <span className="text-xs">Ver detalhes da inscrição</span>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -484,25 +512,7 @@ const VotoPopular: React.FC = () => {
 
             
             
-            {/* Botão de reset para testes - apenas em desenvolvimento */}
-            {import.meta.env.DEV && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <div className="text-[10px] text-yellow-800 mb-1">
-                  <strong>Modo Desenvolvimento:</strong> Use o botão abaixo para resetar votos e testar novamente.
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    clearAllVotes();
-                    window.location.reload();
-                  }}
-                  className="text-[10px]"
-                >
-                  🔄 Resetar votos para teste
-                </Button>
-              </div>
-            )}
+            
 
             <div className="mt-4 flex justify-end">
               <Button
