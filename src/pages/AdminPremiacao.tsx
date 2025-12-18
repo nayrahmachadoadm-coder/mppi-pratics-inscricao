@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { Medal } from 'lucide-react';
+import { useCallback } from 'react';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
 
@@ -34,6 +35,116 @@ const AdminPremiacao = () => {
   const sortedFinalistasAlpha = useMemo(() => {
     return [...finalistas].sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
   }, [finalistas]);
+
+  const triggerConfetti = useCallback(() => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    const setSize = () => {
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.scale(dpr, dpr);
+    };
+    setSize();
+    canvas.style.position = 'fixed';
+    canvas.style.left = '0';
+    canvas.style.top = '0';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+    const colors = ['#e11d48', '#0ea5e9', '#10b981', '#f59e0b', '#6366f1', '#14b8a6'];
+    const shapes = ['rect', 'circle', 'triangle'];
+    const particles: Array<any> = [];
+    const burst = (x: number, y: number, count: number) => {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 4;
+        const size = 2 + Math.random() * 6;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          g: 0.08 + Math.random() * 0.12,
+          size,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          shape: shapes[Math.floor(Math.random() * shapes.length)],
+          rotation: Math.random() * Math.PI * 2,
+          vr: (Math.random() - 0.5) * 0.1,
+          life: 120 + Math.random() * 60,
+        });
+      }
+    };
+    burst(window.innerWidth * 0.25, window.innerHeight * 0.2, 80);
+    burst(window.innerWidth * 0.5, window.innerHeight * 0.15, 120);
+    burst(window.innerWidth * 0.75, window.innerHeight * 0.2, 80);
+    const streamCount = 140;
+    for (let i = 0; i < streamCount; i++) {
+      const x = Math.random() * window.innerWidth;
+      particles.push({
+        x,
+        y: -10,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: 2 + Math.random() * 3,
+        g: 0.05 + Math.random() * 0.08,
+        size: 2 + Math.random() * 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        shape: shapes[Math.floor(Math.random() * shapes.length)],
+        rotation: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.08,
+        life: 160 + Math.random() * 100,
+      });
+    }
+    let frame = 0;
+    let running = true;
+    const draw = () => {
+      if (!running) return;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      particles.forEach((p) => {
+        p.vy += p.g;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.vr;
+        p.life -= 1;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = p.color;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        if (p.shape === 'rect') {
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+        } else if (p.shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(0, -p.size / 2);
+          ctx.lineTo(p.size / 2, p.size / 2);
+          ctx.lineTo(-p.size / 2, p.size / 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (particles[i].life <= 0 || particles[i].y > window.innerHeight + 20) particles.splice(i, 1);
+      }
+      frame++;
+      if (frame < 240 || particles.length > 0) {
+        requestAnimationFrame(draw);
+      } else {
+        running = false;
+        canvas.remove();
+        window.removeEventListener('resize', setSize);
+      }
+    };
+    window.addEventListener('resize', setSize);
+    requestAnimationFrame(draw);
+  }, []);
 
   useEffect(() => {
     const loadCategoria = async () => {
@@ -135,7 +246,13 @@ const AdminPremiacao = () => {
                         variant="outline"
                         className="text-[11px]"
                         disabled={loading || ranking.length === 0}
-                        onClick={() => setShowResultado((v) => !v)}
+                        onClick={() => {
+                          setShowResultado((v) => {
+                            const next = !v;
+                            if (!v && ranking.length > 0) triggerConfetti();
+                            return next;
+                          });
+                        }}
                       >
                         {showResultado ? 'Ocultar resultado' : 'Exibir o resultado'}
                       </Button>
