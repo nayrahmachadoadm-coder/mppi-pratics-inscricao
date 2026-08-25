@@ -6,7 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
-import PublicRedirect from "./pages/PublicRedirect";
+import Index from "./pages/Index";
+import ConfirmacaoInscricao from "./pages/ConfirmacaoInscricao";
 import AdminHome from "./pages/AdminHome";
 import AdminInscricaoDetails from "./pages/AdminInscricaoDetails";
 import AdminCategorias from "./pages/AdminCategorias";
@@ -39,12 +40,12 @@ const App = () => (
       <BrowserRouter>
         <TopNav />
         <Routes>
-          {/* Página principal passa a ser o login do sistema de gestão */}
-          <Route path="/" element={<AdminLogin />} />
-          {/* Redirecionamento de páginas públicas antigas para o login */}
-          <Route path="/confirmacao" element={<PublicRedirect />} />
-          <Route path="/index" element={<PublicRedirect />} />
-          <Route path="/inscricao" element={<PublicRedirect />} />
+          {/* Página principal para inscrição do público */}
+          <Route path="/" element={<Index />} />
+          <Route path="/index" element={<Index />} />
+          <Route path="/inscricao" element={<Index />} />
+          <Route path="/confirmacao" element={<ConfirmacaoInscricao />} />
+          
           <Route path="/admin/login" element={<AdminLogin />} />
            <Route path="/admin/categorias" element={
              <EitherProtectedRoute>

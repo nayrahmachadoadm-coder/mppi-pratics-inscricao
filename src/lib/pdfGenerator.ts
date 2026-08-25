@@ -247,7 +247,7 @@ export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOp
       // Subtítulo com fonte menor
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      const title2 = '9ª Edição - 2025 | Ficha de Inscrição';
+      const title2 = '10ª Edição - 2026 | Ficha de Inscrição';
       const title2Width = pdf.getTextWidth(title2);
       pdf.text(title2, (pageWidth - title2Width) / 2, 50);
       
@@ -269,7 +269,7 @@ export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOp
       pdf.setFont('helvetica', 'normal');
       
       // Lado esquerdo
-      pdf.text('9ª ed. Prêmio Melhores Práticas', margin, footerY);
+      pdf.text('10ª ed. Prêmio Melhores Práticas', margin, footerY);
       
       // Centro - Numeração correta das páginas
       const pageInfo = `Página ${currentPage}/${totalPages}`;

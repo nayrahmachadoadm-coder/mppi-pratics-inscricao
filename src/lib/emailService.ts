@@ -158,7 +158,7 @@ export const sendEmailAlternative = async (emailData: EmailData): Promise<boolea
     formData.append('message', `
       Prezado(a) ${emailData.nomeCompleto},
 
-      Sua inscrição no Prêmio Melhores Práticas MPPI - 9ª Edição - 2025 foi enviada com sucesso!
+      Sua inscrição no Prêmio Melhores Práticas MPPI - 10ª Edição - 2026 foi enviada com sucesso!
 
       Título da Prática/Projeto: ${emailData.tituloIniciativa}
 

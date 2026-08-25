@@ -40,7 +40,7 @@ const AdminRegulamento = () => {
           <div className="flex items-center gap-3">
             <img src="/favicon.ico" alt="Ícone" className="h-6 w-6 opacity-80" />
             <div>
-              <h1 className="text-base font-semibold text-gray-900">Regulamento – 9ª Edição do Prêmio Melhores Práticas</h1>
+              <h1 className="text-base font-semibold text-gray-900">Regulamento – 10ª Edição do Prêmio Melhores Práticas</h1>
               <p className="text-xs text-gray-600">Sistema de Julgamento e Gestão de Inscrições</p>
             </div>
           </div>
@@ -58,7 +58,7 @@ const AdminRegulamento = () => {
             <CardTitle className="text-xl font-semibold text-center">Edital nº 107/2025</CardTitle>
           </CardHeader>
           <CardContent id="regulamento-content" className="max-w-none text-justify text-xs">
-            <p className="text-gray-700">Regulamenta a 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí.</p>
+            <p className="text-gray-700">Regulamenta a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí.</p>
 
             <h3 id="sec-1" className="font-semibold mt-4 scroll-mt-24 text-sm">1. DA APRESENTAÇÃO</h3>
             <p className="text-gray-700">1.1 O Prêmio Melhores Práticas do Ministério Público do Estado do Piauí visa a estimular, reconhecer e a premiar boas experiências relacionadas à atuação institucional, finalística ou estruturante, que promovam práticas e projetos em prol da sociedade e do aprimoramento da atividade ministerial.</p>
@@ -69,7 +69,7 @@ const AdminRegulamento = () => {
             <p className="text-gray-700">2.2 Estimular práticas alinhadas aos Objetivos de Desenvolvimento Sustentável (ODS) da Agenda 2030 da ONU, fortalecendo o compromisso institucional com a sustentabilidade e os direitos fundamentais.</p>
 
             <h3 id="sec-3" className="font-semibold mt-4 scroll-mt-24 text-sm">3. DAS CATEGORIAS E CRITÉRIOS</h3>
-            <p className="text-gray-700">3.1 A 9ª Edição contemplará as seguintes áreas e categorias:</p>
+            <p className="text-gray-700">3.1 A 10ª Edição contemplará as seguintes áreas e categorias:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
               <li>I - Área Finalística: Categoria Práticas; Categoria Projetos</li>
               <li>II - Área Estruturante: Categoria Práticas; Categoria Projetos</li>
@@ -87,21 +87,21 @@ const AdminRegulamento = () => {
             </ul>
 
             <h3 id="sec-4" className="font-semibold mt-4 scroll-mt-24 text-sm">4. DOS REQUISITOS DE PARTICIPAÇÃO</h3>
-            <p className="text-gray-700">4.1 Poderão participar da 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí membros e servidores do MPPI, com atuação nas áreas fim e meio.</p>
+            <p className="text-gray-700">4.1 Poderão participar da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí membros e servidores do MPPI, com atuação nas áreas fim e meio.</p>
             <p className="text-gray-700">4.2 Não poderão concorrer projetos ou práticas que já tenham sido vencedores em edições anteriores do Prêmio Melhores Práticas do MPPI, sendo tais inscrições automaticamente indeferidas.</p>
 
             <h3 id="sec-5" className="font-semibold mt-4 scroll-mt-24 text-sm">5. DA INSCRIÇÃO</h3>
-            <p className="text-gray-700">5.1 As inscrições da 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí serão realizadas, no período de 20 de setembro a 30 de outubro de 2025, devendo o candidato preencher, pelo link <a href="https://mppi-pratics-inscricao.lovable.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-pratics-inscricao.lovable.app/</a> a ficha de inscrição.</p>
+            <p className="text-gray-700">5.1 As inscrições da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí serão realizadas, no período de 20 de setembro a 30 de outubro de 2025, devendo o candidato preencher, pelo link <a href="https://mppi-pratics-inscricao.lovable.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-pratics-inscricao.lovable.app/</a> a ficha de inscrição.</p>
             <p className="text-gray-700">5.2 Cada participante poderá inscrever até 03 (três) iniciativas, sendo: 01 (uma) prática; 01 (um) projeto; e, adicionalmente, 01 (uma) inscrição na Categoria Especial de Inteligência Artificial.</p>
             <p className="text-gray-700">5.3 Poderão ser inscritas práticas e projetos que tenham sido efetivamente executadas pelo membro e/ou servidor e que sejam de sua autoria.</p>
             <p className="text-gray-700">5.4 Havendo mais de uma inscrição na mesma categoria, será considerada a que primeira foi enviada.</p>
             <p className="text-gray-700">5.5 Somente projetos institucionalizados, ou seja, elaborados de acordo com o Ato PGJ/PI Nº 1254/2022, que dispõe sobre a Metodologia de Gerenciamento de Projetos no âmbito do Ministério Público do Estado do Piauí e sobre práticas inscritas no Banco de Práticas do MPPI, concorrerão ao Prêmio Melhores Práticas.</p>
             <p className="text-gray-700">5.6 As Práticas e Projetos inscritos podem ter sido concluídos ou estar em execução, desde que seja possível mensurar os resultados nos últimos 03 anos.</p>
-            <p className="text-gray-700">5.7 As inscrições da 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí são gratuitas.</p>
+            <p className="text-gray-700">5.7 As inscrições da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí são gratuitas.</p>
             <p className="text-gray-700">5.8 As inscrições serão analisadas pelo Presidente da Comissão Julgadora designada pela Procuradora-Geral de Justiça para deferimento ou não.</p>
             <p className="text-gray-700">5.9 Serão indeferidas as inscrições que não atenderem ao disposto neste regulamento, incluindo aquelas cuja respectiva ficha de inscrição esteja preenchida incorretamente.</p>
             <p className="text-gray-700">5.10 No caso do indeferimento da inscrição, o interessado poderá interpor um pedido de reconsideração ao Presidente da Comissão Julgadora, no prazo contido no Anexo Único, que decidirá, de forma fundamentada.</p>
-            <p className="text-gray-700">5.11 A inscrição na 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí implica aceitação tácita de eventual publicação, divulgação e utilização das práticas inscritas, independentemente de premiação, assim como a autorização do uso de imagens, textos, vozes e nomes, em qualquer meio de divulgação e promoção (interno, externo e/ou de imprensa), sem ônus ou termo de retribuição.</p>
+            <p className="text-gray-700">5.11 A inscrição na 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí implica aceitação tácita de eventual publicação, divulgação e utilização das práticas inscritas, independentemente de premiação, assim como a autorização do uso de imagens, textos, vozes e nomes, em qualquer meio de divulgação e promoção (interno, externo e/ou de imprensa), sem ônus ou termo de retribuição.</p>
             <p className="text-gray-700">5.12 Os membros e servidores autores das práticas e projetos que concorrerem ao Prêmio Melhores Práticas, ao realizarem a mera inscrição neste certame, declaram e reconhecem expressamente que as ações que resultaram nas práticas e projetos inscritos foram executadas em nome do Ministério Público do Estado do Piauí, pelo que os direitos autorais das mesmas a este pertencem, sendo permitido à referida instituição dispor, usar e gozar destas obras intelectuais como bem lhe dispuser.</p>
 
             <h3 id="sec-6" className="font-semibold mt-6 scroll-mt-24 text-sm">6. DA COMISSÃO JULGADORA</h3>
@@ -170,7 +170,7 @@ const AdminRegulamento = () => {
 
             <h3 id="sec-8" className="font-semibold mt-6 scroll-mt-24 text-sm">8. DAS DISPOSIÇÕES GERAIS</h3>
             <p className="text-gray-700">8.1 A Coordenadoria de Comunicação Social - CCS deverá fornecer apoio técnico aos projetos e práticas, que tenham por veículo as redes sociais (como medir o alcance) e todas as informações e documentos requisitados pela Comissão.</p>
-            <p className="text-gray-700">8.2. Quaisquer dúvidas sobre a 9ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí poderão ser esclarecidas por meio dos telefones (86) 2222-8000 - Ramal 8015 (Assessoria de Planejamento e Gestão) ou por meio da instauração de procedimento de gestão administrativa no sistema SEI, o qual deverá ser encaminhado à ASSESPPLAGES.</p>
+            <p className="text-gray-700">8.2. Quaisquer dúvidas sobre a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí poderão ser esclarecidas por meio dos telefones (86) 2222-8000 - Ramal 8015 (Assessoria de Planejamento e Gestão) ou por meio da instauração de procedimento de gestão administrativa no sistema SEI, o qual deverá ser encaminhado à ASSESPPLAGES.</p>
             <p className="text-gray-700">8.3. A premiação de natureza pecuniária será custeada com recursos da Associação de Membros do Ministério Público do Estado do Piauí (APMP) e do Sindicato dos Servidores do Ministério Público do Estado do Piauí (SINDSEMP/PI).</p>
             <p className="text-gray-700">8.4. Os casos omissos serão resolvidos pela Presidente da Comissão Julgadora.</p>
             <p className="text-gray-700 mt-2">Teresina (PI), 17 de setembro de 2025.</p>

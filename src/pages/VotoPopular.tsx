@@ -213,7 +213,7 @@ const VotoPopular: React.FC = () => {
       doc.circle(margin + 4, headerY - 2, 3, 'F');
     }
     doc.setFontSize(14);
-    doc.text('Prêmio Melhores Práticas do MPPI - 9ª Edição', margin + 12, headerY);
+    doc.text('Prêmio Melhores Práticas do MPPI - 10ª Edição', margin + 12, headerY);
     doc.setFontSize(11);
     doc.text('Resultado - Voto Popular', margin + 12, headerY + 7);
     doc.setDrawColor(180);
@@ -308,7 +308,7 @@ const VotoPopular: React.FC = () => {
               <img src="/favicon.ico" alt="Ícone" className="h-10 w-10 opacity-80" />
               <div>
                 <CardTitle className="text-sm">Voto Popular</CardTitle>
-                <div className="text-[11px] text-gray-600">Prêmio Melhores Práticas do MPPI - 9ª edição</div>
+                <div className="text-[11px] text-gray-600">Prêmio Melhores Práticas do MPPI - 10ª edição</div>
               </div>
             </div>
           </CardHeader>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy } from 'lucide-react';
+import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy, Trophy } from 'lucide-react';
 import { saveInscricao } from '@/lib/supabaseService';
 import Step1 from '@/components/FormSteps/Step1';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 interface FormData {
   // Dados do proponente
@@ -199,7 +201,19 @@ const InscricaoForm = () => {
     return true;
 
     return true;
-  }, [formData, toast]);
+  }, [formData, toast, currentStep]);
+
+  // Confetti setup
+  const { width, height } = useWindowSize();
+  const [showConfetti, setShowConfetti] = useState(true);
+
+  // Auto-hide confetti after 8 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleNextStep = useCallback(() => {
     console.log(`🚀 DEBUG: handleNextStep chamado - currentStep: ${currentStep}`);
@@ -850,7 +864,7 @@ const InscricaoForm = () => {
         
         <div className="p-4 bg-institutional-light border border-primary/20 rounded-lg">
           <p className="text-sm mb-4">
-            Declaro estar ciente e de acordo com as normas do Edital PGJ nº 107/2025 – 9ª Edição do Prêmio Melhores Práticas do MPPI, 
+            Declaro estar ciente e de acordo com as normas do Edital PGJ nº 107/2025 – 10ª Edição do Prêmio Melhores Práticas do MPPI, 
             autorizando a divulgação das informações, imagens e resultados relacionados a esta inscrição, em quaisquer meios institucionais ou de imprensa.
           </p>
           
@@ -872,22 +886,46 @@ const InscricaoForm = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8 border border-gray-200 rounded-lg shadow-md p-4 sm:p-6 bg-white">
-          <img 
-            src="https://i.postimg.cc/pT3rRnwr/logo-mppi.png" 
-            alt="MPPI Logo" 
-            className="w-48 h-24 sm:w-64 sm:h-32 object-contain mb-4 sm:mb-6 mx-auto block" 
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 py-8 relative overflow-hidden">
+      {/* Confetti effect for the 10th anniversary */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={400}
+          gravity={0.15}
+          colors={['#D4AF37', '#B8860B', '#FFD700', '#800020', '#4A0404']}
+        />
+      )}
+      
+      {/* Floating decorative elements */}
+      <div className="absolute top-10 left-10 w-24 h-24 bg-yellow-400 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-float"></div>
+      <div className="absolute top-40 right-20 w-32 h-32 bg-primary rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+      
+      <Card className="w-full max-w-4xl shadow-2xl relative z-10 glass-gold border-yellow-500/20">
+        <CardHeader className="text-center pb-2 bg-gradient-to-r from-primary-dark via-primary to-primary-dark text-white rounded-t-xl relative overflow-hidden">
+          {/* Subtle star pattern overlay */}
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #FFD700 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+          
+          <div className="flex justify-center mb-4 relative z-10 animate-sparkle">
+            <div className="bg-white/10 p-2 rounded-full ring-2 ring-yellow-400/50 shadow-[0_0_15px_rgba(212,175,55,0.5)]">
+              <Trophy className="h-10 w-10 text-yellow-400" />
+            </div>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 text-yellow-50 relative z-10">
             Prêmio Melhores Práticas MPPI
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            9ª Edição - 2025 | Ficha de Inscrição
-          </p>
-        </div>
+          <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
+            <span className="text-sm sm:text-base text-yellow-200/90 font-medium">
+              10ª Edição - 2026 | Ficha de Inscrição
+            </span>
+            <span className="bg-yellow-500 text-primary-dark text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_10px_rgba(212,175,55,0.4)] animate-pulse">
+              10 Anos
+            </span>
+          </div>
+        </CardHeader>
 
         {/* Progress Steps */}
         <div className="flex justify-between items-center mb-6 sm:mb-8 px-2 sm:px-4 overflow-x-auto">
@@ -945,7 +983,6 @@ const InscricaoForm = () => {
               Preencha todas as informações obrigatórias marcadas com *
             </CardDescription>
           </CardHeader>
-          
           <CardContent className="px-4 sm:px-6">
             <form onSubmit={handleSubmit}>
               {currentStep === 1 && <Step1 formData={formData} handleInputChange={handleInputChange} />}
@@ -994,7 +1031,7 @@ const InscricaoForm = () => {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </Card>
     </div>
   );
 };

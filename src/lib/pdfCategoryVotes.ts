@@ -75,7 +75,7 @@ export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
       // Identificação do prêmio (centralizada)
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(12);
-      const hdr1 = 'Prêmio Melhores Práticas – 9ª Edição';
+      const hdr1 = 'Prêmio Melhores Práticas – 10ª Edição';
       const hdr1w = pdf.getTextWidth(hdr1);
       pdf.text(hdr1, (pageWidth - hdr1w) / 2, 18);
       pdf.setFont('helvetica', 'normal');
@@ -256,7 +256,7 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
       } catch {}
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(12);
-      const hdr1 = 'Prêmio Melhores Práticas – 9ª Edição';
+      const hdr1 = 'Prêmio Melhores Práticas – 10ª Edição';
       const hdr1w = pdf.getTextWidth(hdr1);
       pdf.text(hdr1, (pageWidth - hdr1w) / 2, 18);
       pdf.setFont('helvetica', 'normal');

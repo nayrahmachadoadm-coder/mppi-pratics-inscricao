@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +21,18 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+
+  // Confetti setup
+  const { width, height } = useWindowSize();
+  const [showConfetti, setShowConfetti] = useState(true);
+
+  // Auto-hide confetti after 8 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Verificar se já está autenticado
   useEffect(() => {
@@ -111,31 +125,48 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="mb-4 flex items-center justify-center">
-            <img src="/logo-mppi.png" alt="Logo MPPI" className="h-16 w-auto" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
-            Prêmio Melhores Práticas do MPPI - 9ª Edição
-          </h1>
-          <p className="text-gray-600">
-            Sistema de Julgamento e Gestão de Inscrições
-          </p>
-        </div>
-
-        {/* Aviso removido */}
-
-        {/* Formulário de Login */}
-        <Card className="shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
-              <Crown className="w-7 h-7 text-yellow-500 drop-shadow-sm" />
-              Login do Sistema
-            </CardTitle>
-            <CardDescription className="text-center">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 py-8 relative overflow-hidden">
+      {/* Confetti effect for the 10th anniversary */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={400}
+          gravity={0.15}
+          colors={['#D4AF37', '#B8860B', '#FFD700', '#800020', '#4A0404']}
+        />
+      )}
+      
+      {/* Floating decorative elements */}
+      <div className="absolute top-10 left-10 w-24 h-24 bg-yellow-400 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-float"></div>
+      <div className="absolute top-40 right-20 w-32 h-32 bg-primary rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-yellow-500 rounded-full mix-blend-multiply filter blur-2xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+      
+      <div className="w-full max-w-md relative z-10">
+        <Card className="shadow-2xl glass-gold border-yellow-500/20">
+          <CardHeader className="text-center pb-6 bg-gradient-to-r from-primary-dark via-primary to-primary-dark text-white rounded-t-xl relative overflow-hidden">
+            {/* Subtle star pattern overlay */}
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #FFD700 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            
+            <div className="flex justify-center mb-4 relative z-10 animate-sparkle">
+              <div className="bg-white/10 p-2 rounded-full ring-2 ring-yellow-400/50 shadow-[0_0_15px_rgba(212,175,55,0.5)]">
+                <Crown className="w-10 h-10 text-yellow-400" />
+              </div>
+            </div>
+            
+            <h1 className="text-xl font-bold tracking-tight mb-1 text-yellow-50 relative z-10">
+              Prêmio Melhores Práticas MPPI
+            </h1>
+            <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
+              <span className="text-sm text-yellow-200/90 font-medium">
+                10ª Edição - 2026 | Ficha de Inscrição
+              </span>
+              <span className="bg-yellow-500 text-primary-dark text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_10px_rgba(212,175,55,0.4)] animate-pulse">
+                10 Anos
+              </span>
+            </div>
+            <CardDescription className="text-yellow-100 mt-2 relative z-10">
               Acesse o sistema de avaliação das inscrições
             </CardDescription>
           </CardHeader>
@@ -194,12 +225,12 @@ const AdminLogin = () => {
               {/* Botão de Login */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-gradient-gold hover:bg-yellow-500 hover:text-primary-dark text-white border-none"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 text-primary-dark">
+                    <div className="w-4 h-4 border-2 border-primary-dark border-t-transparent rounded-full animate-spin" />
                     Entrando...
                   </div>
                 ) : (
