@@ -157,3 +157,4 @@ export async function resetUserPassword(userEmail: string): Promise<{ success: b
     return { success: false, error: e?.message || 'Erro ao resetar senha' };
   }
 }
+

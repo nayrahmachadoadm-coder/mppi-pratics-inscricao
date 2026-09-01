@@ -44,15 +44,21 @@ const AdminAvaliacao = () => {
   });
   const [showValidation, setShowValidation] = useState<boolean>(false);
 
+  const isPratica = inscricao?.area?.includes('pratica') ?? false;
+
   const total = useMemo(() => {
-    const vals = Object.values(scores) as number[];
-    return vals.reduce((sum, v) => sum + (v >= 0 ? v : 0), 0);
-  }, [scores]);
+    return Object.entries(scores).reduce((sum, [key, v]) => {
+      if (isPratica && key === 'alinhamento_ods') return sum;
+      return sum + ((v as number) >= 0 ? (v as number) : 0);
+    }, 0);
+  }, [scores, isPratica]);
 
   const isComplete = useMemo(() => {
-    const vals = Object.values(scores) as number[];
-    return vals.every((v) => v >= 0);
-  }, [scores]);
+    return Object.entries(scores).every(([key, v]) => {
+      if (isPratica && key === 'alinhamento_ods') return true;
+      return (v as number) >= 0;
+    });
+  }, [scores, isPratica]);
 
   const load = async () => {
     try {
@@ -107,7 +113,7 @@ const AdminAvaliacao = () => {
         inovacao: scores.inovacao,
         resolutividade: scores.resolutividade,
         impacto_social: scores.impacto_social,
-        alinhamento_ods: scores.alinhamento_ods,
+        alinhamento_ods: isPratica ? null : scores.alinhamento_ods,
         replicabilidade: scores.replicabilidade,
       };
       const res = await submitAvaliacao(id, payload);
@@ -178,7 +184,9 @@ const AdminAvaliacao = () => {
                   <ScoreRadio label="Inovação" value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
                   <ScoreRadio label="Resolutividade" value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
                   <ScoreRadio label="Impacto Social" value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                  <ScoreRadio label="Alinhamento aos ODS" value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
+                  {!isPratica && (
+                    <ScoreRadio label="Alinhamento aos ODS" value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
+                  )}
                   <ScoreRadio label="Replicabilidade" value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                 </div>
 

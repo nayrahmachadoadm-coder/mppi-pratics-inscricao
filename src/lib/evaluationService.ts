@@ -1,13 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AdminInscricaoData, getAllInscricoes, getInscricaoById as getInscricaoDetalheById } from './adminService';
 import { getCurrentProfile } from './auth';
+import { getVotosCountByCategoria } from './votoPopularService';
 
 export type ScoreEntry = {
   cooperacao: number;
   inovacao: number;
   resolutividade: number;
   impacto_social: number;
-  alinhamento_ods: number;
+  alinhamento_ods: number | null;
   replicabilidade: number;
 };
 
@@ -103,8 +104,16 @@ export type CategoriaRankingItem = {
   media_total: number; // média do total por jurado
   media_resolutividade: number;
   media_replicabilidade: number;
+  media_impacto_social: number;
+  media_inovacao: number;
   total_resolutividade: number; // soma das notas de resolutividade de todos os jurados
   total_replicabilidade: number; // soma das notas de replicabilidade de todos os jurados
+  total_impacto_social: number;
+  total_inovacao: number;
+  nota_tecnica_100: number; // nota técnica convertida para 0-100
+  votos_populares: number; // quantidade de votos populares válidos
+  nota_popular_100: number; // nota popular proporcional de 0-100
+  pontuacao_final: number; // 80% nota técnica + 20% nota popular
 };
 
 export async function getRelatorioCategoria(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
@@ -115,6 +124,11 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
       return { success: false, error: res.error || 'Erro ao buscar inscrições.' };
     }
     const inscricoes = res.data || [];
+    // Obter votos populares da categoria
+    const votosCount = await getVotosCountByCategoria(area);
+    const votosArray = Object.values(votosCount);
+    const maxVotos = votosArray.length > 0 ? Math.max(...votosArray) : 0;
+
     const items: CategoriaRankingItem[] = await Promise.all(
       inscricoes.map(async (insc) => {
         const av = await getAvaliacoesByInscricao(insc.id);
@@ -123,9 +137,25 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
         const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
         const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
         const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+        const sumImpacto = list.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
+        const sumInovacao = list.reduce((sum, r) => sum + (r.inovacao || 0), 0);
         const mediaTotal = count > 0 ? totalGeral / count : 0;
         const mediaResol = count > 0 ? sumResol / count : 0;
         const mediaReplic = count > 0 ? sumReplic / count : 0;
+        const mediaImpacto = count > 0 ? sumImpacto / count : 0;
+        const mediaInovacao = count > 0 ? sumInovacao / count : 0;
+
+        // Converter média para escala 0-100 (a pontuação máxima de 6 critérios é 30 pontos por jurado)
+        const maxPontosPossivel = 30;
+        const notaTecnica100 = count > 0 ? (mediaTotal / maxPontosPossivel) * 100 : 0;
+
+        // Obter número de votos para esta iniciativa e calcular nota proporcional
+        const votosIniciativa = votosCount[insc.id] || 0;
+        const notaPopular100 = maxVotos > 0 ? (votosIniciativa / maxVotos) * 100 : 0;
+
+        // Calcular pontuação final
+        const pontuacaoFinal = (notaTecnica100 * 0.8) + (notaPopular100 * 0.2);
+
         return {
           inscricao: insc,
           avaliacoes_count: count,
@@ -133,16 +163,33 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
           media_total: mediaTotal,
           media_resolutividade: mediaResol,
           media_replicabilidade: mediaReplic,
+          media_impacto_social: mediaImpacto,
+          media_inovacao: mediaInovacao,
           total_resolutividade: sumResol,
           total_replicabilidade: sumReplic,
+          total_impacto_social: sumImpacto,
+          total_inovacao: sumInovacao,
+          nota_tecnica_100: notaTecnica100,
+          votos_populares: votosIniciativa,
+          nota_popular_100: notaPopular100,
+          pontuacao_final: pontuacaoFinal,
         } as CategoriaRankingItem;
       })
     );
 
   items.sort((a, b) => {
-    if (b.total_geral !== a.total_geral) return b.total_geral - a.total_geral;
-    if (b.total_resolutividade !== a.total_resolutividade) return b.total_resolutividade - a.total_resolutividade;
-    if (b.total_replicabilidade !== a.total_replicabilidade) return b.total_replicabilidade - a.total_replicabilidade;
+    // 8.9 Em caso de empate na Pontuação Final, serão aplicados sucessivamente:
+    // I — maior Nota Técnica;
+    // II — maior nota em resolutividade;
+    // III — maior nota em impacto social ou institucional;
+    // IV — maior nota em replicabilidade;
+    // V — maior nota em inovação;
+    if (Math.abs(b.pontuacao_final - a.pontuacao_final) > 0.0001) return b.pontuacao_final - a.pontuacao_final;
+    if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) return b.nota_tecnica_100 - a.nota_tecnica_100;
+    if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) return b.media_resolutividade - a.media_resolutividade;
+    if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) return b.media_impacto_social - a.media_impacto_social;
+    if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) return b.media_replicabilidade - a.media_replicabilidade;
+    if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) return b.media_inovacao - a.media_inovacao;
     return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
   });
 
@@ -154,16 +201,18 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
 
 export function exportRelatorioCsv(items: CategoriaRankingItem[], areaLabel: string): string {
   const headers = [
-    'Posicao','Titulo','Proponente','Lotacao','Total Geral','Media Total','Media Resolutividade','Media Replicabilidade','Avaliacoes'];
+    'Posicao','Titulo','Proponente','Lotacao','Media Jurados','Nota Tecnica (80%)','Votos Populares','Nota Popular (20%)','Pontuacao Final (100)','Media Resolutividade','Avaliacoes'];
   const rows = items.map((item, idx) => [
     String(idx + 1),
     sanitize(item.inscricao.titulo_iniciativa),
     sanitize(item.inscricao.nome_completo),
     sanitize(item.inscricao.lotacao),
-    String(item.total_geral.toFixed(2)),
     String(item.media_total.toFixed(2)),
+    String(item.nota_tecnica_100.toFixed(2)),
+    String(item.votos_populares),
+    String(item.nota_popular_100.toFixed(2)),
+    String(item.pontuacao_final.toFixed(2)),
     String(item.media_resolutividade.toFixed(2)),
-    String(item.media_replicabilidade.toFixed(2)),
     String(item.avaliacoes_count),
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');

@@ -9,7 +9,6 @@ const areaLabel = (area: string) => {
     'estruturante-projeto': 'Projeto Estruturante',
     'finalistica-pratica': 'Prática Finalística',
     'estruturante-pratica': 'Prática Estruturante',
-    'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial',
   };
   return map[area] || area;
 };

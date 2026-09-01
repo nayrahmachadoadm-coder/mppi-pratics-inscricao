@@ -10,9 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { isAuthenticated } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
-import { submitVotoPopular, getVotosCountByCategoria } from '@/lib/votoPopularService';
+import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos, VotoPopularCandidato } from '@/lib/votoPopularService';
 
-type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 type FinalistasByCategoria = { [K in CategoriaKey]: CategoriaRankingItem[] };
 type VotesByCategoria = { [K in CategoriaKey]: { [id: string]: number } };
 type VotesById = { [id: string]: number };
@@ -22,7 +22,6 @@ const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'estruturante-projeto', label: 'Projetos Estruturantes' },
   { key: 'finalistica-pratica', label: 'Práticas Finalísticas' },
   { key: 'estruturante-pratica', label: 'Práticas Estruturantes' },
-  { key: 'categoria-especial-ia', label: 'Categoria Especial (IA)' },
 ];
 
 const SITE_KEY = undefined;
@@ -39,22 +38,21 @@ const VotoPopular: React.FC = () => {
   };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [allFinalistas, setAllFinalistas] = useState<CategoriaRankingItem[]>([]);
+  const [allFinalistas, setAllFinalistas] = useState<(CategoriaRankingItem | { inscricao: any })[]>([]);
   const [votosCountById, setVotosCountById] = useState<VotesById>({});
   const [selectedId, setSelectedId] = useState<string>('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLogged, setIsLogged] = useState<boolean>(false);
   
   const [detalheOpen, setDetalheOpen] = useState(false);
-  const [detalheItem, setDetalheItem] = useState<CategoriaRankingItem | null>(null);
+  const [detalheItem, setDetalheItem] = useState<any | null>(null);
 
   const formatAreaAtuacao = (area: string) => {
     const areaMap: { [key: string]: string } = {
       'finalistica-pratica': 'Prática Finalística',
       'finalistica-projeto': 'Projeto Finalístico',
       'estruturante-pratica': 'Prática Estruturante',
-      'estruturante-projeto': 'Projeto Estruturante',
-      'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial'
+      'estruturante-projeto': 'Projeto Estruturante'
     };
     return areaMap[area] || area;
   };
@@ -66,37 +64,63 @@ const VotoPopular: React.FC = () => {
       try {
         const logged = await isAuthenticated();
         setIsLogged(logged);
-        const collected: CategoriaRankingItem[] = [];
-        for (const cat of categorias) {
-          try {
-            const viaSql = await getTop3ByCategoriaSql(cat.key);
-            if (viaSql.success && (viaSql.data || []).length > 0) {
-              const top = (viaSql.data || []).slice(0, 3);
-              collected.push(...top);
-              continue;
-            }
-            const rel = await getRelatorioCategoria(cat.key);
-            const list = (rel.data || []);
-            collected.push(...list.slice(0, 3));
-          } catch {
-            void 0;
-          }
+        const collected: any[] = [];
+        
+        let sessionSeed = sessionStorage.getItem('voto_seed');
+        if (!sessionSeed) {
+          sessionSeed = String(Math.random());
+          sessionStorage.setItem('voto_seed', sessionSeed);
         }
-        const sortedAll = collected.slice().sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
-        setAllFinalistas(sortedAll);
 
         if (logged) {
+          for (const cat of categorias) {
+            try {
+              const viaSql = await getTop3ByCategoriaSql(cat.key);
+              if (viaSql.success && (viaSql.data || []).length > 0) {
+                const top = (viaSql.data || []).slice(0, 3);
+                collected.push(...top);
+                continue;
+              }
+              const rel = await getRelatorioCategoria(cat.key);
+              const list = (rel.data || []);
+              collected.push(...list.slice(0, 3));
+            } catch { void 0; }
+          }
+          const sortedAll = collected.slice().sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
+          setAllFinalistas(sortedAll);
+
           const merged: VotesById = {};
           for (const cat of categorias) {
             try {
               const byCat = await getVotosCountByCategoria(cat.key);
               Object.entries(byCat).forEach(([id, count]) => { merged[id] = count; });
-            } catch {
-              void 0;
-            }
+            } catch { void 0; }
           }
           setVotosCountById(merged);
         } else {
+          for (const cat of categorias) {
+            try {
+              const res = await getVotoPopularCandidatos(cat.key, parseFloat(sessionSeed));
+              if (res.success && res.data) {
+                // Map to match the expected structure
+                const mapped = res.data.map(c => ({
+                  inscricao: {
+                    id: c.inscricao_id,
+                    titulo_iniciativa: c.titulo_iniciativa,
+                    nome_completo: c.nome_completo,
+                    lotacao: c.lotacao,
+                    area_atuacao: c.area_atuacao,
+                    descricao_iniciativa: c.descricao_iniciativa,
+                    problema_necessidade: c.problema_necessidade,
+                    metodologia: c.metodologia,
+                    principais_resultados: c.principais_resultados,
+                  }
+                }));
+                collected.push(...mapped);
+              }
+            } catch { void 0; }
+          }
+          setAllFinalistas(collected); // keep the obfuscated order!
           setVotosCountById({});
         }
       } catch (e: unknown) {
@@ -115,7 +139,7 @@ const VotoPopular: React.FC = () => {
     setSelectedId(inscricaoId);
   };
 
-  const openDetalhes = (item: CategoriaRankingItem) => {
+  const openDetalhes = (item: any) => {
     setDetalheItem(item);
     setDetalheOpen(true);
   };
@@ -319,14 +343,14 @@ const VotoPopular: React.FC = () => {
               </Alert>
             )}
 
-            {VOTACAO_ENCERRADA && (
+            {VOTACAO_ENCERRADA ? (
               <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-[11px] text-red-900">
                 A votação popular foi <strong>encerrada</strong>. Agradecemos a participação de todos. Os campos de seleção foram bloqueados e novos votos não podem ser registrados.
               </div>
-            )}
+            ) : null}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem alfabética'}</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
+              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem aleatória, embaraçados para sigilo da votação'}</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
 
             <div className="p-2">
@@ -394,8 +418,6 @@ const VotoPopular: React.FC = () => {
                     ) : (
                       <div className="space-y-1">
                         {allFinalistas
-                          .slice()
-                          .sort((a, b) => (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }))
                           .map((item) => {
                             const id = item.inscricao.id;
                             const selected = selectedId === id;
@@ -532,3 +554,4 @@ const VotoPopular: React.FC = () => {
 };
 
 export default VotoPopular;
+

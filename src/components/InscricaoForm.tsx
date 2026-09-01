@@ -9,8 +9,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy, Trophy } from 'lucide-react';
-import { saveInscricao } from '@/lib/supabaseService';
+import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy, Trophy, AlertCircle, CalendarClock } from 'lucide-react';
+import { saveInscricao, verificarDuplicidadeInscricao, getPeriodoInscricao } from '@/lib/supabaseService';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Step1 from '@/components/FormSteps/Step1';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
@@ -31,6 +32,10 @@ interface FormData {
   anoInicioExecucao: string;
   situacaoAtual: string;
   dataConclusao?: string;
+  cadastroBancoPraticas: string;
+  identificacaoBancoPraticas?: string;
+  institucionalizadoAto: string;
+  identificacaoProjetoMetodologia?: string;
   
   // Descrição da prática/projeto
   resumoExecutivo: string;
@@ -74,6 +79,10 @@ const InscricaoForm = () => {
     tituloIniciativa: '',
     anoInicioExecucao: '',
     situacaoAtual: '',
+    cadastroBancoPraticas: '',
+    identificacaoBancoPraticas: '',
+    institucionalizadoAto: '',
+    identificacaoProjetoMetodologia: '',
     resumoExecutivo: '',
     problemaNecessidade: '',
     objetivosEstrategicos: '',
@@ -90,6 +99,55 @@ const InscricaoForm = () => {
     concordaTermos: false,
     localData: '',
   });
+
+  });
+
+  const [duplicidadeAviso, setDuplicidadeAviso] = useState('');
+  const [periodoInscricaoStatus, setPeriodoInscricaoStatus] = useState<'loading' | 'aberto' | 'fechado_antes' | 'fechado_depois'>('loading');
+  const [datasPeriodo, setDatasPeriodo] = useState<{ inicio: Date | null, fim: Date | null }>({ inicio: null, fim: null });
+
+  useEffect(() => {
+    const fetchPeriodo = async () => {
+      const periodo = await getPeriodoInscricao();
+      setDatasPeriodo(periodo);
+      if (!periodo.inicio || !periodo.fim) {
+        setPeriodoInscricaoStatus('aberto'); // Fallback if no timeline defined
+        return;
+      }
+      
+      const now = new Date();
+      if (now < periodo.inicio) {
+        setPeriodoInscricaoStatus('fechado_antes');
+      } else if (now > periodo.fim) {
+        setPeriodoInscricaoStatus('fechado_depois');
+      } else {
+        setPeriodoInscricaoStatus('aberto');
+      }
+    };
+    fetchPeriodo();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.matricula || !formData.area) {
+      setDuplicidadeAviso('');
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const isPratica = formData.area.includes('pratica');
+        const tipoIniciativa = isPratica ? 'pratica' : 'projeto';
+        const isDuplicata = await verificarDuplicidadeInscricao(formData.matricula, tipoIniciativa);
+        if (isDuplicata) {
+          setDuplicidadeAviso(`Você já possui uma inscrição de ${tipoIniciativa} nesta edição; nos termos do item 6.3, apenas a primeira enviada será considerada válida.`);
+        } else {
+          setDuplicidadeAviso('');
+        }
+      } catch {
+        setDuplicidadeAviso('');
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [formData.matricula, formData.area]);
 
   const handleInputChange = useCallback((field: keyof FormData, value: string | string[] | boolean) => {
     console.log(`💾 DEBUG: handleInputChange - campo: '${field}', valor: '${value}', tipo: ${typeof value}`);
@@ -132,13 +190,25 @@ const InscricaoForm = () => {
         break;
       case 2:
         requiredFields = ['area', 'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual', 'equipeEnvolvida'];
+        if (formData.area.includes('pratica')) {
+          requiredFields.push('cadastroBancoPraticas');
+          if (formData.cadastroBancoPraticas === 'sim') {
+            requiredFields.push('identificacaoBancoPraticas');
+          }
+        } else if (formData.area.includes('projeto')) {
+          requiredFields.push('institucionalizadoAto');
+        }
         break;
       case 3:
         requiredFields = ['resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos', 'etapasMetodologia', 'resultadosAlcancados'];
         break;
       case 4:
         // Step 4 - Critérios de Avaliação (obrigatórios)
-        requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade'];
+        requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'replicabilidade'];
+        // ODS is only required for Projetos
+        if (formData.area === 'finalistica-projeto' || formData.area === 'estruturante-projeto') {
+          requiredFields.push('alinhamentoODS');
+        }
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
@@ -269,9 +339,14 @@ const InscricaoForm = () => {
       'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual',
       'resumoExecutivo', 'problemaNecessidade', 'objetivosEstrategicos',
       'etapasMetodologia', 'resultadosAlcancados',
-      'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'alinhamentoODS', 'replicabilidade',
+      'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'replicabilidade',
       'participouEdicoesAnteriores', 'foiVencedorAnterior'
     ];
+    
+    // ODS is only required for Projetos
+    if (formData.area === 'finalistica-projeto' || formData.area === 'estruturante-projeto') {
+      allRequiredFields.push('alinhamentoODS');
+    }
     
     const missingFields = allRequiredFields.filter(field => {
       const value = formData[field as keyof FormData];
@@ -410,10 +485,6 @@ const InscricaoForm = () => {
             <RadioGroupItem value="estruturante-projeto" id="estruturante-projeto" />
             <Label htmlFor="estruturante-projeto">Projeto Estruturante</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="categoria-especial-ia" id="categoria-especial-ia" />
-            <Label htmlFor="categoria-especial-ia">Categoria Especial – Inteligência Artificial</Label>
-          </div>
         </RadioGroup>
       </div>
       
@@ -470,6 +541,88 @@ const InscricaoForm = () => {
           </div>
         )}
       </div>
+      
+      {formData.area.includes('pratica') && (
+        <div className="space-y-4">
+          <Label className="text-base font-medium flex items-center gap-2">
+            <CheckSquare className="w-4 h-4" />
+            A prática está regularmente inscrita no Banco de Práticas do MPPI (Ato PGJ/PI nº 1.335/2023)? *
+          </Label>
+          <RadioGroup
+            value={formData.cadastroBancoPraticas}
+            onValueChange={(value) => handleInputChange('cadastroBancoPraticas', value)}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="sim" id="banco-sim" />
+              <Label htmlFor="banco-sim">Sim</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="nao" id="banco-nao" />
+              <Label htmlFor="banco-nao">Não</Label>
+            </div>
+          </RadioGroup>
+          {formData.cadastroBancoPraticas === 'sim' && (
+            <div className="space-y-2 mt-2">
+              <Label htmlFor="identificacaoBancoPraticas" className="text-sm">Número ou identificação do registro *</Label>
+              <Input
+                id="identificacaoBancoPraticas"
+                value={formData.identificacaoBancoPraticas || ''}
+                onChange={(e) => handleInputChange('identificacaoBancoPraticas', e.target.value)}
+                placeholder="Ex: Registro nº 12345"
+              />
+            </div>
+          )}
+          {formData.cadastroBancoPraticas === 'nao' && (
+            <Alert className="mt-2" variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Sua inscrição poderá ser indeferida na triagem, nos termos do item 6.4 do Edital.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
+      {formData.area.includes('projeto') && (
+        <div className="space-y-4">
+          <Label className="text-base font-medium flex items-center gap-2">
+            <CheckSquare className="w-4 h-4" />
+            O projeto está institucionalizado conforme a Metodologia de Gerenciamento de Projetos do MPPI (Ato PGJ/PI nº 1.254/2022, alterado pelo Ato nº 1.595/2025)? *
+          </Label>
+          <RadioGroup
+            value={formData.institucionalizadoAto}
+            onValueChange={(value) => handleInputChange('institucionalizadoAto', value)}
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="sim" id="inst-sim" />
+              <Label htmlFor="inst-sim">Sim</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="nao" id="inst-nao" />
+              <Label htmlFor="inst-nao">Não</Label>
+            </div>
+          </RadioGroup>
+          <div className="space-y-2 mt-2">
+            <Label htmlFor="identificacaoProjetoMetodologia" className="text-sm">Identificação do projeto na metodologia (Opcional)</Label>
+            <Input
+              id="identificacaoProjetoMetodologia"
+              value={formData.identificacaoProjetoMetodologia || ''}
+              onChange={(e) => handleInputChange('identificacaoProjetoMetodologia', e.target.value)}
+              placeholder="Ex: Portaria nº 456, ou Número do Projeto"
+            />
+          </div>
+          {formData.institucionalizadoAto === 'nao' && (
+            <Alert className="mt-2" variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Sua inscrição poderá ser indeferida na triagem, nos termos do item 6.4 do Edital.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
       
       <div className="space-y-2">
         <Label htmlFor="equipeEnvolvida" className="text-base font-medium flex items-center gap-2">
@@ -641,13 +794,13 @@ const InscricaoForm = () => {
       <div className="space-y-2">
         <Label htmlFor="resultadosAlcancados" className="text-base font-medium flex items-center gap-2">
           <CheckCircle className="w-4 h-4" />
-          Descrição dos Resultados Alcançados (até 2.000 caracteres).
+          Descrição dos Resultados Alcançados (mensuráveis obtidos nos últimos 3 anos - até 2.000 caracteres). *
         </Label>
         <Textarea
           id="resultadosAlcancados"
           value={formData.resultadosAlcancados}
           onChange={(e) => handleInputChange('resultadosAlcancados', e.target.value)}
-          placeholder="Informe os resultados obtidos com a iniciativa de forma objetiva, utilizando números ou indicadores mensuráveis (ex.: pessoas atendidas, percentual de aumento/redução, recursos mobilizados). Evite descrições genéricas e priorize dados que evidenciem o impacto alcançado."
+          placeholder="Informe os resultados obtidos nos últimos 3 anos de forma objetiva, utilizando números ou indicadores mensuráveis. Evite descrições genéricas e priorize dados que evidenciem o impacto alcançado (item 6.5 do Edital)."
           rows={4}
           maxLength={2000}
         />
@@ -666,13 +819,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="cooperacao" className="text-base font-medium flex items-center gap-2">
             <Users className="h-4 w-4 text-blue-600" />
-            Cooperação (parcerias internas/externas envolvidas) *
+            Cooperação *
           </Label>
+          <p className="text-xs text-muted-foreground">Grau de articulação e de colaboração entre unidades do MPPI, instituições parceiras ou organizações da sociedade civil.</p>
           <Textarea
             id="cooperacao"
             value={formData.cooperacao}
             onChange={(e) => handleInputChange('cooperacao', e.target.value)}
-            placeholder="Descreva as formas de atuação colaborativa estabelecidas durante a iniciativa, indicando a cooperação intra e interinstitucional, bem como eventuais parcerias com a sociedade civil. Informe como essas articulações contribuíram para fortalecer as ações, otimizar recursos e ampliar os resultados alcançados."
+            placeholder="Descreva as formas de atuação colaborativa estabelecidas..."
             rows={3}
             maxLength={2000}
           />
@@ -684,13 +838,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="inovacao" className="text-base font-medium flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-yellow-600" />
-            Inovação (o que a iniciativa traz de novo e diferenciado) *
+            Inovação *
           </Label>
+          <p className="text-xs text-muted-foreground">Adoção de solução, método, processo, ferramenta ou forma de atuação nova ou significativamente aperfeiçoada, capaz de produzir ganho de qualidade, eficiência ou desempenho.</p>
           <Textarea
             id="inovacao"
             value={formData.inovacao}
             onChange={(e) => handleInputChange('inovacao', e.target.value)}
-            placeholder="Relate os aspectos inovadores da iniciativa, destacando o que ela traz de novo e diferenciado em relação a práticas já existentes. Explique como as ações se distinguem por soluções criativas, uso de novas metodologias, tecnologias ou formas de atuação que contribuíram para maior eficiência, impacto ou alcance dos resultados."
+            placeholder="Relate os aspectos inovadores da iniciativa..."
             rows={3}
             maxLength={2000}
           />
@@ -702,13 +857,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="resolutividade" className="text-base font-medium flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-green-600" />
-            Resolutividade (como a iniciativa solucionou de forma efetiva o problema) *
+            Resolutividade *
           </Label>
+          <p className="text-xs text-muted-foreground">Capacidade da iniciativa de solucionar, prevenir, reduzir ou enfrentar de maneira concreta o problema que motivou sua implementação.</p>
           <Textarea
             id="resolutividade"
             value={formData.resolutividade}
             onChange={(e) => handleInputChange('resolutividade', e.target.value)}
-            placeholder="Explique de que forma a iniciativa solucionou de maneira efetiva o problema ou necessidade identificada. Descreva os resultados práticos alcançados, evidenciando a efetividade das ações, a redução ou eliminação dos obstáculos enfrentados e o impacto concreto gerado para o público-alvo ou para a instituição."
+            placeholder="Explique de que forma a iniciativa solucionou de maneira efetiva o problema..."
             rows={3}
             maxLength={2000}
           />
@@ -720,13 +876,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="impactoSocial" className="text-base font-medium flex items-center gap-2">
             <Heart className="h-4 w-4 text-red-600" />
-            Impacto social (volume de pessoas beneficiadas, abrangência e efeitos positivos) *
+            Impacto Social ou Institucional *
           </Label>
+          <p className="text-xs text-muted-foreground">Dimensão, relevância e profundidade das mudanças produzidas para a sociedade, para o público beneficiado ou para o funcionamento da Instituição.</p>
           <Textarea
             id="impactoSocial"
             value={formData.impactoSocial}
             onChange={(e) => handleInputChange('impactoSocial', e.target.value)}
-            placeholder="Quantifique o impacto gerado pela iniciativa, informando o número de pessoas beneficiadas, a abrangência territorial das ações e os principais efeitos positivos observados. Sempre que possível, utilize dados concretos e indicadores que evidenciem a relevância social dos resultados alcançados."
+            placeholder="Quantifique o impacto gerado pela iniciativa..."
             rows={3}
             maxLength={2000}
           />
@@ -738,13 +895,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="alinhamentoODS" className="text-base font-medium flex items-center gap-2">
             <Globe className="h-4 w-4 text-blue-500" />
-            Alinhamento aos ODS da Agenda 2030 da ONU (indicar qual objetivo foi contemplado e de que forma) *
+            Alinhamento aos ODS {formData.area.includes('projeto') ? '*' : '(Opcional para Práticas)'}
           </Label>
+          <p className="text-xs text-muted-foreground">Contribuição demonstrável para um ou mais objetivos da Agenda 2030 da ONU.</p>
           <Textarea
             id="alinhamentoODS"
             value={formData.alinhamentoODS}
             onChange={(e) => handleInputChange('alinhamentoODS', e.target.value)}
-            placeholder="Indique qual Objetivo de Desenvolvimento Sustentável (ODS) foi contemplado pela iniciativa e explique de que forma suas ações contribuíram para alcançá-lo. Relacione as atividades realizadas ao ODS selecionado, destacando impactos e resultados concretos."
+            placeholder="Indique qual Objetivo de Desenvolvimento Sustentável (ODS) foi contemplado..."
             rows={3}
             maxLength={2000}
           />
@@ -756,13 +914,14 @@ const InscricaoForm = () => {
         <div className="space-y-2">
           <Label htmlFor="replicabilidade" className="text-base font-medium flex items-center gap-2">
             <Copy className="h-4 w-4 text-purple-600" />
-            Replicabilidade (potencial de ser aplicada em outras áreas, unidades ou contextos) *
+            Replicabilidade *
           </Label>
+          <p className="text-xs text-muted-foreground">Possibilidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, considerando sua viabilidade prática e seu potencial de produzir resultados semelhantes.</p>
           <Textarea
             id="replicabilidade"
             value={formData.replicabilidade}
             onChange={(e) => handleInputChange('replicabilidade', e.target.value)}
-            placeholder="Descreva o potencial da iniciativa de ser aplicada ou adaptada em outras áreas, unidades ou contextos. Explique de que forma a experiência pode servir como modelo, destacando elementos que favoreçam sua reprodução, como simplicidade da metodologia, baixo custo, facilidade de implementação ou resultados comprovados."
+            placeholder="Descreva o potencial da iniciativa de ser aplicada ou adaptada em outras áreas..."
             rows={3}
             maxLength={2000}
           />
@@ -927,7 +1086,32 @@ const InscricaoForm = () => {
           </div>
         </CardHeader>
 
-        {/* Progress Steps */}
+        {periodoInscricaoStatus === 'loading' ? (
+          <div className="flex justify-center items-center py-20 text-white">Carregando cronograma...</div>
+        ) : periodoInscricaoStatus === 'fechado_antes' ? (
+          <Card className="shadow-lg relative z-10 p-8 text-center bg-white/95 border-yellow-500/30 backdrop-blur-md mt-6">
+            <CalendarClock className="w-16 h-16 mx-auto mb-4 text-yellow-600" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Inscrições em Breve</h2>
+            <p className="text-gray-600">
+              O período de inscrições para a 10ª Edição do Prêmio Melhores Práticas MPPI começa em{' '}
+              <strong className="text-primary">{datasPeriodo.inicio?.toLocaleDateString('pt-BR')}</strong>.
+              <br />
+              Por favor, aguarde o início oficial do período conforme o Anexo Único do Edital.
+            </p>
+          </Card>
+        ) : periodoInscricaoStatus === 'fechado_depois' ? (
+          <Card className="shadow-lg relative z-10 p-8 text-center bg-white/95 border-red-500/30 backdrop-blur-md mt-6">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-600" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Inscrições Encerradas</h2>
+            <p className="text-gray-600">
+              O período de inscrições para a 10ª Edição do Prêmio Melhores Práticas MPPI encerrou em{' '}
+              <strong className="text-primary">{datasPeriodo.fim?.toLocaleDateString('pt-BR')}</strong>.
+              <br />
+              Agradecemos o seu interesse! Acompanhe a publicação dos finalistas no Diário Oficial.
+            </p>
+          </Card>
+        ) : (
+        <>
         <div className="flex justify-between items-center mb-6 sm:mb-8 px-2 sm:px-4 overflow-x-auto">
           {steps.map((step, index) => {
             const Icon = step.icon;
@@ -984,6 +1168,12 @@ const InscricaoForm = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
+            {duplicidadeAviso && (
+              <Alert className="mb-4 border-yellow-200 bg-yellow-50 text-yellow-800">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-xs">{duplicidadeAviso}</AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleSubmit}>
               {currentStep === 1 && <Step1 formData={formData} handleInputChange={handleInputChange} />}
               {currentStep === 2 && renderStep2()}
@@ -1031,6 +1221,8 @@ const InscricaoForm = () => {
             </form>
           </CardContent>
         </Card>
+        </>
+        )}
       </Card>
     </div>
   );

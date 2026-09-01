@@ -18,6 +18,8 @@ import VotoPopular from "./pages/VotoPopular";
 import AdminPremiacao from "./pages/AdminPremiacao";
 import AdminAvaliacao from "./pages/AdminAvaliacao";
 import AdminJulgamento from "./pages/AdminJulgamento";
+import AdminFinalistas from "./pages/AdminFinalistas";
+import AdminApuracao from "./pages/AdminApuracao";
 import AdminRelatorioCategoria from "./pages/AdminRelatorioCategoria";
 import AdminRelatorioJurados from "./pages/AdminRelatorioJurados";
 import JuradoMinhasAvaliacoes from "./pages/JuradoMinhasAvaliacoes";
@@ -136,6 +138,16 @@ const App = () => (
               <AdminPremiacao />
             </EitherProtectedRoute>
            } />
+           <Route path="/admin/finalistas" element={
+             <RoleProtectedRoute role="admin">
+               <AdminFinalistas />
+             </RoleProtectedRoute>
+           } />
+           <Route path="/admin/apuracao" element={
+             <RoleProtectedRoute role="admin">
+               <AdminApuracao />
+             </RoleProtectedRoute>
+           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -145,3 +157,4 @@ const App = () => (
 );
 
 export default App;
+

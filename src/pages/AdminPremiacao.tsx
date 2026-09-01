@@ -6,14 +6,13 @@ import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } fr
 import { Medal, Crown } from 'lucide-react';
 import { useCallback } from 'react';
 
-type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 
 const categorias: { key: CategoriaKey; lines: [string, string] }[] = [
   { key: 'finalistica-projeto', lines: ['Projetos', 'Finalísticos'] },
   { key: 'estruturante-projeto', lines: ['Projetos', 'Estruturantes'] },
   { key: 'finalistica-pratica', lines: ['Práticas', 'Finalísticas'] },
   { key: 'estruturante-pratica', lines: ['Práticas', 'Estruturantes'] },
-  { key: 'categoria-especial-ia', lines: ['Categoria Especial', '(Inteligência Artificial)'] },
 ];
 
 const labelPorArea: Record<CategoriaKey, string> = {
@@ -21,7 +20,6 @@ const labelPorArea: Record<CategoriaKey, string> = {
   'estruturante-projeto': 'Projetos Estruturantes',
   'finalistica-pratica': 'Práticas Finalísticas',
   'estruturante-pratica': 'Práticas Estruturantes',
-  'categoria-especial-ia': 'Categoria Especial (Inteligência Artificial)',
 };
 
 const AdminPremiacao = () => {
@@ -154,16 +152,10 @@ const AdminPremiacao = () => {
         setLoading(true);
         setError('');
         setShowResultado(false);
-        // Buscar top3 via SQL; fallback para relatório completo
-        const viaSql = await getTop3ByCategoriaSql(selectedArea);
-        let top3: CategoriaRankingItem[] = [];
-        if (viaSql.success && (viaSql.data || []).length > 0) {
-          top3 = (viaSql.data || []).slice(0, 3);
-        } else {
-          const rel = await getRelatorioCategoria(selectedArea);
-          const list = (rel.data || []);
-          top3 = list.slice(0, 3);
-        }
+        // Agora utilizamos sempre o getRelatorioCategoria que possui a nova lógica de pontuação (80/20)
+        const rel = await getRelatorioCategoria(selectedArea);
+        const list = (rel.data || []);
+        const top3 = list.slice(0, 3);
         setFinalistas(top3);
         // Ranking completo pela regra do regulamento (ordenado pelo serviço)
         const rel2 = await getRelatorioCategoria(selectedArea);
@@ -197,7 +189,7 @@ const AdminPremiacao = () => {
                 <CardTitle className="text-sm">Premiação</CardTitle>
               </CardHeader>
               <CardContent className="pt-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {categorias.map(({ key, lines }) => (
                     <Button
                       key={key}
@@ -269,9 +261,10 @@ const AdminPremiacao = () => {
                         <div className="grid grid-cols-12 bg-gray-100 px-3 py-2 text-[11px] font-semibold">
                           <div className="col-span-1">Pos</div>
                           <div className="col-span-1"></div>
-                          <div className="col-span-7">Trabalho</div>
-                          <div className="col-span-2 text-right">Total</div>
-                          <div className="col-span-1 text-right">Média</div>
+                          <div className="col-span-4">Trabalho</div>
+                          <div className="col-span-2 text-right text-gray-700">Nota Téc. (80%)</div>
+                          <div className="col-span-2 text-right text-gray-700">Nota Pop. (20%)</div>
+                          <div className="col-span-2 text-right">Pontuação Final</div>
                         </div>
                         <div className="divide-y">
                           {ranking.map((it, idx) => (
@@ -280,9 +273,10 @@ const AdminPremiacao = () => {
                               <div className="col-span-1 flex justify-center">
                                 {idx === 0 ? <Medal className="w-4 h-4 text-yellow-500" /> : idx === 1 ? <Medal className="w-4 h-4 text-gray-400" /> : idx === 2 ? <Medal className="w-4 h-4 text-amber-700" /> : null}
                               </div>
-                              <div className="col-span-7 text-gray-900">{it.inscricao.titulo_iniciativa}</div>
-                              <div className="col-span-2 text-right text-gray-700">{it.total_geral.toFixed(2)}</div>
-                              <div className="col-span-1 text-right text-gray-700">{(it.media_total / 6).toFixed(2)}</div>
+                              <div className="col-span-4 text-gray-900">{it.inscricao.titulo_iniciativa}</div>
+                              <div className="col-span-2 text-right text-gray-700">{it.nota_tecnica_100.toFixed(2)}</div>
+                              <div className="col-span-2 text-right text-gray-700">{it.nota_popular_100.toFixed(2)}</div>
+                              <div className="col-span-2 text-right font-bold text-gray-900">{it.pontuacao_final.toFixed(2)}</div>
                             </div>
                           ))}
                         </div>
@@ -300,3 +294,4 @@ const AdminPremiacao = () => {
 };
 
 export default AdminPremiacao;
+

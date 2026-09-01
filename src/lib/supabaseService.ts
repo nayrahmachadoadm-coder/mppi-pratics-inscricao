@@ -122,7 +122,13 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     
     // Declaração - mapeamento correto para a tabela
     declaracao: Boolean(formData.concordaTermos),
-    observacoes: formData.especificarEdicoesAnteriores || null
+    observacoes: formData.especificarEdicoesAnteriores || null,
+    
+    // Institucionalização
+    cadastro_banco_praticas: formData.cadastroBancoPraticas === 'sim',
+    identificacao_banco_praticas: formData.identificacaoBancoPraticas || null,
+    institucionalizado_ato: formData.institucionalizadoAto === 'sim',
+    identificacao_projeto_metodologia: formData.identificacaoProjetoMetodologia || null
   };
   
   // Debug específico para Step 5 - dados convertidos
@@ -187,6 +193,24 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
       success: false,
       error: `Erro inesperado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
     };
+  }
+}
+
+export async function verificarDuplicidadeInscricao(matricula: string, tipo_iniciativa: string): Promise<boolean> {
+  if (!matricula || !tipo_iniciativa) return false;
+  try {
+    const { data, error } = await supabasePublic.rpc('verificar_duplicidade_inscricao', {
+      p_matricula: matricula,
+      p_tipo_iniciativa: tipo_iniciativa
+    });
+    if (error) {
+      console.error('Erro ao verificar duplicidade', error);
+      return false;
+    }
+    return data === true;
+  } catch (e) {
+    console.error('Erro inesperado ao verificar duplicidade', e);
+    return false;
   }
 }
 
@@ -345,5 +369,68 @@ export async function updateInscricaoStatus(id: string, status: string, observac
       success: false,
       error: `Erro inesperado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
     };
+  }
+}
+
+/**
+ * Funções de Apuração (Administrativo)
+ */
+export async function consolidarFinalistas(ignorarPendencias: boolean = false, justificativa: string | null = null, dryRun: boolean = true): Promise<SupabaseResult> {
+  try {
+    const { data, error } = await supabase.rpc('consolidar_finalistas_v2', {
+      p_ignorar_pendencias: ignorarPendencias,
+      p_justificativa: justificativa,
+      p_dry_run: dryRun
+    });
+    if (error) throw new Error(error.message);
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Erro ao consolidar finalistas: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+    };
+  }
+}
+
+export async function apurarResultadosFinais(justificativa: string | null = null, dryRun: boolean = true): Promise<SupabaseResult> {
+  try {
+    const { data, error } = await supabase.rpc('apurar_resultados_finais_v2', {
+      p_justificativa: justificativa,
+      p_dry_run: dryRun
+    });
+    if (error) throw new Error(error.message);
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Erro ao apurar resultados finais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+    };
+  }
+}
+
+/**
+ * Funções de Cronograma (Público)
+ */
+export async function getPeriodoInscricao(): Promise<{
+  inicio: Date | null;
+  fim: Date | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('cronograma_parametros')
+      .select('chave, valor_data')
+      .in('chave', ['inicio_inscricoes', 'fim_inscricoes']);
+
+    if (error || !data) return { inicio: null, fim: null };
+
+    const inicioStr = data.find(item => item.chave === 'inicio_inscricoes')?.valor_data;
+    const fimStr = data.find(item => item.chave === 'fim_inscricoes')?.valor_data;
+
+    return {
+      inicio: inicioStr ? new Date(inicioStr) : null,
+      fim: fimStr ? new Date(fimStr) : null,
+    };
+  } catch (error) {
+    return { inicio: null, fim: null };
   }
 }

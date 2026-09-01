@@ -10,14 +10,13 @@ import { getAllInscricoes } from '@/lib/adminService';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular } from '@/lib/votoPopularService';
 
-type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
   { key: 'estruturante-projeto', label: 'Projetos Estruturantes' },
   { key: 'finalistica-pratica', label: 'Práticas Finalísticas' },
   { key: 'estruturante-pratica', label: 'Práticas Estruturantes' },
-  { key: 'categoria-especial-ia', label: 'Categoria Especial (Inteligência Artificial)' },
 ];
 
 const AdminVotoPopular = () => {
@@ -29,7 +28,6 @@ const AdminVotoPopular = () => {
     'estruturante-projeto': [],
     'finalistica-pratica': [],
     'estruturante-pratica': [],
-    'categoria-especial-ia': [],
   });
   // Estado para modal de verificação (substitui window.prompt)
   const [verifyOpen, setVerifyOpen] = useState(false);
@@ -47,7 +45,6 @@ const AdminVotoPopular = () => {
           'estruturante-projeto': [],
           'finalistica-pratica': [],
           'estruturante-pratica': [],
-          'categoria-especial-ia': [],
         };
         for (const cat of categorias) {
           const res = await getRelatorioCategoria(cat.key);

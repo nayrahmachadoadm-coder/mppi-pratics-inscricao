@@ -48,3 +48,32 @@ export async function getVotosCountByCategoria(categoria: string): Promise<Recor
     return {};
   }
 }
+
+export type VotoPopularCandidato = {
+  inscricao_id: string;
+  titulo_iniciativa: string;
+  nome_completo: string;
+  lotacao: string;
+  descricao_iniciativa: string;
+  problema_necessidade: string;
+  metodologia: string;
+  principais_resultados: string;
+  area_atuacao: string;
+};
+
+export async function getVotoPopularCandidatos(categoria: string, seed: number): Promise<{ success: boolean; data?: VotoPopularCandidato[]; error?: string }> {
+  if (!client) return { success: false, error: 'Sem conexão' };
+  try {
+    const { data, error } = await (client as any).rpc('get_voto_popular_candidatos', { p_categoria: categoria, p_session_seed: seed });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    const items: VotoPopularCandidato[] = (data || []).map((r: any) => ({
+      ...r,
+      area_atuacao: categoria,
+    }));
+    return { success: true, data: items };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao carregar candidatos' };
+  }
+}

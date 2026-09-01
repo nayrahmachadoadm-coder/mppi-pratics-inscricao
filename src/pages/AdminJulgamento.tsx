@@ -23,7 +23,7 @@ import { getJuryMembers, JuryMember } from '@/lib/juryManagement';
 import { exportCategoryVotesPdf, exportCategoryVotesByWorkPdf } from '@/lib/pdfCategoryVotes';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
@@ -948,3 +948,4 @@ const ScoreRadio: React.FC<{ label: string; infoText?: string; value: number; in
 };
 
 export default AdminJulgamento;
+

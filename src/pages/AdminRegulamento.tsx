@@ -55,125 +55,104 @@ const AdminRegulamento = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-center">Edital nº 107/2025</CardTitle>
+            <CardTitle className="text-xl font-semibold text-center">Edital nº XX/2026</CardTitle>
           </CardHeader>
           <CardContent id="regulamento-content" className="max-w-none text-justify text-xs">
             <p className="text-gray-700">Regulamenta a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí.</p>
 
             <h3 id="sec-1" className="font-semibold mt-4 scroll-mt-24 text-sm">1. DA APRESENTAÇÃO</h3>
-            <p className="text-gray-700">1.1 O Prêmio Melhores Práticas do Ministério Público do Estado do Piauí visa a estimular, reconhecer e a premiar boas experiências relacionadas à atuação institucional, finalística ou estruturante, que promovam práticas e projetos em prol da sociedade e do aprimoramento da atividade ministerial.</p>
-            <p className="text-gray-700">1.2 A organização do Prêmio Melhores Práticas é de responsabilidade da Assessoria de Planejamento e Gestão, que coordenará todas as etapas do certame.</p>
+            <p className="text-gray-700">1.1 O Prêmio Melhores Práticas do Ministério Público do Estado do Piauí tem por finalidade estimular, reconhecer, valorizar e premiar práticas e projetos relacionados à atuação institucional, finalística ou estruturante, que apresentem resultados relevantes para a sociedade ou contribuam para o aprimoramento da atividade ministerial.</p>
+            <p className="text-gray-700">1.2 A organização do Prêmio Melhores Práticas será de responsabilidade da Assessoria de Planejamento e Gestão — ASSESPPLAGES, a quem competirá coordenar as etapas do certame e prestar o apoio técnico e administrativo necessário à Comissão Julgadora.</p>
 
-            <h3 id="sec-2" className="font-semibold mt-4 scroll-mt-24 text-sm">2. DO OBJETIVO</h3>
-            <p className="text-gray-700">2.1 Valorizar e difundir iniciativas inovadoras que gerem impacto positivo para a sociedade e para a gestão do MPPI, além de incentivar a replicabilidade das experiências de sucesso.</p>
-            <p className="text-gray-700">2.2 Estimular práticas alinhadas aos Objetivos de Desenvolvimento Sustentável (ODS) da Agenda 2030 da ONU, fortalecendo o compromisso institucional com a sustentabilidade e os direitos fundamentais.</p>
-
-            <h3 id="sec-3" className="font-semibold mt-4 scroll-mt-24 text-sm">3. DAS CATEGORIAS E CRITÉRIOS</h3>
-            <p className="text-gray-700">3.1 A 10ª Edição contemplará as seguintes áreas e categorias:</p>
+            <h3 id="sec-2" className="font-semibold mt-4 scroll-mt-24 text-sm">2. DOS OBJETIVOS</h3>
+            <p className="text-gray-700">2.1 São objetivos do Prêmio Melhores Práticas:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
-              <li>I - Área Finalística: Categoria Práticas; Categoria Projetos</li>
-              <li>II - Área Estruturante: Categoria Práticas; Categoria Projetos</li>
-              <li>III - Categoria Especial: Práticas com Uso de Inteligência Artificial na otimização do ambiente de trabalho e/ou aprimoramento da atividade finalística ou meio.</li>
+              <li>I — reconhecer e valorizar práticas e projetos que produzam resultados concretos e contribuam para o aperfeiçoamento da atuação do Ministério Público do Estado do Piauí;</li>
+              <li>II — identificar e difundir iniciativas inovadoras, resolutivas e passíveis de replicação em outras unidades ou contextos institucionais;</li>
+              <li>III — incentivar o compartilhamento de experiências, conhecimentos, métodos e soluções desenvolvidos no âmbito do MPPI;</li>
+              <li>IV — estimular a atuação integrada entre unidades ministeriais e a cooperação com instituições públicas, privadas e organizações da sociedade civil; e</li>
+              <li>V — fomentar iniciativas alinhadas aos Objetivos de Desenvolvimento Sustentável — ODS da Agenda 2030 da Organização das Nações Unidas — ONU.</li>
             </ul>
-            <p className="text-gray-700">3.2 Cada área do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí contemplará 01 (uma) categoria: I - categoria Prática.</p>
-            <p className="text-gray-700">3.3 As melhores práticas serão escolhidas e julgadas mediante avaliação dos seguintes critérios: Projetos e Práticas Finalísticas.</p>
+
+            <h3 id="sec-3" className="font-semibold mt-4 scroll-mt-24 text-sm">3. DAS ÁREAS, DAS CATEGORIAS E DOS CONCEITOS</h3>
+            <p className="text-gray-700">3.1 A 10ª Edição do Prêmio Melhores Práticas contemplará as seguintes categorias:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
-              <li>I - cooperação: atuação colaborativa intra e interinstitucional ou em parceria com a sociedade civil.</li>
-              <li>II - inovação: introdução de novidade que resulte em produtos, serviços ou agregação de funcionalidades, com ganho de qualidade ou desempenho.</li>
-              <li>III - resolutividade: solução efetiva e concreta de um problema (eficácia da ação).</li>
-              <li>IV - impacto social: dimensão e profundidade da mudança gerada, com foco no número de pessoas beneficiadas e no efeito transformador para comunidade/instituição.</li>
-              <li>V - Alinhamento aos Objetivos de Desenvolvimento Sustentável (ODS) da Organização das Nações Unidas (ONU): contribuição mensurável para um ou mais dos Objetivos de Desenvolvimento Sustentável.</li>
-              <li>VI - Replicabilidade: capacidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, com viabilidade prática e potencial de gerar resultados semelhantes ou superiores.</li>
+              <li>I — Práticas Finalísticas;</li>
+              <li>II — Projetos Finalísticos;</li>
+              <li>III — Práticas Estruturantes;</li>
+              <li>IV — Projetos Estruturantes;</li>
             </ul>
-
-            <h3 id="sec-4" className="font-semibold mt-4 scroll-mt-24 text-sm">4. DOS REQUISITOS DE PARTICIPAÇÃO</h3>
-            <p className="text-gray-700">4.1 Poderão participar da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí membros e servidores do MPPI, com atuação nas áreas fim e meio.</p>
-            <p className="text-gray-700">4.2 Não poderão concorrer projetos ou práticas que já tenham sido vencedores em edições anteriores do Prêmio Melhores Práticas do MPPI, sendo tais inscrições automaticamente indeferidas.</p>
-
-            <h3 id="sec-5" className="font-semibold mt-4 scroll-mt-24 text-sm">5. DA INSCRIÇÃO</h3>
-            <p className="text-gray-700">5.1 As inscrições da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí serão realizadas, no período de 20 de setembro a 30 de outubro de 2025, devendo o candidato preencher, pelo link <a href="https://mppi-pratics-inscricao.lovable.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-pratics-inscricao.lovable.app/</a> a ficha de inscrição.</p>
-            <p className="text-gray-700">5.2 Cada participante poderá inscrever até 03 (três) iniciativas, sendo: 01 (uma) prática; 01 (um) projeto; e, adicionalmente, 01 (uma) inscrição na Categoria Especial de Inteligência Artificial.</p>
-            <p className="text-gray-700">5.3 Poderão ser inscritas práticas e projetos que tenham sido efetivamente executadas pelo membro e/ou servidor e que sejam de sua autoria.</p>
-            <p className="text-gray-700">5.4 Havendo mais de uma inscrição na mesma categoria, será considerada a que primeira foi enviada.</p>
-            <p className="text-gray-700">5.5 Somente projetos institucionalizados, ou seja, elaborados de acordo com o Ato PGJ/PI Nº 1254/2022, que dispõe sobre a Metodologia de Gerenciamento de Projetos no âmbito do Ministério Público do Estado do Piauí e sobre práticas inscritas no Banco de Práticas do MPPI, concorrerão ao Prêmio Melhores Práticas.</p>
-            <p className="text-gray-700">5.6 As Práticas e Projetos inscritos podem ter sido concluídos ou estar em execução, desde que seja possível mensurar os resultados nos últimos 03 anos.</p>
-            <p className="text-gray-700">5.7 As inscrições da 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí são gratuitas.</p>
-            <p className="text-gray-700">5.8 As inscrições serão analisadas pelo Presidente da Comissão Julgadora designada pela Procuradora-Geral de Justiça para deferimento ou não.</p>
-            <p className="text-gray-700">5.9 Serão indeferidas as inscrições que não atenderem ao disposto neste regulamento, incluindo aquelas cuja respectiva ficha de inscrição esteja preenchida incorretamente.</p>
-            <p className="text-gray-700">5.10 No caso do indeferimento da inscrição, o interessado poderá interpor um pedido de reconsideração ao Presidente da Comissão Julgadora, no prazo contido no Anexo Único, que decidirá, de forma fundamentada.</p>
-            <p className="text-gray-700">5.11 A inscrição na 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí implica aceitação tácita de eventual publicação, divulgação e utilização das práticas inscritas, independentemente de premiação, assim como a autorização do uso de imagens, textos, vozes e nomes, em qualquer meio de divulgação e promoção (interno, externo e/ou de imprensa), sem ônus ou termo de retribuição.</p>
-            <p className="text-gray-700">5.12 Os membros e servidores autores das práticas e projetos que concorrerem ao Prêmio Melhores Práticas, ao realizarem a mera inscrição neste certame, declaram e reconhecem expressamente que as ações que resultaram nas práticas e projetos inscritos foram executadas em nome do Ministério Público do Estado do Piauí, pelo que os direitos autorais das mesmas a este pertencem, sendo permitido à referida instituição dispor, usar e gozar destas obras intelectuais como bem lhe dispuser.</p>
-
-            <h3 id="sec-6" className="font-semibold mt-6 scroll-mt-24 text-sm">6. DA COMISSÃO JULGADORA</h3>
-            <p className="text-gray-700">6.1 A Comissão Julgadora terá 09 (nove) integrantes, assim distribuídos:</p>
+            <p className="text-gray-700">3.2 Para os fins deste Edital, consideram-se:</p>
+            <p className="text-gray-700">3.2.1 Considera-se boa prática institucional, nos termos do Ato PGJ/PI nº 1.335/2023, o método, fluxo, técnica, experiência, procedimento ou forma de atuação, de caráter contínuo, executado por unidade ministerial e destinado à solução de problema específico, ao aperfeiçoamento da atuação institucional ou à melhoria dos serviços prestados pelo Ministério Público, que apresente resultados concretos e potencial de replicabilidade.</p>
+            <p className="text-gray-700">3.2.2 Considera-se projeto institucional o esforço temporário e estruturado destinado à criação de produto, serviço ou resultado específico, com escopo definido, planejamento formal, cronograma, governança, monitoramento e submissão à Metodologia de Gerenciamento de Projetos do Ministério Público do Estado do Piauí, regulamentada pelo Ato PGJ/PI nº 1.254/2022 e suas alterações posteriores.</p>
+            <p className="text-gray-700">3.3 A mesma iniciativa não poderá ser inscrita simultaneamente em mais de uma categoria.</p>
+            <p className="text-gray-700">4. DOS CRITÉRIOS DE AVALIAÇÃO</p>
+            <p className="text-gray-700">4.1 As práticas e os projetos serão avaliados de acordo com os seguintes critérios:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
-              <li>I – 02 (dois) membros escolhidos pelo Procurador-Geral de Justiça, e, dentre eles, designado o Presidente da Comissão, o qual escolherá o secretário dos trabalhos;</li>
-              <li>II – 01 (um) membro indicado pela Associação Piauiense do Ministério Público;</li>
-              <li>III – 01 (um) servidor indicado pelo Sindicato dos Servidores do MPPI;</li>
-              <li>IV – 01 (um) representante indicado pela Universidade Federal do Piauí;</li>
-              <li>V – 01 (um) representante indicado pela Universidade Estadual do Piauí;</li>
-              <li>VI – 01 (um) representante indicado pelo Poder Judiciário do Estado do Piauí;</li>
-              <li>VII – 01 (um) representante indicado pela OAB-PI; e</li>
-              <li>VIII – 01 (um) representante indicado pela Defensoria Pública.</li>
+              <li>I — cooperação: grau de articulação e de colaboração entre unidades do MPPI, instituições parceiras ou organizações da sociedade civil;</li>
+              <li>II — inovação: adoção de solução, método, processo, ferramenta ou forma de atuação nova ou significativamente aperfeiçoada, capaz de produzir ganho de qualidade, eficiência ou desempenho;</li>
+              <li>III — resolutividade: capacidade da iniciativa de solucionar, prevenir, reduzir ou enfrentar de maneira concreta o problema que motivou sua implementação;</li>
+              <li>IV — impacto social ou institucional: dimensão, relevância e profundidade das mudanças produzidas para a sociedade, para o público beneficiado ou para o funcionamento da Instituição;</li>
+              <li>V — alinhamento aos Objetivos de Desenvolvimento Sustentável — ODS (nos Projetos Institucionais): contribuição demonstrável para um ou mais objetivos da Agenda 2030 da ONU; e</li>
+              <li>VI — replicabilidade: possibilidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, considerando sua viabilidade prática e seu potencial de produzir resultados semelhantes.</li>
             </ul>
-            <p className="mt-4 text-gray-700">6.2 A Comissão Julgadora atribuirá pontuação para cada critério com valor representado por um número inteiro compreendido entre 0 (zero) e 5 (cinco) pontos, observadas as seguintes condições:</p>
-            <ul className="list-disc pl-6 text-gray-700">
-              <li>I – a pontuação final obtida por cada prática ou projeto inscrito será a soma aritmética da pontuação de todos os critérios, constantes no item 3.3 deste regulamento, atribuída por cada jurado;</li>
-              <li>II – as práticas e projetos vencedores serão aquelas que atingirem a maior pontuação final; e</li>
-              <li>III – em caso de empate, vencerá a Prática e Projeto com maior pontuação no critério resolutividade, e, caso persistindo o empate, vencerá aquela com maior pontuação no critério replicabilidade.</li>
+            <p className="text-gray-700">4.2 Cada critério receberá pontuação inteira de 0 (zero) a 5 (cinco), de acordo com a seguinte escala: 0 ponto: critério não demonstrado; 1 ponto: atendimento incipiente; 2 pontos: atendimento parcial ou pouco consistente; 3 pontos: atendimento satisfatório; 4 pontos: atendimento relevante e bem demonstrado; e 5 pontos: atendimento excelente, amplamente demonstrado por dados, resultados ou evidências.</p>
+            <p className="text-gray-700">4.3 A pontuação máxima atribuível por integrante da Comissão Julgadora será de 30 (trinta) pontos.</p>
+
+            <h3 id="sec-5" className="font-semibold mt-4 scroll-mt-24 text-sm">5. DOS REQUISITOS DE PARTICIPAÇÃO</h3>
+            <p className="text-gray-700">5.1 Poderão participar da 10ª Edição do Prêmio Melhores Práticas membros, servidores e assessores do Ministério Público do Estado do Piauí, com atuação nas áreas finalística ou estruturante.</p>
+            <p className="text-gray-700">5.2 As inscrições poderão ser individuais ou coletivas, devendo ser indicado, nas iniciativas desenvolvidas em equipe, um responsável pela inscrição e identificados os demais participantes.</p>
+            <p className="text-gray-700">5.3 Somente poderão ser inscritas práticas e projetos que tenham contado com a participação efetiva do proponente em sua elaboração, implementação ou execução.</p>
+            <p className="text-gray-700">5.4 Não poderão concorrer práticas ou projetos que já tenham sido vencedores em edições anteriores do Prêmio Melhores Práticas do MPPI, sendo a respectiva inscrição automaticamente indeferida.</p>
+
+            <h3 id="sec-6" className="font-semibold mt-4 scroll-mt-24 text-sm">6. DAS INSCRIÇÕES</h3>
+            <p className="text-gray-700">6.1 As inscrições serão realizadas gratuitamente no período de 08 de setembro a 08 de outubro de 2026, mediante preenchimento do formulário eletrônico disponível no endereço: <a href="https://mppi-praticas-inscricao.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-praticas-inscricao.vercel.app/</a></p>
+            <p className="text-gray-700">6.2 Cada participante poderá inscrever até 2 (duas) iniciativas, observados os seguintes limites:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — 1 (uma) prática, na área finalística ou estruturante;</li>
+              <li>II — 1 (um) projeto, na área finalística ou estruturante; e</li>
+            </ul>
+            <p className="text-gray-700">6.3 Havendo mais de uma inscrição do mesmo participante em uma das modalidades previstas nos incisos do item 6.2, será considerada válida apenas a primeira inscrição encaminhada.</p>
+            <p className="text-gray-700">6.4 Para concorrer ao Prêmio:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — as práticas deverão estar regularmente inscritas no Banco de Práticas do MPPI, nos termos do Ato PGJ/PI nº 1.335/2023; e</li>
+              <li>II — os projetos deverão estar institucionalizados de acordo com a Metodologia de Gerenciamento de Projetos do MPPI, regulamentada pelo Ato PGJ/PI nº 1.254/2022 e suas alterações posteriores (Ato PGJ/PI nº 1595/2025).</li>
+            </ul>
+            <p className="text-gray-700">6.5 Poderão ser inscritas iniciativas concluídas ou em execução, desde que apresentem resultados mensuráveis obtidos nos 3 (três) anos anteriores ao encerramento do período de inscrições.</p>
+
+            <h3 id="sec-7" className="font-semibold mt-6 scroll-mt-24 text-sm">7. DA COMISSÃO JULGADORA</h3>
+            <p className="text-gray-700">7.1 A Comissão Julgadora será composta por 9 (nove) integrantes, assim distribuídos: 2 (dois) membros escolhidos pelo Procurador-Geral, 1 (um) membro da APMP, 1 (um) servidor do SINDSEMP/PI, e representantes da UFPI, UESPI, Poder Judiciário, OAB/PI e Defensoria Pública.</p>
+            <p className="mt-4 text-gray-700">7.3 Cada integrante da Comissão atribuirá pontuação de 0 (zero) a 5 (cinco) para cada um dos critérios previstos no item 4.1.</p>
+            <p className="text-gray-700">7.4 A nota atribuída por cada julgador à iniciativa corresponderá à soma das pontuações dos critérios de avaliação.</p>
+
+            <h3 id="sec-8" className="font-semibold mt-6 scroll-mt-24 text-sm">8. DA PONTUAÇÃO E DA CLASSIFICAÇÃO FINAL</h3>
+            <p className="text-gray-700">8.1 A classificação final das iniciativas em cada categoria será definida mediante a composição da Avaliação Técnica da Comissão Julgadora e do Voto Popular , observados os seguintes pesos:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — Avaliação Técnica da Comissão Julgadora: 80% (oitenta por cento) da pontuação final; e</li>
+              <li>II — Voto Popular: 20% (vinte por cento) da pontuação final.</li>
+            </ul>
+            <p className="text-gray-700">8.2 A nota da avaliação técnica corresponderá à média aritmética das notas válidas atribuídas pelos integrantes da Comissão Julgadora.</p>
+            <p className="text-gray-700">8.3 Para fins de composição da pontuação final, a nota técnica será convertida para uma escala de 0 (zero) a 100 (cem) pontos.</p>
+            <p className="text-gray-700">8.6 A Pontuação Final de cada iniciativa será calculada de acordo com a seguinte fórmula: Pontuação Final = (Nota Técnica × 0,80) + (Nota Popular × 0,20)</p>
+            <p className="text-gray-700">8.7 Após a aplicação da fórmula prevista no item anterior, as iniciativas serão classificadas, em cada categoria, em ordem decrescente de Pontuação Final, sendo consideradas vencedoras as 3 (três) iniciativas que obtiverem as maiores pontuações.</p>
+            <p className="text-gray-700">8.8 A pontuação final será considerada com até 2 (duas) casas decimais.</p>
+            <p className="text-gray-700">8.9 Em caso de empate na Pontuação Final, serão aplicados, sucessivamente, os seguintes critérios de desempate:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — maior Nota Técnica atribuída pela Comissão Julgadora;</li>
+              <li>II — maior nota no critério resolutividade;</li>
+              <li>III — maior nota no critério impacto social ou institucional;</li>
+              <li>IV — maior nota no critério replicabilidade;</li>
+              <li>V — maior nota no critério inovação; e</li>
+              <li>VI — persistindo o empate, decisão fundamentada da Comissão Julgadora.</li>
             </ul>
 
-            <h3 id="sec-7" className="font-semibold mt-6 scroll-mt-24 text-sm">7. DA SELEÇÃO E PREMIAÇÃO</h3>
-            <p className="text-gray-700">7.1 O processo de seleção e premiação será realizado nas seguintes etapas:</p>
-            <ul className="list-none pl-6 text-gray-700 space-y-1">
-              <li>
-                I - 1ª etapa - Triagem: os trabalhos inscritos passarão por verificação por parte do Presidente da Comissão Julgadora quanto ao cumprimento dos requisitos básicos para inscrição e participação, com publicação em Diário Oficial Eletrônico das práticas inscritas e projetos inscritos.
-              </li>
-              <li>
-                II - 2ª etapa - Julgamento: as práticas e projetos triados serão submetidos à avaliação da Comissão Julgadora.
-              </li>
-              <li>
-                III - 3ª etapa - Divulgação dos finalistas: a Comissão Julgadora divulgará no Diário Oficial Eletrônico do Ministério Público do Estado do Piauí, sem indicar a ordem de classificação, os três trabalhos mais bem avaliados em cada categoria, que serão convocados para a cerimônia de premiação.
-              </li>
-              <li>
-                IV - 4ª etapa - Voto Popular:
-                <ul className="list-none pl-6 mt-2 text-gray-700 space-y-1">
-                  <li>a) As práticas e projetos finalistas de cada categoria serão divulgados no site institucional do MPPI e em suas redes sociais oficiais, em seção específica do "Prêmio Melhores Práticas".</li>
-                  <li>b) O público poderá votar eletronicamente em sua iniciativa preferida, no prazo estabelecido no cronograma (Anexo Único).</li>
-                  <li>c) O trabalho mais votado receberá o Prêmio de Destaque pelo Voto Popular, com entrega de troféu especial e certificado, independentemente da classificação final atribuída pela Comissão Julgadora.</li>
-                  <li>d) O voto popular terá caráter exclusivamente honorífico e não interferirá na ordem de classificação técnica definida pela Comissão Julgadora.</li>
-                </ul>
-              </li>
-              <div id="premiacao" className="scroll-mt-24"></div>
-              <li>
-                V - 5ª etapa – Premiação: realizada em cerimônia de premiação (a se realizar conforme cronograma - Anexo Único), com os seguintes prêmios:
-                <ul className="list-none pl-6 mt-2 text-gray-700 space-y-1">
-                  <li>a) 1º colocado de cada categoria: 01 (um) troféu e R$ 1.200,00 (um mil e duzentos reais).</li>
-                  <li>b) 2º colocado de cada categoria: 01 (um) troféu e R$ 500,00 (quinhentos reais).</li>
-                  <li>c) 3º colocado de cada categoria: 01 (um) troféu e R$ 300,00 (trezentos reais).</li>
-                </ul>
-              </li>
-              <li>
-                VI - 6ª Etapa – Homologação: divulgação do resultado final em ordem de premiação no Diário Oficial Eletrônico e no site do Ministério Público do Estado do Piauí.
-              </li>
-            </ul>
-            <p className="text-gray-700">7.2. Será concedido 01 (um) troféu para cada projeto classificado na forma do inciso IV do item</p>
-            <p className="text-gray-700">7.3. Durante o período compreendido entre o início das inscrições e a data da premiação, a Comissão Julgadora poderá, a seu critério, averiguar a veracidade e consistência das informações apresentadas pelos candidatos, bem como solicitar aos mesmos informações e documentação comprobatória complementar acerca da prática inscrita.</p>
-            <div id="voto-popular" className="scroll-mt-24"></div>
-            <p className="text-gray-700">7.4 Voto Popular:</p>
-            <ul className="list-none pl-6 text-gray-700 space-y-1">
-              <li>I - As práticas e projetos finalísticos finalistas de cada categoria serão divulgados no site institucional do MPPI e em suas redes sociais oficiais.</li>
-              <li>II - O público poderá votar eletronicamente em sua iniciativa preferida, no prazo estabelecido no cronograma (Anexo Único).</li>
-            </ul>
-            <p className="text-gray-700">7.5 O não atendimento das solicitações, bem como qualquer outro óbice à atuação da Comissão Julgadora, ensejará a desclassificação da prática ou projeto inscrito no Prêmio.</p>
-            <p className="text-gray-700">7.6 A Procuradoria Geral de Justiça, por meio da Assessoria de Planejamento e Gestão e da Coordenadoria de Comunicação Social, organizará a confecção e divulgação de um e-book digital contendo os finalistas do Prêmio, com o objetivo de registrar e difundir as iniciativas premiadas e de destaque, incentivando sua replicação.</p>
-
-            <h3 id="sec-8" className="font-semibold mt-6 scroll-mt-24 text-sm">8. DAS DISPOSIÇÕES GERAIS</h3>
-            <p className="text-gray-700">8.1 A Coordenadoria de Comunicação Social - CCS deverá fornecer apoio técnico aos projetos e práticas, que tenham por veículo as redes sociais (como medir o alcance) e todas as informações e documentos requisitados pela Comissão.</p>
-            <p className="text-gray-700">8.2. Quaisquer dúvidas sobre a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí poderão ser esclarecidas por meio dos telefones (86) 2222-8000 - Ramal 8015 (Assessoria de Planejamento e Gestão) ou por meio da instauração de procedimento de gestão administrativa no sistema SEI, o qual deverá ser encaminhado à ASSESPPLAGES.</p>
-            <p className="text-gray-700">8.3. A premiação de natureza pecuniária será custeada com recursos da Associação de Membros do Ministério Público do Estado do Piauí (APMP) e do Sindicato dos Servidores do Ministério Público do Estado do Piauí (SINDSEMP/PI).</p>
-            <p className="text-gray-700">8.4. Os casos omissos serão resolvidos pela Presidente da Comissão Julgadora.</p>
-            <p className="text-gray-700 mt-2">Teresina (PI), 17 de setembro de 2025.</p>
+            <h3 id="sec-9" className="font-semibold mt-6 scroll-mt-24 text-sm">9. DO VOTO POPULAR</h3>
+            <p className="text-gray-700">9.1 Concluído o julgamento técnico, serão selecionadas, em cada categoria, as 3 (três) iniciativas que obtiverem as maiores Notas Técnicas, as quais serão consideradas finalistas e participarão da etapa de Voto Popular.</p>
+            <p className="text-gray-700">9.8 Após a composição da Nota Técnica e da Nota Popular, será calculada a Pontuação Final, que definirá, em cada categoria, o 1º, 2º e 3º lugares.</p>
+            
+            <h3 id="sec-10" className="font-semibold mt-6 scroll-mt-24 text-sm">10. DA SELEÇÃO E DA PREMIAÇÃO</h3>
+            <p className="text-gray-700">10.1 O processo de seleção e premiação compreenderá as seguintes etapas: Triagem, Análise dos pedidos, Julgamento técnico, Divulgação dos finalistas, Voto Popular, Cerimônia de premiação, Homologação.</p>
+            <p className="text-gray-700 mt-2">Teresina (PI), ___ de __________ de 2026.</p>
             <div className="mt-10 text-center">
               <p className="text-gray-700 font-semibold">Cláudia Pessoa Marques da Rocha Seabra – Procuradora-Geral de Justiça</p>
             </div>
@@ -195,35 +174,39 @@ const AdminRegulamento = () => {
               <tbody>
                 <tr>
                   <td className="p-2">Lançamento do edital</td>
-                  <td className="p-2">19/09/2025</td>
+                  <td className="p-2">04/09/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Período de inscrição</td>
-                  <td className="p-2">20/09 a 30/10/2025</td>
+                  <td className="p-2">Período de inscrições</td>
+                  <td className="p-2">08/09/2026 a 08/10/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Divulgação das práticas inscritas deferidas</td>
-                  <td className="p-2">07/11/2025</td>
+                  <td className="p-2">Divulgação da relação provisória das inscrições deferidas e indeferidas</td>
+                  <td className="p-2">12/10/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Prazo de pedido de reconsideração</td>
-                  <td className="p-2">05 dias úteis, contados a partir da divulgação.</td>
+                  <td className="p-2">Prazo para pedido de reconsideração</td>
+                  <td className="p-2">16/10/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Divulgação da lista definitiva dos inscritos</td>
-                  <td className="p-2">17/11/2025</td>
+                  <td className="p-2">Divulgação da relação definitiva das inscrições habilitadas</td>
+                  <td className="p-2">19/10/2026</td>
+                </tr>
+                <tr>
+                  <td className="p-2">Julgamento técnico pela Comissão Julgadora</td>
+                  <td className="p-2">19/10/2026 a 30/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação dos finalistas</td>
-                  <td className="p-2">28/11/2025</td>
+                  <td className="p-2">03/11/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Voto Popular</td>
-                  <td className="p-2">28/11/2025 a 08/12/2025</td>
+                  <td className="p-2">Votação popular</td>
+                  <td className="p-2">04/11/2026 a 13/11/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Cerimônia de premiação</td>
-                  <td className="p-2">Dezembro de 2025 – comemoração do Dia Nacional do Ministério Público</td>
+                  <td className="p-2">Dezembro de 2026, em data a ser divulgada, preferencialmente durante as comemorações do Dia Nacional do Ministério Público</td>
                 </tr>
               </tbody>
             </table>
