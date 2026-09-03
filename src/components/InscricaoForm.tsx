@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy, Trophy, AlertCircle, CalendarClock } from 'lucide-react';
 import { saveInscricao, verificarDuplicidadeInscricao, getPeriodoInscricao } from '@/lib/supabaseService';
+import { hasRole } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Step1 from '@/components/FormSteps/Step1';
 import Confetti from 'react-confetti';
@@ -106,8 +107,15 @@ const InscricaoForm = () => {
 
   useEffect(() => {
     const fetchPeriodo = async () => {
+      const isAdmin = await hasRole('admin');
       const periodo = await getPeriodoInscricao();
       setDatasPeriodo(periodo);
+
+      if (isAdmin) {
+        setPeriodoInscricaoStatus('aberto');
+        return;
+      }
+
       if (!periodo.inicio || !periodo.fim) {
         setPeriodoInscricaoStatus('aberto'); // Fallback if no timeline defined
         return;
