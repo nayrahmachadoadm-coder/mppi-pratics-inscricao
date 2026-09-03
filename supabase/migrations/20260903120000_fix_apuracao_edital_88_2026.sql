@@ -72,7 +72,7 @@ CREATE OR REPLACE FUNCTION consolidar_finalistas_v2(
     p_ignorar_pendencias BOOLEAN DEFAULT false,
     p_dry_run BOOLEAN DEFAULT true
 )
-RETURNS SETOF public.finalistas_preview
+RETURNS SETOF public.finalista_preview
 SECURITY DEFINER
 SET search_path = public, pg_temp
 LANGUAGE plpgsql
