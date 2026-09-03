@@ -426,9 +426,17 @@ export async function getPeriodoInscricao(): Promise<{
     const inicioStr = data.find(item => item.chave === 'inicio_inscricoes')?.valor_data;
     const fimStr = data.find(item => item.chave === 'fim_inscricoes')?.valor_data;
 
+    const parseDateLocal = (dateStr: string | undefined) => {
+      if (!dateStr) return null;
+      // Handle both "YYYY-MM-DD HH:mm:ss" and "YYYY-MM-DDTHH:mm:ss..." formats
+      const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
+      const [year, month, day] = datePart.split('-');
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    };
+
     return {
-      inicio: inicioStr ? new Date(inicioStr) : null,
-      fim: fimStr ? new Date(fimStr) : null,
+      inicio: parseDateLocal(inicioStr),
+      fim: parseDateLocal(fimStr),
     };
   } catch (error) {
     return { inicio: null, fim: null };
