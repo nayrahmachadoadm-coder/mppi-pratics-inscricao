@@ -42,6 +42,7 @@ const AdminEdicoesAnteriores = () => {
               nome: cols[4].trim(),
             });
           }
+        }
         // 3. Combinar e ordenar (O CSV já contém todas as edições, incluindo 2025)
         setRows(parsed);
         setError(null);
