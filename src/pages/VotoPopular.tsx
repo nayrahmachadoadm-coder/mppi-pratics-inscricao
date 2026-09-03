@@ -8,7 +8,7 @@ import { Eye, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
-import { isAuthenticated } from '@/lib/auth';
+import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos, VotoPopularCandidato } from '@/lib/votoPopularService';
 
@@ -43,6 +43,7 @@ const VotoPopular: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLogged, setIsLogged] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   
   const [detalheOpen, setDetalheOpen] = useState(false);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
@@ -64,6 +65,10 @@ const VotoPopular: React.FC = () => {
       try {
         const logged = await isAuthenticated();
         setIsLogged(logged);
+        if (logged) {
+          const adminCheck = await hasRole('admin');
+          setIsAdmin(adminCheck);
+        }
         const collected: any[] = [];
         
         let sessionSeed = sessionStorage.getItem('voto_seed');
@@ -245,82 +250,83 @@ const VotoPopular: React.FC = () => {
     doc.setDrawColor(180);
     doc.line(margin, headerY + 10, pageWidth - margin, headerY + 10);
 
-    // Preparar ranking (ordem decrescente de votos)
-    const ranked = allFinalistas
-      .map((f) => {
-        const id = f.inscricao.id;
-        const votes = votosCountById[id] || 0;
-        const pct = totalVotos > 0 ? (votes / totalVotos) * 100 : 0;
-        return { pos: 0, name: f.inscricao.titulo_iniciativa || '', votes, pct };
-      })
-      .sort((a, b) => b.votes - a.votes)
-      .map((item, idx) => ({ ...item, pos: idx + 1 }));
-
-    // Tabela: colunas (pos, trabalho, votos, %)
-    const colPosW = 16;
-    const colVotesW = 28;
-    const colPctW = 26;
-    const tableWidth = pageWidth - margin * 2;
-    const colWorkW = tableWidth - (colPosW + colVotesW + colPctW);
-    const xPos = margin;
-    const xWork = xPos + colPosW;
-    const xVotes = xWork + colWorkW;
-    const xPct = xVotes + colVotesW;
-
     let y = headerY + 16;
     const rowH = 8;
 
-    // Cabeçalho da tabela
-    doc.setFontSize(10);
-    // bg vermelho igual ao header principal (aproximação de hsl(345 85% 25%) -> rgb(118,10,37))
-    doc.setTextColor(255);
-    doc.setFillColor(118, 10, 37);
-    doc.rect(margin, y, tableWidth, rowH, 'F');
-    doc.text('Pos', xPos + 2, y + 5);
-    doc.text('Trabalho', xWork + 2, y + 5);
-    doc.text('Votos', xVotes + 2, y + 5);
-    doc.text('%', xPct + 2, y + 5);
-    y += rowH;
+    for (const cat of categorias) {
+      const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
+      if (catFinalistas.length === 0) continue;
 
-    doc.setTextColor(20);
-    ranked.forEach((r) => {
-      // Quebra de página
+      const catTotalVotos = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
+
+      const ranked = catFinalistas
+        .map((f) => {
+          const id = f.inscricao.id;
+          const votes = votosCountById[id] || 0;
+          const pct = catTotalVotos > 0 ? (votes / catTotalVotos) * 100 : 0;
+          return { name: f.inscricao.titulo_iniciativa || '', votes, pct };
+        })
+        .sort((a, b) => b.votes - a.votes)
+        .map((item, idx) => ({ ...item, pos: idx + 1 }));
+
+      if (y > doc.internal.pageSize.getHeight() - margin - 20) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.setFont('helvetica', 'bold');
+      doc.text(cat.label, margin, y);
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(255);
+      doc.setFillColor(118, 10, 37);
+      doc.rect(margin, y, tableWidth, rowH, 'F');
+      doc.text('Pos', xPos + 2, y + 5);
+      doc.text('Trabalho', xWork + 2, y + 5);
+      doc.text('Votos', xVotes + 2, y + 5);
+      doc.text('%', xPct + 2, y + 5);
+      y += rowH;
+
+      doc.setTextColor(20);
+      ranked.forEach((r) => {
+        if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.setDrawColor(230);
+        doc.line(margin, y, margin + tableWidth, y);
+
+        doc.text(String(r.pos).padStart(2, '0'), xPos + 2, y + 6);
+
+        const wrapped = doc.splitTextToSize(r.name, colWorkW - 4);
+        doc.text(wrapped, xWork + 2, y + 6);
+        const lines = Array.isArray(wrapped) ? wrapped.length : 1;
+
+        doc.text(r.votes.toLocaleString('pt-BR'), xVotes + 2, y + 6);
+        doc.text(`${r.pct.toFixed(1)}%`, xPct + 2, y + 6);
+
+        y += Math.max(rowH, lines * 6);
+      });
+
       if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
         doc.addPage();
         y = margin;
       }
-      // Linhas
-      doc.setDrawColor(230);
+      doc.setDrawColor(0);
       doc.line(margin, y, margin + tableWidth, y);
-
-      // Pos
-      doc.text(String(r.pos).padStart(2, '0'), xPos + 2, y + 6);
-
-      // Trabalho (quebra para caber na coluna)
-      const wrapped = doc.splitTextToSize(r.name, colWorkW - 4);
-      doc.text(wrapped, xWork + 2, y + 6);
-      const lines = Array.isArray(wrapped) ? wrapped.length : 1;
-
-      // Votos e % (primeira linha da célula)
-      doc.text(r.votes.toLocaleString('pt-BR'), xVotes + 2, y + 6);
-      doc.text(`${r.pct.toFixed(1)}%`, xPct + 2, y + 6);
-
-      // Avança pela altura utilizada
-      y += Math.max(rowH, lines * 6);
-    });
-
-    // Linha total
-    if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
-      doc.addPage();
-      y = margin;
+      y += 4;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total da categoria', xWork + 2, y);
+      doc.text(catTotalVotos.toLocaleString('pt-BR'), xVotes + 2, y);
+      doc.text(catTotalVotos > 0 ? '100,0%' : '0,0%', xPct + 2, y);
+      doc.setFont('helvetica', 'normal');
+      
+      y += 12;
     }
-    doc.setDrawColor(0);
-    doc.line(margin, y, margin + tableWidth, y);
-    y += 4;
-    doc.setFontSize(10);
-    doc.text('Total de votos', xWork + 2, y);
-    doc.text(totalVotos.toLocaleString('pt-BR'), xVotes + 2, y);
-    doc.text(totalVotos > 0 ? '100,0%' : '0,0%', xPct + 2, y);
 
     doc.save('voto-popular.pdf');
   };
@@ -363,7 +369,7 @@ const VotoPopular: React.FC = () => {
                     {hasVotedAny() && (
                       <span className="text-[11px]">Voto registrado neste dispositivo</span>
                     )}
-                    {isLogged && (
+                    {isAdmin && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
