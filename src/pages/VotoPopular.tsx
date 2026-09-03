@@ -40,7 +40,7 @@ const VotoPopular: React.FC = () => {
   const [error, setError] = useState('');
   const [allFinalistas, setAllFinalistas] = useState<(CategoriaRankingItem | { inscricao: any })[]>([]);
   const [votosCountById, setVotosCountById] = useState<VotesById>({});
-  const [selectedId, setSelectedId] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLogged, setIsLogged] = useState<boolean>(false);
   
@@ -135,8 +135,8 @@ const VotoPopular: React.FC = () => {
   const hasVoted = (cat: CategoriaKey) => Boolean(getStoredVote(cat));
   const hasVotedAny = () => categorias.some((c) => hasVoted(c.key));
 
-  const onSelectOne = (inscricaoId: string) => {
-    setSelectedId(inscricaoId);
+  const onSelectOne = (categoria: string, inscricaoId: string) => {
+    setSelectedIds(prev => ({ ...prev, [categoria]: inscricaoId }));
   };
 
   const openDetalhes = (item: any) => {
@@ -149,12 +149,9 @@ const VotoPopular: React.FC = () => {
       toast({ title: 'Votação encerrada', description: 'A votação popular foi encerrada.' });
       return;
     }
-    if (!selectedId) {
-      toast({ title: 'Selecione um finalista', description: 'Escolha um dos 15 trabalhos antes de confirmar.' });
-      return;
-    }
-    if (hasVotedAny()) {
-      toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a um voto por dispositivo.' });
+    const categoriesToSubmit = Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey));
+    if (categoriesToSubmit.length === 0) {
+      toast({ title: 'Nenhuma seleção pendente', description: 'Você precisa selecionar pelo menos um trabalho de uma categoria que ainda não votou.' });
       return;
     }
     confirmarVotos();
@@ -163,39 +160,44 @@ const VotoPopular: React.FC = () => {
   const confirmarVotos = async () => {
     try {
       const fp = await getDeviceFingerprint();
-      const item = allFinalistas.find((f) => f.inscricao.id === selectedId);
-      if (!item) {
-        toast({ title: 'Seleção inválida', description: 'Escolha um dos finalistas e tente novamente.' });
-        return;
-      }
-      const categoria = item.inscricao.area_atuacao as CategoriaKey;
-      if (hasVotedAny()) {
-        toast({ title: 'Voto já registrado neste dispositivo', description: 'A votação é limitada a um voto por dispositivo.' });
-        return;
-      }
-      const res = await submitVotoPopular({ categoria, inscricao_id: selectedId, fingerprint: fp });
-      if (res.success) {
-        storeVote(categoria, selectedId);
-        setSelectedId('');
-        if (isLogged) {
-          try {
-            const merged: VotesById = { ...votosCountById };
-            for (const c of categorias) {
-              try {
-                const byCat = await getVotosCountByCategoria(c.key);
-                Object.entries(byCat).forEach(([id, count]) => { merged[id] = count; });
-              } catch { void 0; }
-            }
-            setVotosCountById(merged);
-          } catch { void 0; }
+      const categoriesToSubmit = Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey));
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const cat of categoriesToSubmit) {
+        const selId = selectedIds[cat];
+        const res = await submitVotoPopular({ categoria: cat, inscricao_id: selId, fingerprint: fp });
+        if (res.success) {
+          storeVote(cat as CategoriaKey, selId);
+          successCount++;
+        } else {
+          errorCount++;
         }
-        toast({ title: 'Voto confirmado', description: 'Obrigado por participar do Voto Popular!' });
+      }
+
+      setSelectedIds({});
+
+      if (isLogged) {
+        try {
+          const merged: VotesById = { ...votosCountById };
+          for (const c of categorias) {
+            try {
+              const byCat = await getVotosCountByCategoria(c.key);
+              Object.entries(byCat).forEach(([id, count]) => { merged[id] = count; });
+            } catch { void 0; }
+          }
+          setVotosCountById(merged);
+        } catch { void 0; }
+      }
+      
+      if (errorCount === 0) {
+        toast({ title: 'Voto(s) confirmado(s)', description: 'Obrigado por participar do Voto Popular!' });
       } else {
-        const duplicated = String(res.error || '').includes('duplicado_por_ip_ou_fingerprint');
-        toast({ title: duplicated ? 'Voto já registrado' : 'Falha ao registrar voto', description: duplicated ? 'Este dispositivo/IP já registrou um voto.' : 'Houve um problema ao registrar seu voto no servidor.' });
+        toast({ title: 'Atenção', description: `Foram registrados ${successCount} voto(s), mas ${errorCount} falharam ou já estavam computados.` });
       }
     } catch (e: unknown) {
-      toast({ title: 'Voto registrado localmente', description: 'Seu voto foi salvo no dispositivo.' });
+      toast({ title: 'Erro', description: 'Houve um problema ao processar seu(s) voto(s).' });
     }
   };
 
@@ -350,7 +352,7 @@ const VotoPopular: React.FC = () => {
             ) : null}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Selecione apenas <strong>um</strong> dos 15 trabalhos finalistas e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem aleatória, embaraçados para sigilo da votação'}</strong>. O voto é <strong>único por dispositivo</strong>; após confirmar, novas votações ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
+              Selecione até <strong>1 (um)</strong> trabalho finalista de cada categoria e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem aleatória, embaraçados para sigilo da votação'}</strong>. O voto é <strong>único por dispositivo por categoria</strong>; após confirmar, novas votações para aquela categoria ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
 
             <div className="p-2">
@@ -416,61 +418,80 @@ const VotoPopular: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-1">
-                        {allFinalistas
-                          .map((item) => {
-                            const id = item.inscricao.id;
-                            const selected = selectedId === id;
-                            return (
-                              <label
-                                key={id}
-                                className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
-                                  selected ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name={`sel-all`}
-                                    checked={selected}
-                                    onChange={() => onSelectOne(id)}
-                                    className="h-3 w-3"
-                                    disabled={VOTACAO_ENCERRADA || hasVotedAny()}
-                                  />
-                                  <div>
-                                    <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {selected && (
-                                    <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
-                                  )}
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 px-2"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            openDetalhes(item);
-                                          }}
-                                          aria-label="Ver detalhes da inscrição"
-                                        >
-                                          <Eye className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <span className="text-xs">Ver detalhes da inscrição</span>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </label>
-                            );
-                          })}
+                      <div className="space-y-6">
+                        {categorias.map(cat => {
+                          const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
+                          if (catFinalistas.length === 0) return null;
+                          
+                          const catVoted = hasVoted(cat.key);
+                          return (
+                            <div key={cat.key} className="space-y-2">
+                              <div className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200">
+                                <h3 className="font-semibold text-gray-800 text-xs">{cat.label}</h3>
+                                {catVoted && <span className="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded font-medium">Voto já registrado</span>}
+                              </div>
+                              <div className="space-y-1">
+                                {catFinalistas.map((item) => {
+                                  const id = item.inscricao.id;
+                                  const selected = selectedIds[cat.key] === id;
+                                  const isVotedItem = catVoted && getStoredVote(cat.key) === id;
+                                  return (
+                                    <label
+                                      key={id}
+                                      className={`flex items-center justify-between rounded border px-3 py-2 text-xs transition-colors ${
+                                        isVotedItem ? 'border-green-400 bg-green-50' :
+                                        selected ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="radio"
+                                          name={`sel-${cat.key}`}
+                                          checked={selected || isVotedItem}
+                                          onChange={() => onSelectOne(cat.key, id)}
+                                          className="h-3 w-3"
+                                          disabled={VOTACAO_ENCERRADA || catVoted}
+                                        />
+                                        <div>
+                                          <div className="font-medium text-gray-900">{item.inscricao.titulo_iniciativa}</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {isVotedItem ? (
+                                          <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-green-600 text-white">Votado</span>
+                                        ) : selected ? (
+                                          <span className="inline-flex items-center shrink-0 whitespace-nowrap text-[10px] px-2 py-[2px] rounded-full bg-black text-white">Selecionado</span>
+                                        ) : null}
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 px-2"
+                                                onClick={(e) => {
+                                                  e.preventDefault();
+                                                  openDetalhes(item);
+                                                }}
+                                                aria-label="Ver detalhes da inscrição"
+                                              >
+                                                <Eye className="h-4 w-4" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <span className="text-xs">Ver detalhes da inscrição</span>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -540,8 +561,8 @@ const VotoPopular: React.FC = () => {
               <Button
                 size="sm"
                 onClick={openConfirm}
-                disabled={VOTACAO_ENCERRADA || !selectedId || hasVotedAny()}
-                aria-disabled={VOTACAO_ENCERRADA || !selectedId || hasVotedAny()}
+                disabled={VOTACAO_ENCERRADA || Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey)).length === 0}
+                aria-disabled={VOTACAO_ENCERRADA || Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey)).length === 0}
               >
                 Confirmar voto
               </Button>
