@@ -20,7 +20,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { isAuthenticated, hasRole } from '@/lib/auth';
-import { getInscricaoById, AdminInscricaoData } from '@/lib/adminService';
+import { getInscricaoById, AdminInscricaoData, updateInscricaoStatus } from '@/lib/adminService';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
@@ -74,6 +74,9 @@ const AdminInscricaoDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewerIsAdmin, setViewerIsAdmin] = useState<boolean>(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const [showIndeferirForm, setShowIndeferirForm] = useState<boolean>(false);
+  const [parecerText, setParecerText] = useState<string>('');
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -86,6 +89,9 @@ const AdminInscricaoDetails = () => {
       if (!authed) {
         navigate('/admin/login');
       }
+      
+      const adminRole = await hasRole('admin');
+      setViewerIsAdmin(adminRole);
     };
     checkAuth();
   }, [navigate]);
@@ -235,6 +241,30 @@ const AdminInscricaoDetails = () => {
     );
   };
 
+  const handleUpdateStatus = async (status: string) => {
+    if (!inscricao) return;
+    if (status === 'Indeferida' && !parecerText.trim()) {
+      toast({ title: 'Atenção', description: 'Por favor, informe a justificativa (parecer) para o indeferimento.', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      setIsUpdatingStatus(true);
+      const res = await updateInscricaoStatus(inscricao.id, status, parecerText);
+      if (res.success) {
+        toast({ title: 'Status Atualizado', description: `Inscrição marcada como ${status}.` });
+        setInscricao({ ...inscricao, status_inscricao: status, parecer_triagem: parecerText });
+        setShowIndeferirForm(false);
+      } else {
+        toast({ title: 'Erro', description: res.error, variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: 'Ocorreu um erro ao atualizar o status.', variant: 'destructive' });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -305,6 +335,65 @@ const AdminInscricaoDetails = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Conteúdo principal sem barra lateral */}
         <div className="space-y-6">
+
+            {viewerIsAdmin && inscricao.status_inscricao !== 'Substituída' && (
+              <Card className="border-blue-200 shadow-sm">
+                <CardHeader className="bg-blue-50 pb-4">
+                  <CardTitle className="text-sm font-medium text-blue-900 flex items-center justify-between">
+                    <span>Triagem da Inscrição</span>
+                    <Badge variant={inscricao.status_inscricao === 'Validada' ? 'default' : inscricao.status_inscricao === 'Indeferida' ? 'destructive' : 'secondary'}>
+                      {inscricao.status_inscricao}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs text-blue-700">
+                    Analise os dados abaixo e confirme o atendimento aos requisitos (Edital 6.7).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  {inscricao.parecer_triagem && (
+                    <div className="bg-gray-50 p-3 rounded text-sm text-gray-700">
+                      <strong>Parecer Registrado:</strong><br/>
+                      {inscricao.parecer_triagem}
+                    </div>
+                  )}
+
+                  {!showIndeferirForm && inscricao.status_inscricao === 'Em Análise' && (
+                    <div className="flex gap-3">
+                      <Button size="sm" onClick={() => handleUpdateStatus('Validada')} disabled={isUpdatingStatus}>
+                        {isUpdatingStatus ? 'Aguarde...' : 'Deferir (Validar Inscrição)'}
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => setShowIndeferirForm(true)} disabled={isUpdatingStatus}>
+                        Indeferir Inscrição
+                      </Button>
+                    </div>
+                  )}
+
+                  {showIndeferirForm && (
+                    <div className="space-y-3 bg-red-50 p-4 rounded border border-red-100">
+                      <div>
+                        <label className="text-xs font-medium text-red-900">Justificativa para Indeferimento (Parecer)</label>
+                        <textarea 
+                          className="w-full mt-1 border rounded p-2 text-sm" 
+                          rows={3} 
+                          placeholder="Ex: Não atende ao item 5.4 do edital..."
+                          value={parecerText}
+                          onChange={(e) => setParecerText(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus('Indeferida')} disabled={isUpdatingStatus}>
+                          Confirmar Indeferimento
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowIndeferirForm(false)} disabled={isUpdatingStatus}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Dados Pessoais */}
             <Card>
               <CardHeader>

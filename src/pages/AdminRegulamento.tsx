@@ -55,7 +55,7 @@ const AdminRegulamento = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-center">Edital nº XX/2026</CardTitle>
+            <CardTitle className="text-xl font-semibold text-center">Edital nº 107/2025</CardTitle>
           </CardHeader>
           <CardContent id="regulamento-content" className="max-w-none text-justify text-xs">
             <p className="text-gray-700">Regulamenta a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí.</p>
@@ -92,12 +92,11 @@ const AdminRegulamento = () => {
               <li>I — cooperação: grau de articulação e de colaboração entre unidades do MPPI, instituições parceiras ou organizações da sociedade civil;</li>
               <li>II — inovação: adoção de solução, método, processo, ferramenta ou forma de atuação nova ou significativamente aperfeiçoada, capaz de produzir ganho de qualidade, eficiência ou desempenho;</li>
               <li>III — resolutividade: capacidade da iniciativa de solucionar, prevenir, reduzir ou enfrentar de maneira concreta o problema que motivou sua implementação;</li>
-              <li>IV — impacto social ou institucional: dimensão, relevância e profundidade das mudanças produzidas para a sociedade, para o público beneficiado ou para o funcionamento da Instituição;</li>
-              <li>V — alinhamento aos Objetivos de Desenvolvimento Sustentável — ODS (nos Projetos Institucionais): contribuição demonstrável para um ou mais objetivos da Agenda 2030 da ONU; e</li>
-              <li>VI — replicabilidade: possibilidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, considerando sua viabilidade prática e seu potencial de produzir resultados semelhantes.</li>
+              <li>IV — impacto social ou institucional: dimensão, relevância e profundidade das mudanças produzidas para a sociedade, para o público beneficiado ou para o funcionamento da Instituição; e</li>
+              <li>V — replicabilidade: possibilidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, considerando sua viabilidade prática e seu potencial de produzir resultados semelhantes.</li>
             </ul>
             <p className="text-gray-700">4.2 Cada critério receberá pontuação inteira de 0 (zero) a 5 (cinco), de acordo com a seguinte escala: 0 ponto: critério não demonstrado; 1 ponto: atendimento incipiente; 2 pontos: atendimento parcial ou pouco consistente; 3 pontos: atendimento satisfatório; 4 pontos: atendimento relevante e bem demonstrado; e 5 pontos: atendimento excelente, amplamente demonstrado por dados, resultados ou evidências.</p>
-            <p className="text-gray-700">4.3 A pontuação máxima atribuível por integrante da Comissão Julgadora será de 30 (trinta) pontos.</p>
+            <p className="text-gray-700">4.3 A pontuação máxima atribuível por integrante da Comissão Julgadora será de 25 (vinte e cinco) pontos.</p>
 
             <h3 id="sec-5" className="font-semibold mt-4 scroll-mt-24 text-sm">5. DOS REQUISITOS DE PARTICIPAÇÃO</h3>
             <p className="text-gray-700">5.1 Poderão participar da 10ª Edição do Prêmio Melhores Práticas membros, servidores e assessores do Ministério Público do Estado do Piauí, com atuação nas áreas finalística ou estruturante.</p>
@@ -119,10 +118,14 @@ const AdminRegulamento = () => {
               <li>II — os projetos deverão estar institucionalizados de acordo com a Metodologia de Gerenciamento de Projetos do MPPI, regulamentada pelo Ato PGJ/PI nº 1.254/2022 e suas alterações posteriores (Ato PGJ/PI nº 1595/2025).</li>
             </ul>
             <p className="text-gray-700">6.5 Poderão ser inscritas iniciativas concluídas ou em execução, desde que apresentem resultados mensuráveis obtidos nos 3 (três) anos anteriores ao encerramento do período de inscrições.</p>
+            <p className="text-gray-700">6.7 Encerrado o prazo de inscrição, caberá à Presidência da Comissão Julgadora realizar a triagem das iniciativas e verificar o atendimento aos requisitos deste Edital.</p>
+            <p className="text-gray-700">6.7.1. Na triagem, a Assessoria de Planejamento e Gestão verificará, além dos demais requisitos deste Edital, a regular inscrição das práticas no Banco de Práticas do MPPI, a institucionalização dos projetos conforme a metodologia aplicável e a inexistência de premiação da mesma iniciativa em edições anteriores do Prêmio Melhores Práticas do MPPI.</p>
+            <p className="text-gray-700">6.7.2. O registro, pelo sistema eletrônico, de declaração negativa, informação inconsistente, ausência de documento ou outra ocorrência relacionada aos requisitos de participação e habilitação não implica deferimento da inscrição, devendo a situação ser submetida à análise da Presidência da Comissão Julgadora durante a triagem.</p>
 
             <h3 id="sec-7" className="font-semibold mt-6 scroll-mt-24 text-sm">7. DA COMISSÃO JULGADORA</h3>
             <p className="text-gray-700">7.1 A Comissão Julgadora será composta por 9 (nove) integrantes, assim distribuídos: 2 (dois) membros escolhidos pelo Procurador-Geral, 1 (um) membro da APMP, 1 (um) servidor do SINDSEMP/PI, e representantes da UFPI, UESPI, Poder Judiciário, OAB/PI e Defensoria Pública.</p>
-            <p className="mt-4 text-gray-700">7.3 Cada integrante da Comissão atribuirá pontuação de 0 (zero) a 5 (cinco) para cada um dos critérios previstos no item 4.1.</p>
+            <p className="text-gray-700">7.2 A Presidência da Comissão designará um de seus integrantes para exercer a função de secretário dos trabalhos.</p>
+            <p className="text-gray-700">7.3 Cada integrante da Comissão atribuirá pontuação de 0 (zero) a 5 (cinco) para cada um dos critérios previstos no item 4.1.</p>
             <p className="text-gray-700">7.4 A nota atribuída por cada julgador à iniciativa corresponderá à soma das pontuações dos critérios de avaliação.</p>
 
             <h3 id="sec-8" className="font-semibold mt-6 scroll-mt-24 text-sm">8. DA PONTUAÇÃO E DA CLASSIFICAÇÃO FINAL</h3>
@@ -132,22 +135,29 @@ const AdminRegulamento = () => {
               <li>II — Voto Popular: 20% (vinte por cento) da pontuação final.</li>
             </ul>
             <p className="text-gray-700">8.2 A nota da avaliação técnica corresponderá à média aritmética das notas válidas atribuídas pelos integrantes da Comissão Julgadora.</p>
-            <p className="text-gray-700">8.3 Para fins de composição da pontuação final, a nota técnica será convertida para uma escala de 0 (zero) a 100 (cem) pontos.</p>
-            <p className="text-gray-700">8.6 A Pontuação Final de cada iniciativa será calculada de acordo com a seguinte fórmula: Pontuação Final = (Nota Técnica × 0,80) + (Nota Popular × 0,20)</p>
+            <p className="text-gray-700">8.2.1. A média aritmética da avaliação técnica será apurada exclusivamente com base nas notas válidas efetivamente registradas e finalizadas no sistema eletrônico do certame pelos integrantes da Comissão Julgadora, dentro do prazo estabelecido para o julgamento técnico.</p>
+            <p className="text-gray-700">8.2.2. Para os fins deste Edital, considera-se nota válida aquela atribuída em conformidade com os critérios, a escala de pontuação e as regras de avaliação previstas neste Edital, regularmente registrada e finalizada pelo respectivo julgador no sistema eletrônico do certame.</p>
+            <p className="text-gray-700">8.2.3. A ausência de registro de nota por integrante da Comissão Julgadora, por qualquer motivo, inclusive impedimento, suspeição, ausência, abstenção ou omissão, não será computada como nota zero nem integrará o divisor utilizado para o cálculo da média aritmética.</p>
+            <p className="text-gray-700">8.3 Para fins de composição da pontuação final, a nota técnica será convertida para uma escala de 0 (zero) a 100 (cem) pontos, mediante a seguinte fórmula:<br/>Nota Técnica = (média das notas válidas atribuídas pela Comissão Julgadora / 25) x 100</p>
+            <p className="text-gray-700">8.4 A pontuação referente ao Voto Popular será calculada separadamente em cada categoria, considerando-se a quantidade de votos válidos recebidos por cada iniciativa finalista.</p>
+            <p className="text-gray-700">8.5 A iniciativa que obtiver o maior número de votos populares válidos em sua categoria receberá 100 (cem) pontos na Nota Popular, sendo a pontuação das demais iniciativas calculada proporcionalmente, mediante a seguinte fórmula:<br/>Nota Popular = (número de votos válidos da iniciativa ÷ maior número de votos válidos obtido na categoria) × 100</p>
+            <p className="text-gray-700">8.6 A Pontuação Final de cada iniciativa será calculada de acordo com a seguinte fórmula:<br/>Pontuação Final = (Nota Técnica × 0,80) + (Nota Popular × 0,20)</p>
             <p className="text-gray-700">8.7 Após a aplicação da fórmula prevista no item anterior, as iniciativas serão classificadas, em cada categoria, em ordem decrescente de Pontuação Final, sendo consideradas vencedoras as 3 (três) iniciativas que obtiverem as maiores pontuações.</p>
             <p className="text-gray-700">8.8 A pontuação final será considerada com até 2 (duas) casas decimais.</p>
             <p className="text-gray-700">8.9 Em caso de empate na Pontuação Final, serão aplicados, sucessivamente, os seguintes critérios de desempate:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
               <li>I — maior Nota Técnica atribuída pela Comissão Julgadora;</li>
-              <li>II — maior nota no critério resolutividade;</li>
-              <li>III — maior nota no critério impacto social ou institucional;</li>
-              <li>IV — maior nota no critério replicabilidade;</li>
-              <li>V — maior nota no critério inovação; e</li>
-              <li>VI — persistindo o empate, decisão fundamentada da Comissão Julgadora.</li>
+              <li>II — maior nota no critério cooperação;</li>
+              <li>III — maior nota no critério resolutividade;</li>
+              <li>IV — maior nota no critério impacto social ou institucional;</li>
+              <li>V — maior nota no critério replicabilidade;</li>
+              <li>VI — maior nota no critério inovação; e</li>
+              <li>VII — persistindo o empate, decisão fundamentada da Comissão Julgadora.</li>
             </ul>
 
             <h3 id="sec-9" className="font-semibold mt-6 scroll-mt-24 text-sm">9. DO VOTO POPULAR</h3>
             <p className="text-gray-700">9.1 Concluído o julgamento técnico, serão selecionadas, em cada categoria, as 3 (três) iniciativas que obtiverem as maiores Notas Técnicas, as quais serão consideradas finalistas e participarão da etapa de Voto Popular.</p>
+            <p className="text-gray-700">9.1.1. Havendo empate na Nota Técnica que impeça a definição das 3 (três) iniciativas finalistas, serão aplicados, sucessivamente, os critérios previstos no item 8.9, incisos II a VI.</p>
             <p className="text-gray-700">9.8 Após a composição da Nota Técnica e da Nota Popular, será calculada a Pontuação Final, que definirá, em cada categoria, o 1º, 2º e 3º lugares.</p>
             
             <h3 id="sec-10" className="font-semibold mt-6 scroll-mt-24 text-sm">10. DA SELEÇÃO E DA PREMIAÇÃO</h3>
@@ -182,19 +192,19 @@ const AdminRegulamento = () => {
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação da relação provisória das inscrições deferidas e indeferidas</td>
-                  <td className="p-2">12/10/2026</td>
+                  <td className="p-2">13/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Prazo para pedido de reconsideração</td>
-                  <td className="p-2">16/10/2026</td>
+                  <td className="p-2">14/10/2026 a 16/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação da relação definitiva das inscrições habilitadas</td>
-                  <td className="p-2">19/10/2026</td>
+                  <td className="p-2">20/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Julgamento técnico pela Comissão Julgadora</td>
-                  <td className="p-2">19/10/2026 a 30/10/2026</td>
+                  <td className="p-2">20/10/2026 a 30/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação dos finalistas</td>
@@ -207,6 +217,10 @@ const AdminRegulamento = () => {
                 <tr>
                   <td className="p-2">Cerimônia de premiação</td>
                   <td className="p-2">Dezembro de 2026, em data a ser divulgada, preferencialmente durante as comemorações do Dia Nacional do Ministério Público</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border-t text-gray-700">Publicação e homologação do resultado final</td>
+                  <td className="p-2 border-t text-gray-700">Após a cerimônia de premiação, em data a ser divulgada</td>
                 </tr>
               </tbody>
             </table>

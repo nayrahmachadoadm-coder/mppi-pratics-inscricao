@@ -6,6 +6,7 @@ export interface AdminInscricaoData extends InscricaoData {
   id: string;
   created_at: string;
   updated_at: string;
+  parecer_triagem?: string;
 }
 
 // Interface para resultado de busca com paginação
@@ -431,5 +432,37 @@ export async function getAreasAtuacao(): Promise<{
       success: false,
       error: 'Erro ao buscar áreas de atuação'
     };
+  }
+}
+
+/**
+ * Atualiza o status e o parecer de uma inscrição (Triagem Administrativa)
+ */
+export async function updateInscricaoStatus(
+  id: string,
+  status: string,
+  parecer?: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('rpc_update_status_inscricao', {
+      p_inscricao_id: id,
+      p_status: status,
+      p_parecer: parecer || null
+    });
+
+    if (error) {
+      console.error('❌ Erro na RPC update_status_inscricao:', error);
+      return { success: false, error: error.message };
+    }
+
+    const result = data as any;
+    if (!result?.success) {
+      return { success: false, error: result?.error || 'Erro ao atualizar status' };
+    }
+
+    return { success: true, message: result.message };
+  } catch (err: any) {
+    console.error('❌ Erro inesperado ao atualizar status:', err);
+    return { success: false, error: err?.message || 'Erro inesperado' };
   }
 }

@@ -100,8 +100,6 @@ const InscricaoForm = () => {
     localData: '',
   });
 
-  });
-
   const [duplicidadeAviso, setDuplicidadeAviso] = useState('');
   const [periodoInscricaoStatus, setPeriodoInscricaoStatus] = useState<'loading' | 'aberto' | 'fechado_antes' | 'fechado_depois'>('loading');
   const [datasPeriodo, setDatasPeriodo] = useState<{ inicio: Date | null, fim: Date | null }>({ inicio: null, fim: null });
@@ -138,7 +136,7 @@ const InscricaoForm = () => {
         const tipoIniciativa = isPratica ? 'pratica' : 'projeto';
         const isDuplicata = await verificarDuplicidadeInscricao(formData.matricula, tipoIniciativa);
         if (isDuplicata) {
-          setDuplicidadeAviso(`Você já possui uma inscrição de ${tipoIniciativa} nesta edição; nos termos do item 6.3, apenas a primeira enviada será considerada válida.`);
+          setDuplicidadeAviso(`Atenção: Você já possui uma inscrição de ${tipoIniciativa} nesta edição. Nos termos do item 6.3 do Edital, ao enviar esta nova inscrição, ela substituirá integralmente a sua inscrição anterior nesta mesma modalidade.`);
         } else {
           setDuplicidadeAviso('');
         }
@@ -1111,7 +1109,7 @@ const InscricaoForm = () => {
             </p>
           </Card>
         ) : (
-        <>
+        <div className="w-full">
         <div className="flex justify-between items-center mb-6 sm:mb-8 px-2 sm:px-4 overflow-x-auto">
           {steps.map((step, index) => {
             const Icon = step.icon;
@@ -1221,7 +1219,7 @@ const InscricaoForm = () => {
             </form>
           </CardContent>
         </Card>
-        </>
+        </div>
         )}
       </Card>
     </div>

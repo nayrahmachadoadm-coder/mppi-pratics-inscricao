@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 type CsvRow = {
   ano: string;
@@ -21,35 +22,37 @@ const AdminEdicoesAnteriores = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadCsv = async () => {
+    const loadData = async () => {
       try {
-        setLoading(true);
+        // 1. Carregar CSV (Até 2024)
         const res = await fetch('/edicoes_anteriores.csv');
-        if (!res.ok) throw new Error(`Falha ao carregar CSV: ${res.status}`);
+        if (!res.ok) throw new Error('Falha ao baixar CSV');
         const text = await res.text();
 
-        // Detecta separador (tab ou vírgula) e normaliza linhas
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length <= 1) throw new Error('CSV sem conteúdo suficiente.');
-        const header = lines[0];
-        const sep = header.includes('\t') ? '\t' : ',';
-
-        const parsed: CsvRow[] = lines.slice(1).map((line) => {
-          const parts = line.split(new RegExp(sep));
-          const [ano, edicao, categoria, colocacao, nome] = parts.map((p) => p?.trim() ?? '');
-          return { ano, edicao, categoria, colocacao, nome };
-        }).filter((r) => r.ano && r.edicao && r.categoria && r.colocacao && r.nome);
-
+        const lines = text.split('\n').filter((l) => l.trim() !== '');
+        const parsed: CsvRow[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split('\t');
+          if (cols.length >= 5) {
+            parsed.push({
+              ano: cols[0].trim(),
+              edicao: cols[1].trim(),
+              categoria: cols[2].trim(),
+              colocacao: cols[3].trim(),
+              nome: cols[4].trim(),
+            });
+          }
+        // 3. Combinar e ordenar (O CSV já contém todas as edições, incluindo 2025)
         setRows(parsed);
         setError(null);
       } catch (err: any) {
         console.error('Erro ao carregar edições anteriores:', err);
-        setError(err?.message ?? 'Erro desconhecido ao carregar CSV.');
+        setError(err?.message ?? 'Erro desconhecido ao carregar dados.');
       } finally {
         setLoading(false);
       }
     };
-    loadCsv();
+    loadData();
   }, []);
 
   const grouped: GroupedData = useMemo(() => {

@@ -12,26 +12,26 @@ const AdminCronograma = () => {
 
   // Eventos
   const singleEvents: { date: string; label: string }[] = [
-    { date: '2025-09-19', label: 'Lançamento do edital' },
-    { date: '2025-11-07', label: 'Divulgação das práticas inscritas deferidas' },
-    { date: '2025-11-17', label: 'Divulgação da lista definitiva dos inscritos' },
-    { date: '2025-11-28', label: 'Divulgação dos finalistas' },
-    { date: '2025-12-18', label: 'Cerimônia de Premiação' },
+    { date: '2026-09-04', label: 'Lançamento do Edital' },
+    { date: '2026-10-13', label: 'Divulgação provisória (deferidas/indeferidas)' },
+    { date: '2026-10-20', label: 'Divulgação definitiva das inscrições habilitadas' },
+    { date: '2026-11-03', label: 'Divulgação dos finalistas' },
   ];
 
   const rangeEvents: { start: string; end: string; label: string }[] = [
-    { start: '2025-09-20', end: '2025-10-30', label: 'Período de inscrição' },
-    { start: '2025-11-10', end: '2025-11-14', label: 'Pedido de reconsideração' }, // 5 dias úteis após 07/11/2025
-    { start: '2025-11-28', end: '2025-12-08', label: 'Voto Popular' },
+    { start: '2026-09-08', end: '2026-10-08', label: 'Período de inscrições' },
+    { start: '2026-10-14', end: '2026-10-16', label: 'Prazo para pedido de reconsideração' },
+    { start: '2026-10-20', end: '2026-10-30', label: 'Julgamento técnico pela Comissão Julgadora' },
+    { start: '2026-11-04', end: '2026-11-13', label: 'Votação popular' },
   ];
 
   const isInRange = (iso: string, start: string, end: string) => iso >= start && iso <= end;
 
   const months = [
-    { year: 2025, monthIndex: 8, name: 'Setembro' },
-    { year: 2025, monthIndex: 9, name: 'Outubro' },
-    { year: 2025, monthIndex: 10, name: 'Novembro' },
-    { year: 2025, monthIndex: 11, name: 'Dezembro' },
+    { year: 2026, monthIndex: 8, name: 'Setembro' },
+    { year: 2026, monthIndex: 9, name: 'Outubro' },
+    { year: 2026, monthIndex: 10, name: 'Novembro' },
+    { year: 2026, monthIndex: 11, name: 'Dezembro' },
   ];
 
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -126,14 +126,16 @@ const AdminCronograma = () => {
             <div className="mt-4 border-t border-border pt-3">
               <div className="text-sm font-medium text-muted-foreground mb-2">Legenda textual</div>
               <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
-                <li>19/09/2025 — Lançamento do edital</li>
-                <li>20/09/2025 – 30/10/2025 — Período de inscrição</li>
-                <li>07/11/2025 — Divulgação das práticas inscritas deferidas</li>
-                <li>10/11/2025 – 14/11/2025 — Pedido de reconsideração</li>
-                <li>17/11/2025 — Divulgação da lista definitiva dos inscritos</li>
-                <li>28/11/2025 — Divulgação dos finalistas</li>
-                <li>28/11/2025 – 08/12/2025 — Voto Popular</li>
-                <li>18/12/2025 — Cerimônia de Premiação</li>
+                <li>04/09/2026 — Lançamento do Edital</li>
+                <li>08/09/2026 a 08/10/2026 — Período de inscrições</li>
+                <li>13/10/2026 — Divulgação da relação provisória das inscrições deferidas e indeferidas</li>
+                <li>14/10/2026 a 16/10/2026 — Prazo para pedido de reconsideração</li>
+                <li>20/10/2026 — Divulgação da relação definitiva das inscrições habilitadas</li>
+                <li>20/10/2026 a 30/10/2026 — Julgamento técnico pela Comissão Julgadora</li>
+                <li>03/11/2026 — Divulgação dos finalistas</li>
+                <li>04/11/2026 a 13/11/2026 — Votação popular</li>
+                <li>Dezembro de 2026 — Cerimônia de premiação</li>
+                <li>Após cerimônia — Publicação e homologação do resultado final</li>
               </ul>
             </div>
           </CardContent>

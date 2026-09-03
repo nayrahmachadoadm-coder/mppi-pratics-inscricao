@@ -76,7 +76,6 @@ const AdminJulgamento: React.FC = () => {
     inovacao: -1,
     resolutividade: -1,
     impacto_social: -1,
-    alinhamento_ods: -1,
     replicabilidade: -1,
   });
   const [saving, setSaving] = useState<boolean>(false);
@@ -211,8 +210,7 @@ const AdminJulgamento: React.FC = () => {
             idx = Number.isFinite(savedIdx) ? Math.min(Math.max(0, savedIdx), Math.max(0, list.length - 1)) : 0;
           } catch { idx = 0; }
           setCurrentIndex(idx);
-          // resetar notas ao trocar a área
-          setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, alinhamento_ods: -1, replicabilidade: -1 });
+          setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, replicabilidade: -1 });
           setShowValidation(false);
         } else {
           setErrorList(res.error || 'Erro ao carregar inscrições');
@@ -272,12 +270,12 @@ const AdminJulgamento: React.FC = () => {
 
   const goPrev = () => {
     setShowValidation(false);
-    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, alinhamento_ods: -1, replicabilidade: -1 });
+    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, replicabilidade: -1 });
     setCurrentIndex((idx) => Math.max(0, idx - 1));
   };
   const goNext = () => {
     setShowValidation(false);
-    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, alinhamento_ods: -1, replicabilidade: -1 });
+    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, replicabilidade: -1 });
     setCurrentIndex((idx) => Math.min(inscricoes.length - 1, idx + 1));
   };
 
@@ -285,7 +283,7 @@ const AdminJulgamento: React.FC = () => {
     const idx = inscricoes.findIndex((i, pos) => pos > currentIndex && i.id && !votedIds.has(i.id));
     const nextIdx = idx >= 0 ? idx : currentIndex;
     setShowValidation(false);
-    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, alinhamento_ods: -1, replicabilidade: -1 });
+    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, replicabilidade: -1 });
     setCurrentIndex(nextIdx);
     // foco no card de avaliação
     setTimeout(() => {
@@ -564,7 +562,6 @@ const AdminJulgamento: React.FC = () => {
                               inovacao: -1,
                               resolutividade: -1,
                               impacto_social: -1,
-                              alinhamento_ods: -1,
                               replicabilidade: -1,
                             });
                             setCurrentIndex(idx);
@@ -647,7 +644,6 @@ const AdminJulgamento: React.FC = () => {
                                 <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Inovação" infoText={currentInscricao?.inovacao || ''} value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
                                 <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Resolutividade" infoText={currentInscricao?.resolutividade || ''} value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
                                 <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Impacto Social" infoText={currentInscricao?.impacto_social || ''} value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                                <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Alinhamento aos ODS" infoText={currentInscricao?.alinhamento_ods || ''} value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
                                 <ScoreRadio disabled={isBlockedCurrent || !juradoState} label="Replicabilidade" infoText={currentInscricao?.replicabilidade || ''} value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                               </div>
                             </TooltipProvider>
@@ -710,9 +706,11 @@ const AdminJulgamento: React.FC = () => {
                   <th className="text-left p-2 w-[320px]">Título</th>
                   <th className="text-left p-2 w-[220px]">Proponente</th>
                   <th className="text-center p-2">Avaliações</th>
-                  <th className="text-center p-2">Total jurados</th>
-                  <th className="text-center p-2">Total resolutividade</th>
+                  <th className="text-center p-2">Total geral (Nota Técnica)</th>
+                  <th className="text-center p-2">Total cooperação</th>
+                  <th className="text-center p-2">Total impacto social</th>
                   <th className="text-center p-2">Total replicabilidade</th>
+                  <th className="text-center p-2">Total inovação</th>
                 </tr>
               </thead>
               <tbody>
@@ -723,8 +721,10 @@ const AdminJulgamento: React.FC = () => {
                     <td className="p-2 w-[220px] break-words">{it.inscricao.nome_completo}</td>
                     <td className="p-2 text-center">{it.avaliacoes_count}</td>
                     <td className="p-2 text-center">{it.total_geral.toFixed(2)}</td>
-                    <td className="p-2 text-center">{it.total_resolutividade.toFixed(2)}</td>
+                    <td className="p-2 text-center">{(it as any).total_cooperacao?.toFixed(2) || '0.00'}</td>
+                    <td className="p-2 text-center">{(it as any).total_impacto_social?.toFixed(2) || '0.00'}</td>
                     <td className="p-2 text-center">{it.total_replicabilidade.toFixed(2)}</td>
+                    <td className="p-2 text-center">{(it as any).total_inovacao?.toFixed(2) || '0.00'}</td>
                   </tr>
                 ))}
                 {totalsItems.length === 0 && (
@@ -734,7 +734,7 @@ const AdminJulgamento: React.FC = () => {
                 )}
               </tbody>
             </table>
-            <div className="mt-2 text-xs text-gray-600 px-2 pb-2">Ordenação: maior soma de notas dos jurados; desempate por total de resolutividade e total de replicabilidade.</div>
+            <div className="mt-2 text-xs text-gray-600 px-2 pb-2">Ordenação: maior nota técnica; desempate por notas de cooperação, impacto social, replicabilidade e inovação, sucessivamente.</div>
           </div>
         )}
       </DialogContent>
@@ -766,7 +766,6 @@ const AdminJulgamento: React.FC = () => {
                   <th className="text-center p-2">Inovação</th>
                   <th className="text-center p-2">Resolutividade</th>
                   <th className="text-center p-2">Impacto Social</th>
-                  <th className="text-center p-2">Alinhamento ODS</th>
                   <th className="text-center p-2">Replicabilidade</th>
                   <th className="text-center p-2">Total</th>
                 </tr>
@@ -779,7 +778,6 @@ const AdminJulgamento: React.FC = () => {
                     <td className="p-2 text-center">{it.avaliacao.inovacao}</td>
                     <td className="p-2 text-center">{it.avaliacao.resolutividade}</td>
                     <td className="p-2 text-center">{it.avaliacao.impacto_social}</td>
-                    <td className="p-2 text-center">{it.avaliacao.alinhamento_ods}</td>
                     <td className="p-2 text-center">{it.avaliacao.replicabilidade}</td>
                     <td className="p-2 text-center font-medium">{it.avaliacao.total}</td>
                   </tr>

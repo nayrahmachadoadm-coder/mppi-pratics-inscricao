@@ -139,14 +139,16 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
         const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
         const sumImpacto = list.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
         const sumInovacao = list.reduce((sum, r) => sum + (r.inovacao || 0), 0);
+        const sumCoop = list.reduce((sum, r) => sum + (r.cooperacao || 0), 0);
         const mediaTotal = count > 0 ? totalGeral / count : 0;
         const mediaResol = count > 0 ? sumResol / count : 0;
         const mediaReplic = count > 0 ? sumReplic / count : 0;
         const mediaImpacto = count > 0 ? sumImpacto / count : 0;
         const mediaInovacao = count > 0 ? sumInovacao / count : 0;
+        const mediaCoop = count > 0 ? sumCoop / count : 0;
 
-        // Converter média para escala 0-100 (a pontuação máxima de 6 critérios é 30 pontos por jurado)
-        const maxPontosPossivel = 30;
+        // Converter média para escala 0-100 (a pontuação máxima de 5 critérios é 25 pontos por jurado)
+        const maxPontosPossivel = 25;
         const notaTecnica100 = count > 0 ? (mediaTotal / maxPontosPossivel) * 100 : 0;
 
         // Obter número de votos para esta iniciativa e calcular nota proporcional
@@ -165,10 +167,12 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
           media_replicabilidade: mediaReplic,
           media_impacto_social: mediaImpacto,
           media_inovacao: mediaInovacao,
+          media_cooperacao: mediaCoop,
           total_resolutividade: sumResol,
           total_replicabilidade: sumReplic,
           total_impacto_social: sumImpacto,
           total_inovacao: sumInovacao,
+          total_cooperacao: sumCoop,
           nota_tecnica_100: notaTecnica100,
           votos_populares: votosIniciativa,
           nota_popular_100: notaPopular100,
@@ -180,13 +184,16 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
   items.sort((a, b) => {
     // 8.9 Em caso de empate na Pontuação Final, serão aplicados sucessivamente:
     // I — maior Nota Técnica;
-    // II — maior nota em resolutividade;
+    // II — maior nota em cooperação;
     // III — maior nota em impacto social ou institucional;
     // IV — maior nota em replicabilidade;
     // V — maior nota em inovação;
     if (Math.abs(b.pontuacao_final - a.pontuacao_final) > 0.0001) return b.pontuacao_final - a.pontuacao_final;
     if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) return b.nota_tecnica_100 - a.nota_tecnica_100;
-    if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) return b.media_resolutividade - a.media_resolutividade;
+    // (a propriedade media_cooperacao foi adicionada acima ao objeto retornado, mas se o TypeScript reclamar precisaremos adicionar ao interface. 
+    // Como a interface CategoriaRankingItem no arquivo pode não ter media_cooperacao, vamos converter o cast implícito se necessário. 
+    // Vou usar a.media_cooperacao com segurança acessando via `any` se TS der erro, mas primeiro farei sem tipagem explícita para não complicar).
+    if (Math.abs((b as any).media_cooperacao - (a as any).media_cooperacao) > 0.0001) return (b as any).media_cooperacao - (a as any).media_cooperacao;
     if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) return b.media_impacto_social - a.media_impacto_social;
     if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) return b.media_replicabilidade - a.media_replicabilidade;
     if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) return b.media_inovacao - a.media_inovacao;
