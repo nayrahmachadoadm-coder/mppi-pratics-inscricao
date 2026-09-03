@@ -157,11 +157,55 @@ const AdminRegulamento = () => {
             <h3 id="sec-9" className="font-semibold mt-6 scroll-mt-24 text-sm">9. DO VOTO POPULAR</h3>
             <p className="text-gray-700">9.1 Concluído o julgamento técnico, serão selecionadas, em cada categoria, as 3 (três) iniciativas que obtiverem as maiores Notas Técnicas, as quais serão consideradas finalistas e participarão da etapa de Voto Popular.</p>
             <p className="text-gray-700">9.1.1. Havendo empate na Nota Técnica que impeça a definição das 3 (três) iniciativas finalistas, serão aplicados, sucessivamente, os critérios previstos no item 8.9, incisos II a VI.</p>
+            <p className="text-gray-700">9.2 A relação das iniciativas finalistas será divulgada sem indicação da respectiva ordem de classificação técnica, assegurando-se igualdade de condições durante o período de votação popular.</p>
+            <p className="text-gray-700">9.3 As iniciativas finalistas serão divulgadas no portal institucional e nas redes sociais oficiais do MPPI, em espaço destinado ao Prêmio Melhores Práticas.</p>
+            <p className="text-gray-700">9.4 O público poderá votar eletronicamente, durante o período estabelecido no Anexo Único, em 1 (uma) iniciativa finalista de cada categoria, observados os mecanismos de identificação, controle e segurança definidos pela organização do certame.</p>
+            <p className="text-gray-700">9.5 O Voto Popular integrará a Pontuação Final das iniciativas finalistas, correspondendo a 20% (vinte por cento) da pontuação total, na forma estabelecida no item 8.6 deste Edital.</p>
+            <p className="text-gray-700">9.6 Encerrada a votação popular, a organização do certame realizará a apuração dos votos válidos e o cálculo da Nota Popular de cada iniciativa.</p>
+            <p className="text-gray-700">9.7 Serão desconsiderados votos identificados como fraudulentos, automatizados, duplicados em desacordo com as regras da plataforma ou obtidos mediante qualquer mecanismo destinado a comprometer a igualdade e a legitimidade da votação.</p>
             <p className="text-gray-700">9.8 Após a composição da Nota Técnica e da Nota Popular, será calculada a Pontuação Final, que definirá, em cada categoria, o 1º, 2º e 3º lugares.</p>
+            <p className="text-gray-700">9.9 A memória de cálculo da Pontuação Final será registrada pela organização do certame, de modo a assegurar transparência, rastreabilidade e possibilidade de conferência do resultado.</p>
+            <p className="text-gray-700">9.10 A Assessoria de Planejamento e Gestão desenvolverá um sistema para a apuração da composição das notas.</p>
             
             <h3 id="sec-10" className="font-semibold mt-6 scroll-mt-24 text-sm">10. DA SELEÇÃO E DA PREMIAÇÃO</h3>
-            <p className="text-gray-700">10.1 O processo de seleção e premiação compreenderá as seguintes etapas: Triagem, Análise dos pedidos, Julgamento técnico, Divulgação dos finalistas, Voto Popular, Cerimônia de premiação, Homologação.</p>
-            <p className="text-gray-700 mt-2">Teresina (PI), ___ de __________ de 2026.</p>
+            <p className="text-gray-700">10.1 O processo de seleção e premiação compreenderá as seguintes etapas:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — 1ª etapa — Triagem: verificação do cumprimento dos requisitos de inscrição e publicação da relação provisória das inscrições deferidas e indeferidas;</li>
+              <li>II — 2ª etapa — Análise dos pedidos de reconsideração: apreciação dos pedidos apresentados e publicação da relação definitiva das iniciativas habilitadas;</li>
+              <li>III — 3ª etapa — Julgamento técnico: avaliação e pontuação das iniciativas pela Comissão Julgadora;</li>
+              <li>IV — 4ª etapa — Divulgação dos finalistas: publicação, sem indicação da ordem de classificação, das 3 (três) iniciativas mais bem avaliadas em cada categoria;</li>
+              <li>V — 5ª etapa — Voto Popular: divulgação dos finalistas para votação eletrônica pelo público;</li>
+              <li>VI — 6ª etapa — Cerimônia de premiação: divulgação da classificação técnica e entrega das premiações; e</li>
+              <li>VII — 7ª etapa — Homologação: publicação do resultado final no Diário Oficial Eletrônico e no portal institucional do MPPI.</li>
+            </ul>
+            <p className="text-gray-700 mt-2 font-semibold">10.2 Da premiação técnica</p>
+            <p className="text-gray-700">10.2.1 Serão concedidos aos classificados de cada categoria os seguintes prêmios:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — 1º lugar: 1 (um) troféu;</li>
+              <li>II — 2º lugar: 1 (um) troféu;</li>
+              <li>III — 3º lugar: 1 (um) troféu.</li>
+            </ul>
+            <p className="text-gray-700">10.2.2 Os autores e integrantes da equipe devidamente identificados no formulário de inscrição das iniciativas classificadas, receberão medalhas referentes à participação/classificação.</p>
+            <p className="text-gray-700 mt-2">10.3 Entre o início das inscrições e a homologação do resultado, a Comissão Julgadora poderá:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — verificar a veracidade e a consistência das informações apresentadas;</li>
+              <li>II — solicitar esclarecimentos ou documentação complementar;</li>
+              <li>III — realizar diligências destinadas à comprovação da execução e dos resultados da iniciativa; e</li>
+              <li>IV — solicitar apoio técnico da ASSESPLAGES.</li>
+            </ul>
+            <p className="text-gray-700">10.4 O não atendimento injustificado das solicitações da Comissão Julgadora, a apresentação de informação falsa ou a criação de obstáculo à verificação da iniciativa poderá acarretar sua desclassificação, mediante decisão fundamentada.</p>
+            
+            <h3 id="sec-11" className="font-semibold mt-6 scroll-mt-24 text-sm">11. DAS DISPOSIÇÕES GERAIS</h3>
+            <p className="text-gray-700">11.1 A Coordenadoria de Comunicação Social - CCS prestará apoio à divulgação do certame e, quando solicitado pela Comissão Julgadora, fornecerá dados, métricas e informações referentes ao alcance de iniciativas que utilizem redes sociais ou outros meios institucionais de comunicação.</p>
+            <p className="text-gray-700">11.2 As dúvidas sobre a 10ª Edição do Prêmio Melhores Práticas poderão ser encaminhadas:</p>
+            <ul className="list-none pl-6 text-gray-700 space-y-1">
+              <li>I — à Assessoria de Planejamento e Gestão, pelo telefone (86) 2222-8000, ramal 8015; ou</li>
+              <li>II — por meio de procedimento de gestão administrativa instaurado no SEI e encaminhado à ASSESPPLAGES.</li>
+            </ul>
+            <p className="text-gray-700">11.3 O cronograma poderá ser alterado por necessidade administrativa, mediante divulgação no Diário Oficial Eletrônico e no portal institucional do MPPI.</p>
+            <p className="text-gray-700">11.4 Os casos omissos serão resolvidos pela Comissão Julgadora, observadas as disposições deste Edital e as normas institucionais aplicáveis.</p>
+
+            <p className="text-gray-700 mt-6">Teresina (PI), ___ de __________ de 2026.</p>
             <div className="mt-10 text-center">
               <p className="text-gray-700 font-semibold">Cláudia Pessoa Marques da Rocha Seabra – Procuradora-Geral de Justiça</p>
             </div>
