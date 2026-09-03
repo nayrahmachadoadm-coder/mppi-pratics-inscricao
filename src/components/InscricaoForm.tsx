@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { FileText, User, Target, CheckCircle, Users, Lightbulb, CheckSquare, Heart, Globe, Copy, Trophy, AlertCircle, CalendarClock } from 'lucide-react';
 import { saveInscricao, verificarDuplicidadeInscricao, getPeriodoInscricao } from '@/lib/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import { hasRole } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Step1 from '@/components/FormSteps/Step1';
@@ -107,27 +108,50 @@ const InscricaoForm = () => {
 
   useEffect(() => {
     const fetchPeriodo = async () => {
-      const isAdmin = await hasRole('admin');
-      const periodo = await getPeriodoInscricao();
-      setDatasPeriodo(periodo);
+      try {
+        console.log("DEBUG: Checking admin role...");
+        // Fast direct check for admin
+        const { data: sessionData } = await supabase.auth.getSession();
+        let isAdmin = false;
+        
+        if (sessionData?.session?.user?.id) {
+           const { data: roles } = await supabase
+             .from('user_roles')
+             .select('role')
+             .eq('user_id', sessionData.session.user.id)
+             .eq('role', 'admin');
+           if (roles && roles.length > 0) {
+             isAdmin = true;
+           }
+        }
+        
+        console.log("DEBUG: isAdmin result:", isAdmin);
 
-      if (isAdmin) {
-        setPeriodoInscricaoStatus('aberto');
-        return;
-      }
+        const periodo = await getPeriodoInscricao();
+        setDatasPeriodo(periodo);
 
-      if (!periodo.inicio || !periodo.fim) {
-        setPeriodoInscricaoStatus('aberto'); // Fallback if no timeline defined
-        return;
-      }
-      
-      const now = new Date();
-      if (now < periodo.inicio) {
+        if (isAdmin) {
+          console.log("DEBUG: Bypassing date check for admin");
+          setPeriodoInscricaoStatus('aberto');
+          return;
+        }
+
+        if (!periodo.inicio || !periodo.fim) {
+          setPeriodoInscricaoStatus('aberto'); // Fallback if no timeline defined
+          return;
+        }
+        
+        const now = new Date();
+        if (now < periodo.inicio) {
+          setPeriodoInscricaoStatus('fechado_antes');
+        } else if (now > periodo.fim) {
+          setPeriodoInscricaoStatus('fechado_depois');
+        } else {
+          setPeriodoInscricaoStatus('aberto');
+        }
+      } catch (error) {
+        console.error("DEBUG: Error in fetchPeriodo:", error);
         setPeriodoInscricaoStatus('fechado_antes');
-      } else if (now > periodo.fim) {
-        setPeriodoInscricaoStatus('fechado_depois');
-      } else {
-        setPeriodoInscricaoStatus('aberto');
       }
     };
     fetchPeriodo();
