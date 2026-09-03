@@ -64,7 +64,7 @@ interface FormData {
   localData: string;
 }
 
-const InscricaoForm = () => {
+const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -109,6 +109,14 @@ const InscricaoForm = () => {
   useEffect(() => {
     const fetchPeriodo = async () => {
       try {
+        if (isAdminBypass) {
+          console.log("DEBUG: Forced bypass active (admin test route)");
+          const periodo = await getPeriodoInscricao();
+          setDatasPeriodo(periodo);
+          setPeriodoInscricaoStatus('aberto');
+          return;
+        }
+
         console.log("DEBUG: Checking admin role...");
         // Fast direct check for admin
         const { data: sessionData } = await supabase.auth.getSession();
@@ -300,7 +308,6 @@ const InscricaoForm = () => {
     console.log(`✅ DEBUG: Validação PASSOU para Step ${step}`);
     return true;
 
-    return true;
   }, [formData, toast, currentStep]);
 
   // Confetti setup

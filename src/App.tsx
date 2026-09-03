@@ -148,6 +148,11 @@ const App = () => (
                <AdminApuracao />
              </RoleProtectedRoute>
            } />
+           <Route path="/admin/teste-inscricao" element={
+             <RoleProtectedRoute role="admin">
+               <Index isAdminBypass={true} />
+             </RoleProtectedRoute>
+           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
