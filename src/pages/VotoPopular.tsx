@@ -25,7 +25,7 @@ const categorias: { key: CategoriaKey; label: string }[] = [
 ];
 
 const SITE_KEY = undefined;
-const VOTACAO_ENCERRADA = true;
+const VOTACAO_ENCERRADA = false;
 
 const VotoPopular: React.FC = () => {
   const { toast } = useToast();
@@ -352,7 +352,7 @@ const VotoPopular: React.FC = () => {
             ) : null}
 
             <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900">
-              Selecione até <strong>1 (um)</strong> trabalho finalista de cada categoria e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>{isLogged ? 'ordem decrescente de votação' : 'ordem aleatória, embaraçados para sigilo da votação'}</strong>. O voto é <strong>único por dispositivo por categoria</strong>; após confirmar, novas votações para aquela categoria ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
+              Selecione até <strong>1 (um)</strong> trabalho finalista de cada categoria e clique em <strong>Confirmar voto</strong>. Os trabalhos finalistas estão exibidos em <strong>ordem aleatória para garantir a igualdade de condições</strong>. O voto é <strong>único por dispositivo por categoria</strong>; após confirmar, novas votações para aquela categoria ficam bloqueadas. Para conhecer cada trabalho, use o ícone de visualizar ao lado do título.
             </div>
 
             <div className="p-2">
