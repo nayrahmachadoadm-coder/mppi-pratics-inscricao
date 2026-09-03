@@ -498,7 +498,7 @@ export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOp
   });
 };
 
-// Geração de PDF do Regulamento (Edital nº 107/2025)
+// Geração de PDF do Regulamento (Edital nº 88/2026)
 export const generateRegulamentoPDF = (elementId: string): Promise<void> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -558,7 +558,7 @@ export const generateRegulamentoPDF = (elementId: string): Promise<void> => {
       y += 8;
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
-      const title2 = 'Regulamento – Edital nº 107/2025';
+      const title2 = 'Regulamento – Edital nº 88/2026';
       pdf.text(title2, (pageWidth - pdf.getTextWidth(title2)) / 2, y);
       y += 8;
       pdf.setLineWidth(0.5);
@@ -604,7 +604,7 @@ export const generateRegulamentoPDF = (elementId: string): Promise<void> => {
         pdf.text(footerText, pageWidth - margin - pdf.getTextWidth(footerText), pageHeight - 10);
       }
 
-      pdf.save('Regulamento-MPPI-Edital-107-2025.pdf');
+      pdf.save('Regulamento-MPPI-Edital-88-2026.pdf');
       resolve();
     } catch (err) {
       reject(err);

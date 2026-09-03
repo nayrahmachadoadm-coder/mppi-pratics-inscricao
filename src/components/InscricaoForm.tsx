@@ -1005,7 +1005,7 @@ const InscricaoForm = () => {
                   </h3>
                   <div className="mt-2 text-sm text-red-700">
                     <p>
-                      Conforme o <strong>Edital PGJ nº 107/2025</strong>, práticas e projetos <strong>vencedores em edições anteriores não podem concorrer novamente</strong>. 
+                      Conforme o <strong>Edital Nº 88/2026</strong>, práticas e projetos <strong>vencedores em edições anteriores não podem concorrer novamente</strong>. 
                       Você não poderá prosseguir com esta inscrição.
                     </p>
                   </div>
@@ -1021,7 +1021,7 @@ const InscricaoForm = () => {
         
         <div className="p-4 bg-institutional-light border border-primary/20 rounded-lg">
           <p className="text-sm mb-4">
-            Declaro estar ciente e de acordo com as normas do Edital PGJ nº 107/2025 – 10ª Edição do Prêmio Melhores Práticas do MPPI, 
+            Declaro estar ciente e de acordo com as normas do Edital Nº 88/2026 – 10ª Edição do Prêmio Melhores Práticas do MPPI, 
             autorizando a divulgação das informações, imagens e resultados relacionados a esta inscrição, em quaisquer meios institucionais ou de imprensa.
           </p>
           

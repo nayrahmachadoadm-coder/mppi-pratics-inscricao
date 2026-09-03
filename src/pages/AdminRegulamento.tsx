@@ -55,7 +55,7 @@ const AdminRegulamento = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-center">Edital nº 107/2025</CardTitle>
+            <CardTitle className="text-xl font-semibold text-center">EDITAL Nº 88/2026</CardTitle>
           </CardHeader>
           <CardContent id="regulamento-content" className="max-w-none text-justify text-xs">
             <p className="text-gray-700">Regulamenta a 10ª Edição do Prêmio Melhores Práticas do Ministério Público do Estado do Piauí.</p>
@@ -70,12 +70,11 @@ const AdminRegulamento = () => {
               <li>I — reconhecer e valorizar práticas e projetos que produzam resultados concretos e contribuam para o aperfeiçoamento da atuação do Ministério Público do Estado do Piauí;</li>
               <li>II — identificar e difundir iniciativas inovadoras, resolutivas e passíveis de replicação em outras unidades ou contextos institucionais;</li>
               <li>III — incentivar o compartilhamento de experiências, conhecimentos, métodos e soluções desenvolvidos no âmbito do MPPI;</li>
-              <li>IV — estimular a atuação integrada entre unidades ministeriais e a cooperação com instituições públicas, privadas e organizações da sociedade civil; e</li>
-              <li>V — fomentar iniciativas alinhadas aos Objetivos de Desenvolvimento Sustentável — ODS da Agenda 2030 da Organização das Nações Unidas — ONU.</li>
+              <li>IV — estimular a atuação integrada entre unidades ministeriais e a cooperação com instituições públicas, privadas e organizações da sociedade civil.</li>
             </ul>
 
             <h3 id="sec-3" className="font-semibold mt-4 scroll-mt-24 text-sm">3. DAS ÁREAS, DAS CATEGORIAS E DOS CONCEITOS</h3>
-            <p className="text-gray-700">3.1 A 10ª Edição do Prêmio Melhores Práticas contemplará as seguintes categorias:</p>
+            <p className="text-gray-700">3.1. A 10ª Edição do Prêmio Melhores Práticas contemplará iniciativas inscritas nas modalidades Práticas Institucionais e Projetos Institucionais, desenvolvidas nas áreas finalística ou estruturante, observadas as seguintes categorias:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
               <li>I — Práticas Finalísticas;</li>
               <li>II — Projetos Finalísticos;</li>
