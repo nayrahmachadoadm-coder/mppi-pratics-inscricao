@@ -1,4 +1,5 @@
 -- 1. Atualizar RPC de contagem de votos para filtrar por edicao_ano = 2026
+DROP FUNCTION IF EXISTS public.votos_count(text);
 CREATE OR REPLACE FUNCTION public.votos_count(categoria text)
 RETURNS TABLE (inscricao_id uuid, votos integer)
 LANGUAGE sql
@@ -14,6 +15,7 @@ AS $$
 $$;
 
 -- 2. Atualizar RPC de obter candidatos do voto popular para filtrar por edicao_ano = 2026
+DROP FUNCTION IF EXISTS public.get_voto_popular_candidatos(text, double precision);
 CREATE OR REPLACE FUNCTION public.get_voto_popular_candidatos(p_categoria TEXT, p_session_seed DOUBLE PRECISION)
 RETURNS TABLE (
     inscricao_id UUID,
