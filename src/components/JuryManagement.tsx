@@ -101,11 +101,13 @@ const JuryManagement = () => {
       try {
         const { count: totalInscricoes } = await supabase
           .from('inscricoes')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('edicao_ano', 2026);
         const total = totalInscricoes || 0;
         const { data: evalRows } = await supabase
           .from('avaliacoes')
-          .select('jurado_username');
+          .select('jurado_username, inscricoes!inner(edicao_ano)')
+          .eq('inscricoes.edicao_ano', 2026);
         const counts: Record<string, number> = {};
         for (const r of (evalRows || [])) {
           const u = (r as any).jurado_username || '';

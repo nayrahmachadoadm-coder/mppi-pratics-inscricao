@@ -234,8 +234,9 @@ export async function getAvaliacoesByJurado(juradoUsername: string): Promise<{ s
   try {
     const { data, error } = await (supabase as any)
       .from('avaliacoes')
-      .select('*')
+      .select('*, inscricoes!inner(edicao_ano)')
       .eq('jurado_username', juradoUsername)
+      .eq('inscricoes.edicao_ano', 2026)
       .order('created_at', { ascending: false });
     if (error) {
       return { success: false, error: error.message };
@@ -259,8 +260,9 @@ export async function getJurorAveragesByCategoria(areaKey: string): Promise<{ su
   try {
     const { data, error } = await (supabase as any)
       .from('avaliacoes')
-      .select('jurado_username,total,inscricoes!inner(area_atuacao)')
-      .eq('inscricoes.area_atuacao', areaKey);
+      .select('jurado_username,total,inscricoes!inner(area_atuacao,edicao_ano)')
+      .eq('inscricoes.area_atuacao', areaKey)
+      .eq('inscricoes.edicao_ano', 2026);
 
     if (error) {
       return { success: false, error: error.message };
@@ -325,8 +327,9 @@ export async function getMinhasAvaliacoes(juradoUsername: string, areaKey?: stri
   try {
     let query = (supabase as any)
       .from('avaliacoes')
-      .select('*, inscricoes!inner(id,titulo_iniciativa,area_atuacao,nome_completo,lotacao)')
+      .select('*, inscricoes!inner(id,titulo_iniciativa,area_atuacao,nome_completo,lotacao,edicao_ano)')
       .eq('jurado_username', juradoUsername)
+      .eq('inscricoes.edicao_ano', 2026)
       .order('created_at', { ascending: false });
 
     if (areaKey) {

@@ -70,7 +70,8 @@ export async function getAllInscricoes(
     console.log('🔗 Testando conexão com Supabase...');
     let query = supabase
       .from('inscricoes')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'exact' })
+      .eq('edicao_ano', 2026);
     
     // Aplicar outros filtros
     if (filters) {
@@ -173,6 +174,7 @@ export async function getInscricaoById(id: string): Promise<AdminInscricoesResul
       .from('inscricoes')
       .select('*')
       .eq('id', id)
+      .eq('edicao_ano', 2026)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -287,7 +289,8 @@ export async function getInscricoesStats(): Promise<{
       // Total de inscrições
       const { count: totalFallback, error: totalError } = await supabase
         .from('inscricoes')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('edicao_ano', 2026);
       if (totalError) throw totalError;
       total = totalFallback || 0;
 
@@ -295,6 +298,7 @@ export async function getInscricoesStats(): Promise<{
       const { data: porAreaData, error: areaError } = await supabase
         .from('inscricoes')
         .select('area_atuacao')
+        .eq('edicao_ano', 2026)
         .order('area_atuacao');
       if (areaError) throw areaError;
 
@@ -314,6 +318,7 @@ export async function getInscricoesStats(): Promise<{
       const { count, error: recentError } = await supabase
         .from('inscricoes')
         .select('*', { count: 'exact', head: true })
+        .eq('edicao_ano', 2026)
         .gte('created_at', oneDayAgo.toISOString());
       if (!recentError) ultimas_24h = count || 0;
     } catch (e) {
@@ -326,6 +331,7 @@ export async function getInscricoesStats(): Promise<{
       const { data, error: mesError } = await supabase
         .from('inscricoes')
         .select('created_at')
+        .eq('edicao_ano', 2026)
         .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at');
       if (!mesError) porMesData = (data || []) as any[];
@@ -396,6 +402,7 @@ export async function getAreasAtuacao(): Promise<{
     const { data, error } = await supabase
       .from('inscricoes')
       .select('area_atuacao')
+      .eq('edicao_ano', 2026)
       .order('area_atuacao');
     
     if (error) {
