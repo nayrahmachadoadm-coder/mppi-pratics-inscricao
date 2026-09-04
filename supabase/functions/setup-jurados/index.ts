@@ -12,19 +12,9 @@ type Juror = {
   seatLabel?: string | null;
 };
 
-const TEMP_PASSWORD = 'Mppi#2025!';
+const TEMP_PASSWORD = 'Mppi#2026!';
 
-const jurors: Juror[] = [
-  { fullName: 'Marlete Maria da Rocha Cipriano', email: 'marlete@mppi.mp.br' },
-  { fullName: 'Luisa Cynobellina Assunção Lacerda Andrade', email: 'luisalacerda@mppi.mp.br' },
-  { fullName: 'Esdras Oliveira Costa Beleza do Nascimento', email: 'esdras.nascimento@mppi.mp.br' },
-  { fullName: 'Rosiane Brasileiro de Jesus dos Passos', email: 'rosianebrasileiro@mppi.mp.br' },
-  { fullName: 'Sâmia Alves dos Santos', email: 'samia_alves@ufpi.edu.br' },
-  { fullName: 'Eduardo Albuquerque Rodrigues Diniz', email: 'eduardoalbuquerque@cte.uespi.br' },
-  { fullName: 'Alexandre Camilo Costa', email: 'alexandre.camilo@tjpi.jus.br' },
-  { fullName: 'Noélia Castro de Sampaio', email: 'noeliasampaio@hotmail.com' },
-  { fullName: 'Sheila de Andrade Ferreira', email: 'sheila.ferreira@defensoria.pi.def.br' },
-];
+const jurors: Juror[] = [];
 
 function sanitizeUsernameFromEmail(email: string): string {
   const local = email.split('@')[0].toLowerCase();
@@ -57,6 +47,7 @@ async function ensureProfileAndRole(
       _seat_code: seatCode ?? null,
       _seat_label: seatLabel ?? null,
       _must_change: true,
+      _edicao_ano: 2026,
     });
     if (rpcError) throw rpcError;
     return { createdProfile: true };

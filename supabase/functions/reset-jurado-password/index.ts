@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TEMP_PASSWORD = 'Mppi#2025!';
+const TEMP_PASSWORD = 'Mppi#2026!';
 
 type ResetBody = {
   email?: string;

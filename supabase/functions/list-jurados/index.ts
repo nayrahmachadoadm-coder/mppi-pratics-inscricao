@@ -32,8 +32,9 @@ Deno.serve(async (req) => {
 
     const { data, error } = await (adminClient as any)
       .from('profiles')
-      .select('username, full_name, created_at, seat_code, seat_label, user_roles!inner(role)')
+      .select('username, full_name, created_at, seat_code, seat_label, edicao_ano, user_roles!inner(role)')
       .eq('user_roles.role', 'jurado')
+      .eq('edicao_ano', 2026)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -46,6 +47,7 @@ Deno.serve(async (req) => {
       created_at: p.created_at,
       seat_code: p.seat_code,
       seat_label: p.seat_label,
+      edicao_ano: p.edicao_ano,
     }));
 
     return new Response(JSON.stringify({ success: true, data: rows }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

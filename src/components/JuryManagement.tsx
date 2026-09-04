@@ -163,7 +163,7 @@ const JuryManagement = () => {
         
         toast({
           title: "Jurado cadastrado com sucesso!",
-          description: "O jurado foi cadastrado com a senha temporária Mppi#2025!",
+          description: "O jurado foi cadastrado com a senha temporária Mppi#2026!",
         });
       } else {
         toast({
@@ -192,7 +192,7 @@ const JuryManagement = () => {
         await loadJuryMembers();
         toast({
           title: "Senha resetada",
-          description: "O jurado deverá usar a senha temporária Mppi#2025! e será solicitado a alterá-la no primeiro login",
+          description: "O jurado deverá usar a senha temporária Mppi#2026! e será solicitado a alterá-la no primeiro login",
         });
       } else {
         toast({
@@ -264,7 +264,7 @@ const JuryManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Cadastrar Novo Jurado</DialogTitle>
                   <DialogDescription>
-                    Informe o e-mail do jurado e dados da vaga. A senha temporária será Mppi#2025!
+                    Informe o e-mail do jurado e dados da vaga. A senha temporária será Mppi#2026!
                   </DialogDescription>
                 </DialogHeader>
                 
