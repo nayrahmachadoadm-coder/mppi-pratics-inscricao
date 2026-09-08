@@ -1212,11 +1212,11 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
               </Alert>
             )}
             <form onSubmit={handleSubmit}>
-              {currentStep === 1 && <Step1 formData={formData} handleInputChange={handleInputChange} />}
-              {currentStep === 2 && renderStep2()}
-              {currentStep === 3 && renderStep3()}
-              {currentStep === 4 && renderStep4()}
-              {currentStep === 5 && renderStep5()}
+              {currentStep === 1 && <div key="step-1"><Step1 formData={formData} handleInputChange={handleInputChange} /></div>}
+              {currentStep === 2 && <div key="step-2">{renderStep2()}</div>}
+              {currentStep === 3 && <div key="step-3">{renderStep3()}</div>}
+              {currentStep === 4 && <div key="step-4">{renderStep4()}</div>}
+              {currentStep === 5 && <div key="step-5">{renderStep5()}</div>}
               
               <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
                 <Button
