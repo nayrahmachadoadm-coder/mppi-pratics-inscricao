@@ -51,7 +51,7 @@ const Step1: React.FC<Step1Props> = React.memo(({ formData, handleInputChange })
         </Label>
         <Select value={formData.cargoFuncao} onValueChange={(value) => handleInputChange('cargoFuncao', value)}>
           <SelectTrigger id="cargoFuncao">
-            <SelectValue placeholder="Selecione seu cargo" />
+            <SelectValue placeholder={<span style={{ pointerEvents: "none" }}>Selecione seu cargo</span>} />
           </SelectTrigger>
           <SelectContent position="popper" className="z-50">
             <SelectItem value="procurador-de-justica">Procurador de Justiça</SelectItem>
