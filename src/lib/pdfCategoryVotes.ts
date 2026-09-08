@@ -119,7 +119,6 @@ export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
     { key: 'inov', label: 'Inov', width: numColWidth },
     { key: 'resol', label: 'Resol', width: numColWidth },
     { key: 'impacto', label: 'Imp', width: numColWidth },
-    { key: 'ods', label: 'ODS', width: numColWidth },
     { key: 'replic', label: 'Rep', width: numColWidth },
     { key: 'total', label: 'Total', width: numColWidth },
   ];
@@ -189,7 +188,6 @@ export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
         it.avaliacao.inovacao,
         it.avaliacao.resolutividade,
         it.avaliacao.impacto_social,
-        it.avaliacao.alinhamento_ods,
         it.avaliacao.replicabilidade,
         it.avaliacao.total,
       ];
@@ -298,14 +296,13 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     { key: 'inov', label: 'Inov', width: numW },
     { key: 'resol', label: 'Resol', width: numW },
     { key: 'imp', label: 'Imp', width: numW },
-    { key: 'ods', label: 'ODS', width: numW },
     { key: 'rep', label: 'Rep', width: numW },
     { key: 'total', label: 'Total', width: numW },
   ];
 
   const { data: inscricoes } = await getAllInscricoes(1, 1000, { area_atuacao: areaKey } as any);
   const list = inscricoes || [];
-  const works: Array<{ insc: any; avs: any[]; sumCoop: number; sumInov: number; sumResol: number; sumImp: number; sumOds: number; sumRep: number; totalWork: number }> = [];
+  const works: Array<{ insc: any; avs: any[]; sumCoop: number; sumInov: number; sumResol: number; sumImp: number; sumRep: number; totalWork: number }> = [];
   for (const insc of list) {
     const avRes = await getAvaliacoesByInscricao(insc.id);
     const avs = avRes.success ? (avRes.data || []) : [];
@@ -313,10 +310,9 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     const sumInov = avs.reduce((sum, r) => sum + (r.inovacao || 0), 0);
     const sumResol = avs.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
     const sumImp = avs.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
-    const sumOds = avs.reduce((sum, r) => sum + (r.alinhamento_ods || 0), 0);
     const sumRep = avs.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
     const totalWork = avs.reduce((sum, r) => sum + (r.total || 0), 0);
-    works.push({ insc, avs, sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork });
+    works.push({ insc, avs, sumCoop, sumInov, sumResol, sumImp, sumRep, totalWork });
   }
 
   works.sort((a, b) => {
@@ -326,7 +322,7 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     return (a.insc.titulo_iniciativa || '').localeCompare(b.insc.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' });
   });
 
-  for (const { insc, avs, sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork } of works) {
+  for (const { insc, avs, sumCoop, sumInov, sumResol, sumImp, sumRep, totalWork } of works) {
     await ensureSpace(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
@@ -383,7 +379,7 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
       let cx = margin;
       pdf.text(jurWrap, cx + 2, y + 3);
       cx += cols[0].width;
-      const vals = [r.cooperacao, r.inovacao, r.resolutividade, r.impacto_social, r.alinhamento_ods, r.replicabilidade, r.total];
+      const vals = [r.cooperacao, r.inovacao, r.resolutividade, r.impacto_social, r.replicabilidade, r.total];
       for (let i = 1; i < cols.length; i++) {
         const v = String(vals[i - 1] ?? '');
         const cw = cols[i].width;
@@ -414,7 +410,7 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
       sx += c.width;
     }
     // valores por critério (alinhar à direita)
-    const sums = [sumCoop, sumInov, sumResol, sumImp, sumOds, sumRep, totalWork];
+    const sums = [sumCoop, sumInov, sumResol, sumImp, sumRep, totalWork];
     let cxSum = margin + cols[0].width;
     for (let i = 1; i < cols.length; i++) {
       const v = String(sums[i - 1]);

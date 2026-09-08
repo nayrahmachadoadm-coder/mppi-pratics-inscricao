@@ -152,8 +152,6 @@ export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOp
     simulateAddText(inscricaoData.resolutividade);
     simulateAddText('Impacto Social:', 9);
     simulateAddText(inscricaoData.impacto_social);
-    simulateAddText('Alinhamento aos ODS:', 9);
-    simulateAddText(inscricaoData.alinhamento_ods);
     simulateAddText('Replicabilidade:', 9);
     simulateAddText(inscricaoData.replicabilidade);
     tempYPosition += 2;
@@ -457,10 +455,6 @@ export const generatePDF = (inscricaoData: InscricaoData, options: GeneratePdfOp
     
     addText('Impacto Social:', 9, true);
     addText(inscricaoData.impacto_social);
-    addQuestionSpacing();
-    
-    addText('Alinhamento aos ODS:', 9, true);
-    addText(inscricaoData.alinhamento_ods);
     addQuestionSpacing();
     
     addText('Replicabilidade:', 9, true);

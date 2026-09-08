@@ -868,7 +868,6 @@ const AdminJulgamento: React.FC = () => {
                     <th className="text-center p-2">Inovação</th>
                     <th className="text-center p-2">Resolutividade</th>
                     <th className="text-center p-2">Impacto Social</th>
-                    <th className="text-center p-2">Alinhamento ODS</th>
                     <th className="text-center p-2">Replicabilidade</th>
                     <th className="text-center p-2">Total</th>
                   </tr>
@@ -881,7 +880,6 @@ const AdminJulgamento: React.FC = () => {
                       <td className="p-2 text-center">{it.avaliacao.inovacao}</td>
                       <td className="p-2 text-center">{it.avaliacao.resolutividade}</td>
                       <td className="p-2 text-center">{it.avaliacao.impacto_social}</td>
-                      <td className="p-2 text-center">{it.avaliacao.alinhamento_ods}</td>
                       <td className="p-2 text-center">{it.avaliacao.replicabilidade}</td>
                       <td className="p-2 text-center font-medium">{it.avaliacao.total}</td>
                     </tr>

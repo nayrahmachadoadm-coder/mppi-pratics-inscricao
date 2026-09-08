@@ -578,17 +578,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
               <Label htmlFor="banco-nao">Não</Label>
             </div>
           </RadioGroup>
-          {formData.cadastroBancoPraticas === 'sim' && (
-            <div className="space-y-2 mt-2">
-              <Label htmlFor="identificacaoBancoPraticas" className="text-sm">Número ou identificação do registro *</Label>
-              <Input
-                id="identificacaoBancoPraticas"
-                value={formData.identificacaoBancoPraticas || ''}
-                onChange={(e) => handleInputChange('identificacaoBancoPraticas', e.target.value)}
-                placeholder="Ex: Registro nº 12345"
-              />
-            </div>
-          )}
+
           {formData.cadastroBancoPraticas === 'nao' && (
             <Alert className="mt-2" variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -620,15 +610,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
               <Label htmlFor="inst-nao">Não</Label>
             </div>
           </RadioGroup>
-          <div className="space-y-2 mt-2">
-            <Label htmlFor="identificacaoProjetoMetodologia" className="text-sm">Identificação do projeto na metodologia (Opcional)</Label>
-            <Input
-              id="identificacaoProjetoMetodologia"
-              value={formData.identificacaoProjetoMetodologia || ''}
-              onChange={(e) => handleInputChange('identificacaoProjetoMetodologia', e.target.value)}
-              placeholder="Ex: Portaria nº 456, ou Número do Projeto"
-            />
-          </div>
+
           {formData.institucionalizadoAto === 'nao' && (
             <Alert className="mt-2" variant="destructive">
               <AlertCircle className="h-4 w-4" />

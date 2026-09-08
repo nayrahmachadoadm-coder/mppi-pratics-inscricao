@@ -20,7 +20,6 @@ const criterionDescriptions: Record<string, string> = {
   'Inovação': 'Introdução de novidade que resulte em produtos, serviços ou agregação de funcionalidades, com ganho de qualidade ou desempenho.',
   'Resolutividade': 'Solução efetiva e concreta de um problema (eficácia da ação).',
   'Impacto Social': 'Dimensão e profundidade da mudança gerada, com foco no número de pessoas beneficiadas e no efeito transformador para comunidade/instituição.',
-  'Alinhamento aos ODS': 'Contribuição mensurável para um ou mais Objetivos de Desenvolvimento Sustentável (Agenda 2030/ONU).',
   'Replicabilidade': 'Capacidade de reaplicação ou adaptação em outras unidades, áreas ou contextos, com viabilidade prática e potencial de gerar resultados semelhantes ou superiores.',
 };
 
@@ -184,9 +183,6 @@ const AdminAvaliacao = () => {
                   <ScoreRadio label="Inovação" value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
                   <ScoreRadio label="Resolutividade" value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
                   <ScoreRadio label="Impacto Social" value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                  {!isPratica && (
-                    <ScoreRadio label="Alinhamento aos ODS" value={scores.alinhamento_ods} invalid={showValidation && scores.alinhamento_ods < 0} onChange={(v) => handleChange('alinhamento_ods', v)} />
-                  )}
                   <ScoreRadio label="Replicabilidade" value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
                 </div>
 

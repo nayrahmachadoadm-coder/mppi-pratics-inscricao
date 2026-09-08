@@ -543,10 +543,6 @@ const AdminInscricaoDetails = () => {
                     <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.impacto_social)}</p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-600">Alinhamento ODS</label>
-                    <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.alinhamento_ods)}</p>
-                  </div>
-                  <div>
                     <label className="text-xs font-medium text-gray-600">Replicabilidade</label>
                     <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks(inscricao.replicabilidade)}</p>
                   </div>
