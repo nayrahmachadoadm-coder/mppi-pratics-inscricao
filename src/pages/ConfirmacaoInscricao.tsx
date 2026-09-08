@@ -91,7 +91,7 @@ const ConfirmacaoInscricao: React.FC = () => {
             Inscrição Realizada com Sucesso!
           </CardTitle>
           <CardDescription className="text-lg text-gray-600">
-            Sua inscrição no Prêmio Melhores Práticas MPPI 2025 foi registrada
+            Sua inscrição no Prêmio Melhores Práticas MPPI 2026 foi registrada
           </CardDescription>
         </CardHeader>
 

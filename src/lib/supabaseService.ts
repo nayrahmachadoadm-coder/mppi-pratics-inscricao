@@ -173,8 +173,12 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
   try {
     console.log('💾 Iniciando salvamento no Supabase...', { formData });
     
-    // Converter dados do formulário para formato do banco
-    const inscricaoData = convertFormDataToSupabase(formData);
+    // Converter dados do formulário para formato do banco e gerar ID localmente
+    const inscricaoId = crypto.randomUUID();
+    const inscricaoData = {
+      ...convertFormDataToSupabase(formData),
+      id: inscricaoId
+    };
     
     console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
     console.log('📊 Estrutura dos dados:', Object.keys(inscricaoData));
@@ -182,11 +186,9 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
     // Inserir dados na tabela inscricoes usando o cliente público que bypassa RLS
     console.log('📤 Enviando dados para Supabase...');
     
-    const { data, error } = await supabasePublic
+    const { error } = await supabasePublic
       .from('inscricoes')
-      .insert([inscricaoData])
-      .select()
-      .single();
+      .insert([inscricaoData]);
     
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);
@@ -203,12 +205,12 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
       };
     }
     
-    console.log('✅ Inscrição salva com sucesso no Supabase:', data);
+    console.log('✅ Inscrição salva com sucesso no Supabase:', inscricaoData);
     
     return {
       success: true,
-      data,
-      inscricaoId: data.id,
+      data: inscricaoData,
+      inscricaoId: inscricaoId,
     };
     
   } catch (error) {
@@ -246,23 +248,25 @@ export async function salvarInscricao(formData: InscricaoData): Promise<{ succes
     console.log('🔄 Iniciando salvamento no Supabase...');
     console.log('📝 Dados do formulário:', formData);
     
-    const supabaseData = convertFormDataToSupabase(formData);
+    const inscricaoId = crypto.randomUUID();
+    const supabaseData = {
+      ...convertFormDataToSupabase(formData),
+      id: inscricaoId
+    };
     console.log('🔄 Dados convertidos para Supabase:', supabaseData);
     
     // Usar o cliente público que bypassa RLS
-    const { data, error } = await supabasePublic
+    const { error } = await supabasePublic
       .from('inscricoes')
-      .insert(supabaseData)
-      .select()
-      .single();
+      .insert(supabaseData);
 
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);
       throw new Error(`Erro no banco de dados: ${error.message}`);
     }
 
-    console.log('✅ Inscrição salva com sucesso:', data);
-    return { success: true, data };
+    console.log('✅ Inscrição salva com sucesso:', supabaseData);
+    return { success: true, data: supabaseData };
   } catch (error) {
     console.error('❌ Erro ao salvar inscrição:', error);
     return { 

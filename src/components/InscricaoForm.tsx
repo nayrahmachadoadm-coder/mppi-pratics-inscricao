@@ -119,19 +119,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
 
         console.log("DEBUG: Checking admin role...");
         // Fast direct check for admin
-        const { data: sessionData } = await supabase.auth.getSession();
-        let isAdmin = false;
-        
-        if (sessionData?.session?.user?.id) {
-           const { data: roles } = await supabase
-             .from('user_roles')
-             .select('role')
-             .eq('user_id', sessionData.session.user.id)
-             .eq('role', 'admin');
-           if (roles && roles.length > 0) {
-             isAdmin = true;
-           }
-        }
+        let isAdmin = await hasRole('admin');
         
         console.log("DEBUG: isAdmin result:", isAdmin);
 
@@ -243,10 +231,6 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
       case 4:
         // Step 4 - Critérios de Avaliação (obrigatórios)
         requiredFields = ['cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'replicabilidade'];
-        // ODS is only required for Projetos
-        if (formData.area === 'finalistica-projeto' || formData.area === 'estruturante-projeto') {
-          requiredFields.push('alinhamentoODS');
-        }
         break;
       case 5:
         requiredFields = ['participouEdicoesAnteriores', 'foiVencedorAnterior'];
@@ -379,11 +363,6 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
       'cooperacao', 'inovacao', 'resolutividade', 'impactoSocial', 'replicabilidade',
       'participouEdicoesAnteriores', 'foiVencedorAnterior'
     ];
-    
-    // ODS is only required for Projetos
-    if (formData.area === 'finalistica-projeto' || formData.area === 'estruturante-projeto') {
-      allRequiredFields.push('alinhamentoODS');
-    }
     
     const missingFields = allRequiredFields.filter(field => {
       const value = formData[field as keyof FormData];
@@ -533,8 +512,8 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
         <Input
           id="anoInicioExecucao"
           type="number"
-          min="2000"
-          max="2025"
+          min="1900"
+          max="2026"
           value={formData.anoInicioExecucao}
           onChange={(e) => handleInputChange('anoInicioExecucao', e.target.value)}
           placeholder="Informe o ano de início da execução"
@@ -929,24 +908,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
           </div>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="alinhamentoODS" className="text-base font-medium flex items-center gap-2">
-            <Globe className="h-4 w-4 text-blue-500" />
-            Alinhamento aos ODS {formData.area.includes('projeto') ? '*' : '(Opcional para Práticas)'}
-          </Label>
-          <p className="text-xs text-muted-foreground">Contribuição demonstrável para um ou mais objetivos da Agenda 2030 da ONU.</p>
-          <Textarea
-            id="alinhamentoODS"
-            value={formData.alinhamentoODS}
-            onChange={(e) => handleInputChange('alinhamentoODS', e.target.value)}
-            placeholder="Indique qual Objetivo de Desenvolvimento Sustentável (ODS) foi contemplado..."
-            rows={3}
-            maxLength={2000}
-          />
-          <div className="text-xs text-muted-foreground text-right mt-1">
-            {formData.alinhamentoODS.length}/2000 caracteres
-          </div>
-        </div>
+
         
         <div className="space-y-2">
           <Label htmlFor="replicabilidade" className="text-base font-medium flex items-center gap-2">
