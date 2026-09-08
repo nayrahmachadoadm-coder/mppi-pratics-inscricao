@@ -57,6 +57,18 @@ export interface InscricaoData {
   id?: string;
   created_at?: string;
   updated_at?: string;
+
+  // Campos legados para compatibilidade com a tabela antiga
+  area?: string;
+  ano_inicio_execucao?: string;
+  unidade_setor?: string;
+  telefone_institucional?: string;
+  equipe_envolvida?: string;
+  resumo_executivo?: string;
+  objetivos_estrategicos?: string;
+  etapas_metodologia?: string;
+  resultados_alcancados?: string;
+  concorda_termos?: boolean;
 }
 
 // Interface para o resultado da operação
@@ -128,7 +140,19 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     cadastro_banco_praticas: formData.cadastroBancoPraticas === 'sim',
     identificacao_banco_praticas: formData.identificacaoBancoPraticas || null,
     institucionalizado_ato: formData.institucionalizadoAto === 'sim',
-    identificacao_projeto_metodologia: formData.identificacaoProjetoMetodologia || null
+    identificacao_projeto_metodologia: formData.identificacaoProjetoMetodologia || null,
+    
+    // COMPATIBILIDADE: Campos legados da tabela antiga para evitar erros de NOT NULL
+    area: formData.area || '',
+    ano_inicio_execucao: formData.anoInicioExecucao || '',
+    unidade_setor: formData.unidadeSetor || '',
+    telefone_institucional: formData.telefoneInstitucional || '',
+    equipe_envolvida: formData.equipeEnvolvida || '',
+    resumo_executivo: formData.resumoExecutivo || '',
+    objetivos_estrategicos: formData.objetivosEstrategicos || '',
+    etapas_metodologia: formData.etapasMetodologia || '',
+    resultados_alcancados: formData.resultadosAlcancados || '',
+    concorda_termos: Boolean(formData.concordaTermos)
   };
   
   // Debug específico para Step 5 - dados convertidos
