@@ -102,13 +102,6 @@ const AdminInscricaoDetails = () => {
     }
   }, [id]);
 
-  // Carregar dados da inscrição
-  useEffect(() => {
-    if (id) {
-      loadInscricao(id);
-    }
-  }, [id]);
-
   const loadInscricao = async (inscricaoId: string) => {
     try {
       setLoading(true);
@@ -250,15 +243,25 @@ const AdminInscricaoDetails = () => {
 
     try {
       setIsUpdatingStatus(true);
+      console.log('🔄 Iniciando atualização de status:', { id: inscricao.id, status, parecer: parecerText });
       const res = await updateInscricaoStatus(inscricao.id, status, parecerText);
+      console.log('📡 Resultado da atualização:', res);
       if (res.success) {
         toast({ title: 'Status Atualizado', description: `Inscrição marcada como ${status}.` });
-        setInscricao({ ...inscricao, status_inscricao: status, parecer_triagem: parecerText });
+        // Atualizar estado local imediatamente para feedback instantâneo
+        setInscricao({ ...inscricao, status_inscricao: status, parecer_triagem: parecerText || inscricao.parecer_triagem });
         setShowIndeferirForm(false);
+        setParecerText('');
+        // Recarregar dados do banco para garantir consistência
+        if (id) {
+          setTimeout(() => loadInscricao(id), 500);
+        }
       } else {
-        toast({ title: 'Erro', description: res.error, variant: 'destructive' });
+        console.error('❌ Falha na atualização:', res.error);
+        toast({ title: 'Erro', description: res.error || 'Erro desconhecido ao atualizar status.', variant: 'destructive' });
       }
     } catch (e: any) {
+      console.error('❌ Exceção na atualização:', e);
       toast({ title: 'Erro', description: 'Ocorreu um erro ao atualizar o status.', variant: 'destructive' });
     } finally {
       setIsUpdatingStatus(false);

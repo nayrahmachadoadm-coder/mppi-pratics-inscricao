@@ -6,6 +6,7 @@ export interface AdminInscricaoData extends InscricaoData {
   id: string;
   created_at: string;
   updated_at: string;
+  status_inscricao?: string;
   parecer_triagem?: string;
 }
 
@@ -450,6 +451,9 @@ export async function updateInscricaoStatus(
   status: string,
   parecer?: string
 ): Promise<{ success: boolean; message?: string; error?: string }> {
+  console.log('🔄 updateInscricaoStatus chamada:', { id, status, parecer: parecer || '(vazio)' });
+
+  // ── Tentativa 1: via RPC SECURITY DEFINER ──
   try {
     const { data, error } = await supabase.rpc('rpc_update_status_inscricao', {
       p_inscricao_id: id,
@@ -457,19 +461,57 @@ export async function updateInscricaoStatus(
       p_parecer: parecer || null
     });
 
+    console.log('📡 RPC rpc_update_status_inscricao – data:', data, '– error:', error);
+
+    if (!error && data) {
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+      if (result?.success) {
+        console.log('✅ Status atualizado via RPC com sucesso');
+        return { success: true, message: result.message || 'Status atualizado com sucesso' };
+      }
+      // RPC retornou success=false
+      console.warn('⚠️ RPC retornou success=false:', result?.error);
+    }
+
     if (error) {
-      console.error('❌ Erro na RPC update_status_inscricao:', error);
-      return { success: false, error: error.message };
+      console.warn('⚠️ Erro na RPC, tentando fallback direto:', error.message);
+    }
+  } catch (rpcErr: any) {
+    console.warn('⚠️ Exceção na RPC, tentando fallback direto:', rpcErr?.message);
+  }
+
+  // ── Tentativa 2: UPDATE direto na tabela ──
+  try {
+    const updatePayload: Record<string, any> = {
+      status_inscricao: status,
+      updated_at: new Date().toISOString()
+    };
+    // Só grava parecer se fornecido ou se for indeferimento
+    if (parecer && parecer.trim()) {
+      updatePayload.parecer_triagem = parecer;
+    } else if (status === 'Validada') {
+      // Limpar parecer ao validar
+      updatePayload.parecer_triagem = null;
     }
 
-    const result = data as any;
-    if (!result?.success) {
-      return { success: false, error: result?.error || 'Erro ao atualizar status' };
+    console.log('📝 Fallback: UPDATE direto em inscricoes –', updatePayload);
+
+    const { data, error } = await supabase
+      .from('inscricoes')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('id, status_inscricao, parecer_triagem')
+      .single();
+
+    if (error) {
+      console.error('❌ Erro no UPDATE direto:', error);
+      return { success: false, error: `Erro ao atualizar status: ${error.message}` };
     }
 
-    return { success: true, message: result.message };
+    console.log('✅ Status atualizado via UPDATE direto:', data);
+    return { success: true, message: `Status atualizado para ${status}` };
   } catch (err: any) {
-    console.error('❌ Erro inesperado ao atualizar status:', err);
-    return { success: false, error: err?.message || 'Erro inesperado' };
+    console.error('❌ Erro inesperado no fallback:', err);
+    return { success: false, error: err?.message || 'Erro inesperado ao atualizar status' };
   }
 }
