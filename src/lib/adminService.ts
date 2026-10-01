@@ -480,7 +480,7 @@ export async function updateInscricaoStatus(
     console.warn('⚠️ Exceção na RPC, tentando fallback direto:', rpcErr?.message);
   }
 
-  // ── Tentativa 2: UPDATE direto na tabela ──
+  // ── Tentativa 2: UPDATE direto na tabela (com parecer_triagem) ──
   try {
     const updatePayload: Record<string, any> = {
       status_inscricao: status,
@@ -490,7 +490,6 @@ export async function updateInscricaoStatus(
     if (parecer && parecer.trim()) {
       updatePayload.parecer_triagem = parecer;
     } else if (status === 'Validada') {
-      // Limpar parecer ao validar
       updatePayload.parecer_triagem = null;
     }
 
@@ -500,10 +499,33 @@ export async function updateInscricaoStatus(
       .from('inscricoes')
       .update(updatePayload)
       .eq('id', id)
-      .select('id, status_inscricao, parecer_triagem')
+      .select('id, status_inscricao')
       .single();
 
     if (error) {
+      // Se o erro é que a coluna parecer_triagem não existe, tentar sem ela
+      if (error.message?.includes('parecer_triagem')) {
+        console.warn('⚠️ Coluna parecer_triagem não existe, tentando sem ela...');
+        
+        const { data: data2, error: error2 } = await supabase
+          .from('inscricoes')
+          .update({ 
+            status_inscricao: status, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', id)
+          .select('id, status_inscricao')
+          .single();
+        
+        if (error2) {
+          console.error('❌ Erro no UPDATE sem parecer:', error2);
+          return { success: false, error: `Erro ao atualizar status: ${error2.message}` };
+        }
+        
+        console.log('✅ Status atualizado via UPDATE direto (sem parecer):', data2);
+        return { success: true, message: `Status atualizado para ${status}` };
+      }
+
       console.error('❌ Erro no UPDATE direto:', error);
       return { success: false, error: `Erro ao atualizar status: ${error.message}` };
     }
