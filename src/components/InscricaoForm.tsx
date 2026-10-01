@@ -35,7 +35,6 @@ interface FormData {
   situacaoAtual: string;
   dataConclusao?: string;
   cadastroBancoPraticas: string;
-  identificacaoBancoPraticas?: string;
   institucionalizadoAto: string;
   identificacaoProjetoMetodologia?: string;
   
@@ -82,7 +81,6 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
     anoInicioExecucao: '',
     situacaoAtual: '',
     cadastroBancoPraticas: '',
-    identificacaoBancoPraticas: '',
     institucionalizadoAto: '',
     identificacaoProjetoMetodologia: '',
     resumoExecutivo: '',
@@ -218,9 +216,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
         requiredFields = ['area', 'tituloIniciativa', 'anoInicioExecucao', 'situacaoAtual', 'equipeEnvolvida'];
         if (formData.area.includes('pratica')) {
           requiredFields.push('cadastroBancoPraticas');
-          if (formData.cadastroBancoPraticas === 'sim') {
-            requiredFields.push('identificacaoBancoPraticas');
-          }
+
         } else if (formData.area.includes('projeto')) {
           requiredFields.push('institucionalizadoAto');
         }

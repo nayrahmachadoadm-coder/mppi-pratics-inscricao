@@ -138,7 +138,7 @@ export function convertFormDataToSupabase(formData: any): InscricaoData {
     
     // Institucionalização
     cadastro_banco_praticas: formData.cadastroBancoPraticas === 'sim',
-    identificacao_banco_praticas: formData.identificacaoBancoPraticas || null,
+    identificacao_banco_praticas: null,
     institucionalizado_ato: formData.institucionalizadoAto === 'sim',
     identificacao_projeto_metodologia: formData.identificacaoProjetoMetodologia || null,
     
