@@ -47,7 +47,6 @@ async function ensureProfileAndRole(
       _seat_code: seatCode ?? null,
       _seat_label: seatLabel ?? null,
       _must_change: true,
-      _edicao_ano: 2026,
     });
     if (rpcError) throw rpcError;
     return { createdProfile: true };
@@ -98,26 +97,59 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
 
-    // Obtem todos usuários para checagem por e-mail
-    const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
-
     for (const j of jurorsToProcess) {
       const username = sanitizeUsernameFromEmail(j.email);
-      const existing = allUsers?.users.find(u => u.email === j.email);
 
-      let userId = existing?.id || '';
+      let userId = '';
       let createdAuth = false;
 
-      if (!existing) {
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: j.email,
-          password: TEMP_PASSWORD,
-          email_confirm: true,
-          user_metadata: { full_name: j.fullName, role: 'jurado' },
-        });
-        if (authError) throw authError;
-        userId = authData.user?.id || '';
-        createdAuth = true;
+      // Tentar achar pelo email no profiles (mais rápido e sem limite de paginação do Auth)
+      const { data: profileByEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('auth_user_id')
+        .eq('email', j.email)
+        .maybeSingle();
+
+      if (profileByEmail?.auth_user_id) {
+        userId = profileByEmail.auth_user_id;
+      } else {
+        let authData: any = null;
+        let authError: any = null;
+        
+        try {
+          const res = await supabaseAdmin.auth.admin.createUser({
+            email: j.email,
+            password: TEMP_PASSWORD,
+            email_confirm: true,
+            user_metadata: { full_name: j.fullName, role: 'jurado' },
+          });
+          authData = res.data;
+          authError = res.error;
+        } catch (e: any) {
+          authError = e;
+        }
+
+        if (authError) {
+          let page = 1;
+          while (!userId && page < 100) {
+            const { data: pageData } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+            if (!pageData || pageData.users.length === 0) {
+              break;
+            }
+            const found = pageData.users.find((u: any) => u.email?.toLowerCase() === j.email.toLowerCase());
+            if (found) {
+              userId = found.id;
+              break;
+            }
+            page++;
+          }
+          if (!userId) {
+            throw authError; // throw the original error if we STILL can't find them
+          }
+        } else {
+          userId = authData.user?.id || '';
+          createdAuth = true;
+        }
       }
 
       if (!userId) throw new Error(`ID do usuário não encontrado para ${j.email}`);
@@ -152,7 +184,7 @@ Deno.serve(async (req) => {
     console.error('❌ Erro ao cadastrar jurados:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message || 'Erro desconhecido' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });

@@ -9,14 +9,13 @@ import { Key } from 'lucide-react';
 import { Users } from 'lucide-react';
 import { Award } from 'lucide-react';
 
-type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica' | 'categoria-especial-ia';
+type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 
 const categorias: { key: CategoriaKey; lines: [string, string] }[] = [
   { key: 'finalistica-projeto', lines: ['Projetos', 'Finalísticos'] },
   { key: 'estruturante-projeto', lines: ['Projetos', 'Estruturantes'] },
   { key: 'finalistica-pratica', lines: ['Práticas', 'Finalísticas'] },
   { key: 'estruturante-pratica', lines: ['Práticas', 'Estruturantes'] },
-  { key: 'categoria-especial-ia', lines: ['Categoria Especial', '(Inteligência Artificial)'] },
 ];
 
 const AdminCategorias = () => {
@@ -38,8 +37,7 @@ const AdminCategorias = () => {
     'finalistica-projeto': 'Projetos Finalísticos',
     'estruturante-projeto': 'Projetos Estruturantes',
     'finalistica-pratica': 'Práticas Finalísticas',
-    'estruturante-pratica': 'Práticas Estruturantes',
-    'categoria-especial-ia': 'Categoria Especial (Inteligência Artificial)'
+    'estruturante-pratica': 'Práticas Estruturantes'
   };
 
   useEffect(() => {

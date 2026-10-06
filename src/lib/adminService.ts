@@ -242,13 +242,10 @@ export async function getInscricoesStats(): Promise<{
         'finalistica-projeto',
         'estruturante-pratica',
         'estruturante-projeto',
-        'categoria-especial-ia',
       ];
       if (directKeys.includes(s)) return s;
 
       // Heurísticas para rótulos legados
-      if (s.includes('categoria') && s.includes('especial')) return 'categoria-especial-ia';
-      if (s.includes('inteligencia') && s.includes('artificial')) return 'categoria-especial-ia';
 
       const isProjeto = s.includes('projeto');
       const isPratica = s.includes('pratica');

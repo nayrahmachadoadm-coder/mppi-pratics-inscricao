@@ -30,7 +30,6 @@ const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'estruturante-projeto', label: 'Projetos Estruturantes' },
   { key: 'finalistica-pratica', label: 'Práticas Finalísticas' },
   { key: 'estruturante-pratica', label: 'Práticas Estruturantes' },
-  { key: 'categoria-especial-ia', label: 'Categoria Especial (IA)' },
 ];
 
 const scoreOptions = [0,1,2,3,4,5];
@@ -68,7 +67,6 @@ const AdminJulgamento: React.FC = () => {
     'estruturante-projeto': { total: 0, done: 0 },
     'finalistica-pratica': { total: 0, done: 0 },
     'estruturante-pratica': { total: 0, done: 0 },
-    'categoria-especial-ia': { total: 0, done: 0 },
   });
 
   const [scores, setScores] = useState<any>({
@@ -95,7 +93,6 @@ const AdminJulgamento: React.FC = () => {
     'estruturante-projeto': false,
     'finalistica-pratica': false,
     'estruturante-pratica': false,
-    'categoria-especial-ia': false,
   });
   const [adminVotesOpen, setAdminVotesOpen] = useState(false);
   const [adminVotesLoading, setAdminVotesLoading] = useState(false);

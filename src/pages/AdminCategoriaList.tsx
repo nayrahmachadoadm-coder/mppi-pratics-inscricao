@@ -12,8 +12,7 @@ const areaLabelMap: Record<string, string> = {
   'finalistica-projeto': 'Projetos Finalísticos',
   'estruturante-projeto': 'Projetos Estruturantes',
   'finalistica-pratica': 'Práticas Finalísticas',
-  'estruturante-pratica': 'Práticas Estruturantes',
-  'categoria-especial-ia': 'Categoria Especial (Inteligência Artificial)'
+  'estruturante-pratica': 'Práticas Estruturantes'
 };
 
 // Geração de logomarca dinâmica com base em um seed (id/título)

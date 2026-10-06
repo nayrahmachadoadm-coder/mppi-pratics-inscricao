@@ -66,18 +66,32 @@ Deno.serve(async (req) => {
     let targetProfileId: string | null = null;
 
     if (targetEmail) {
-      const { data: allUsers } = await adminClient.auth.admin.listUsers();
-      const found = allUsers?.users.find((u: any) => (u.email || '').toLowerCase() === targetEmail) || null;
-      targetUserId = found?.id || null;
+      const { data: prof } = await adminClient
+        .from('profiles')
+        .select('id, auth_user_id')
+        .eq('email', targetEmail)
+        .maybeSingle();
+      
+      targetProfileId = prof?.id || null;
+      targetUserId = prof?.auth_user_id || null;
+
+      if (!targetUserId) {
+        let page = 1;
+        while (!targetUserId && page < 100) {
+          const { data: pageData } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
+          if (!pageData || pageData.users.length === 0) break;
+          const found = pageData.users.find((u: any) => (u.email || '').toLowerCase() === targetEmail);
+          if (found) {
+            targetUserId = found.id;
+            break;
+          }
+          page++;
+        }
+      }
+
       if (!targetUserId) {
         return new Response(JSON.stringify({ success: false, error: 'user_not_found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      const { data: prof } = await adminClient
-        .from('profiles')
-        .select('id')
-        .eq('auth_user_id', targetUserId)
-        .maybeSingle();
-      targetProfileId = prof?.id || null;
     } else if (targetUsername) {
       const { data: prof } = await adminClient
         .from('profiles')

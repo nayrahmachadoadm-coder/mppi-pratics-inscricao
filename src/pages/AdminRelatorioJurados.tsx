@@ -11,8 +11,7 @@ const areaLabels: Record<string, string> = {
   'finalistica-projeto': 'Projetos Finalísticos',
   'estruturante-projeto': 'Projetos Estruturantes',
   'finalistica-pratica': 'Práticas Finalísticas',
-  'estruturante-pratica': 'Práticas Estruturantes',
-  'categoria-especial-ia': 'Categoria Especial (IA)'
+  'estruturante-pratica': 'Práticas Estruturantes'
 };
 
 const AdminRelatorioJurados: React.FC = () => {

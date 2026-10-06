@@ -197,8 +197,7 @@ const AdminInscricaoDetails = () => {
       'finalistica-pratica': 'Prática Finalística',
       'finalistica-projeto': 'Projeto Finalístico',
       'estruturante-pratica': 'Prática Estruturante',
-      'estruturante-projeto': 'Projeto Estruturante',
-      'categoria-especial-ia': 'Categoria Especial – Inteligência Artificial'
+      'estruturante-projeto': 'Projeto Estruturante'
     };
     
     return areaMap[area] || area;

@@ -42,7 +42,7 @@ export function storeVote(categoria: string, inscricaoId: string) {
 }
 
 export function clearAllVotes() {
-  const categorias = ['finalistica-projeto', 'estruturante-projeto', 'finalistica-pratica', 'estruturante-pratica', 'categoria-especial-ia'];
+  const categorias = ['finalistica-projeto', 'estruturante-projeto', 'finalistica-pratica', 'estruturante-pratica'];
   categorias.forEach(categoria => {
     localStorage.removeItem(getLocalVoteKey(categoria));
   });
