@@ -1,69 +1,32 @@
--- ============================================================
--- SCRIPT DE MIGRAÇÃO: Triagem Administrativa
--- Execute este SQL no SQL Editor do Supabase Dashboard:
--- https://supabase.com/dashboard/project/ljbxctmywdpsfmjvmlmh/sql
--- ============================================================
+-- 1. Remoção da exigência do critério "Alinhamento aos ODS" para Projetos na edição de 2026.
+-- Esse script atualiza a trigger que validava e somava os pontos, removendo qualquer referência ao alinhamento_ods.
 
--- 1. Adicionar coluna parecer_triagem (se não existir)
-ALTER TABLE public.inscricoes
-ADD COLUMN IF NOT EXISTS parecer_triagem TEXT;
-
-COMMENT ON COLUMN public.inscricoes.parecer_triagem IS 'Parecer ou justificativa registrada pela comissão durante a triagem da inscrição.';
-
--- 2. Criar RPC para atualizar o status e o parecer da inscrição, restrita a admins
-CREATE OR REPLACE FUNCTION public.rpc_update_status_inscricao(
-    p_inscricao_id UUID,
-    p_status TEXT,
-    p_parecer TEXT DEFAULT NULL
-)
-RETURNS JSONB
-SECURITY DEFINER
-SET search_path = public, pg_temp
+CREATE OR REPLACE FUNCTION public.trg_check_ods_e_calcula_total()
+RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_uid UUID := auth.uid();
-    v_is_admin BOOLEAN;
-    v_current_status TEXT;
+    v_tipo_iniciativa TEXT;
 BEGIN
-    -- Verifica se usuário é admin
-    SELECT EXISTS (
-        SELECT 1 FROM public.user_roles 
-        WHERE user_id = v_uid AND role::text = 'admin'
-    ) INTO v_is_admin;
-
-    IF NOT v_is_admin THEN
-        RAISE EXCEPTION 'Acesso negado: Apenas administradores podem atualizar o status da inscrição.';
-    END IF;
-
-    -- Pega o status atual
-    SELECT status_inscricao INTO v_current_status 
+    -- Busca o tipo da iniciativa da inscrição avaliada
+    SELECT tipo_iniciativa INTO v_tipo_iniciativa 
     FROM public.inscricoes 
-    WHERE id = p_inscricao_id;
-
+    WHERE id = NEW.inscricao_id;
+    
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Inscrição % não encontrada.', p_inscricao_id;
+        RAISE EXCEPTION 'Inscrição % não encontrada.', NEW.inscricao_id;
     END IF;
 
-    -- Atualiza a inscrição
-    UPDATE public.inscricoes
-    SET 
-        status_inscricao = p_status,
-        parecer_triagem = p_parecer,
-        updated_at = timezone('utc'::text, now())
-    WHERE id = p_inscricao_id;
+    -- Regra ODS (Removida para 2026)
+    -- Não exige mais que Projetos pontuem ODS, nem proíbe Práticas.
 
-    RETURN jsonb_build_object(
-        'success', true,
-        'message', 'Status atualizado com sucesso'
-    );
-EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object(
-        'success', false,
-        'error', SQLERRM
-    );
+    -- Recálculo do Total unificado para ambos os tipos (sem ODS)
+    NEW.total := COALESCE(NEW.cooperacao, 0) + 
+                 COALESCE(NEW.inovacao, 0) + 
+                 COALESCE(NEW.resolutividade, 0) + 
+                 COALESCE(NEW.impacto_social, 0) + 
+                 COALESCE(NEW.replicabilidade, 0);
+
+    RETURN NEW;
 END;
 $$;
-
--- Confirmar que tudo foi criado com sucesso
-SELECT 'Migração aplicada com sucesso!' AS resultado;

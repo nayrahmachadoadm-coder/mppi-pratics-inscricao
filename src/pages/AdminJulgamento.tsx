@@ -100,7 +100,7 @@ const AdminJulgamento: React.FC = () => {
   const [adminVotesItems, setAdminVotesItems] = useState<MinhasAvaliacaoItem[]>([]);
   const [juradosList, setJuradosList] = useState<JuryMember[]>([]);
   const [selectedAdminJurado, setSelectedAdminJurado] = useState<string>('');
-  const votingClosed = true;
+  const votingClosed = false;
 
   const total = useMemo(() => {
     const vals = Object.values(scores) as number[];
