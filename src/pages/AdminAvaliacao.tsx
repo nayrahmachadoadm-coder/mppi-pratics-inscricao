@@ -47,17 +47,17 @@ const AdminAvaliacao = () => {
 
   const total = useMemo(() => {
     return Object.entries(scores).reduce((sum, [key, v]) => {
-      if (isPratica && key === 'alinhamento_ods') return sum;
+      if (key === 'alinhamento_ods') return sum;
       return sum + ((v as number) >= 0 ? (v as number) : 0);
     }, 0);
-  }, [scores, isPratica]);
+  }, [scores]);
 
   const isComplete = useMemo(() => {
     return Object.entries(scores).every(([key, v]) => {
-      if (isPratica && key === 'alinhamento_ods') return true;
+      if (key === 'alinhamento_ods') return true;
       return (v as number) >= 0;
     });
-  }, [scores, isPratica]);
+  }, [scores]);
 
   const load = async () => {
     try {
@@ -112,7 +112,7 @@ const AdminAvaliacao = () => {
         inovacao: scores.inovacao,
         resolutividade: scores.resolutividade,
         impacto_social: scores.impacto_social,
-        alinhamento_ods: isPratica ? null : scores.alinhamento_ods,
+        alinhamento_ods: 0, // Envia 0 para não quebrar a constraint do banco; este valor será ignorado na soma.
         replicabilidade: scores.replicabilidade,
       };
       const res = await submitAvaliacao(id, payload);
