@@ -104,16 +104,30 @@ const JuryManagement = () => {
           .select('*', { count: 'exact', head: true })
           .eq('edicao_ano', 2026);
         const total = totalInscricoes || 0;
-        const { data: evalRows } = await supabase
-          .from('avaliacoes')
-          .select('jurado_username, inscricoes!inner(edicao_ano)')
-          .eq('inscricoes.edicao_ano', 2026);
-        const counts: Record<string, number> = {};
-        for (const r of (evalRows || [])) {
-          const u = (r as any).jurado_username || '';
-          if (!u) continue;
-          counts[u] = (counts[u] || 0) + 1;
+        
+        let counts: Record<string, number> = {};
+        
+        // Tentar usar RPC com SECURITY DEFINER primeiro para contornar RLS
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_jury_evaluations_count');
+        if (!rpcError && rpcData) {
+          for (const r of rpcData as any[]) {
+            if (r.jurado_username) {
+              counts[r.jurado_username] = Number(r.avaliacoes_count);
+            }
+          }
+        } else {
+          // Fallback para select direto (sujeito a RLS se jurado)
+          const { data: evalRows } = await supabase
+            .from('avaliacoes')
+            .select('jurado_username, inscricoes!inner(edicao_ano)')
+            .eq('inscricoes.edicao_ano', 2026);
+          for (const r of (evalRows || [])) {
+            const u = (r as any).jurado_username || '';
+            if (!u) continue;
+            counts[u] = (counts[u] || 0) + 1;
+          }
         }
+
         const perc: Record<string, number> = {};
         for (const m of members) {
           const c = counts[m.username] || 0;
