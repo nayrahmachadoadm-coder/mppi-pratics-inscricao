@@ -790,6 +790,12 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
           <CheckCircle className="w-4 h-4" />
           Descrição dos Resultados Alcançados (mensuráveis obtidos nos últimos 3 anos - até 2.000 caracteres). *
         </Label>
+        <Alert className="mb-2 bg-blue-50 border-blue-200">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-xs text-blue-800">
+            <strong>Lembrete importante:</strong> Embora o anexo de documentos não seja obrigatório para o cadastro no Banco, recomendamos fortemente que você inclua neste campo <strong>links (Google Drive, OneDrive, etc.)</strong> contendo documentos, fotos ou planilhas que comprovem a execução da prática e os resultados alcançados. Certifique-se de que os links possuam permissão pública de leitura.
+          </AlertDescription>
+        </Alert>
         <Textarea
           id="resultadosAlcancados"
           value={formData.resultadosAlcancados}

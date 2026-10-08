@@ -104,7 +104,7 @@ const AdminRegulamento = () => {
             <p className="text-gray-700">5.4 Não poderão concorrer práticas ou projetos que já tenham sido vencedores em edições anteriores do Prêmio Melhores Práticas do MPPI, sendo a respectiva inscrição automaticamente indeferida.</p>
 
             <h3 id="sec-6" className="font-semibold mt-4 scroll-mt-24 text-sm">6. DAS INSCRIÇÕES</h3>
-            <p className="text-gray-700">6.1 As inscrições serão realizadas gratuitamente no período de 08 de setembro a 08 de outubro de 2026, mediante preenchimento do formulário eletrônico disponível no endereço: <a href="https://mppi-praticas-inscricao.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-praticas-inscricao.vercel.app/</a></p>
+            <p className="text-gray-700">6.1 As inscrições serão realizadas gratuitamente no período de 08 de setembro a 18 de outubro de 2026, mediante preenchimento do formulário eletrônico disponível no endereço: <a href="https://mppi-praticas-inscricao.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://mppi-praticas-inscricao.vercel.app/</a></p>
             <p className="text-gray-700">6.2 Cada participante poderá inscrever até 2 (duas) iniciativas, observados os seguintes limites:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
               <li>I — 1 (uma) prática, na área finalística ou estruturante;</li>
@@ -231,7 +231,7 @@ const AdminRegulamento = () => {
                 </tr>
                 <tr>
                   <td className="p-2">Período de inscrições</td>
-                  <td className="p-2">08/09/2026 a 08/10/2026</td>
+                  <td className="p-2">08/09/2026 a 18/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação da relação provisória das inscrições deferidas e indeferidas</td>

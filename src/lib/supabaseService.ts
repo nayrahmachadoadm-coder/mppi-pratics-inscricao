@@ -456,10 +456,15 @@ export async function getPeriodoInscricao(): Promise<{
 
     const parseDateLocal = (dateStr: string | undefined) => {
       if (!dateStr) return null;
-      // Handle both "YYYY-MM-DD HH:mm:ss" and "YYYY-MM-DDTHH:mm:ss..." formats
-      const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
-      const [year, month, day] = datePart.split('-');
-      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      let isoStr = dateStr.replace(' ', 'T');
+      if (isoStr.length === 10) { // Only date "YYYY-MM-DD"
+        isoStr += "T00:00:00";
+      }
+      const timePart = isoStr.split('T')[1];
+      if (timePart && !timePart.includes('Z') && !timePart.includes('-') && !timePart.includes('+')) {
+        isoStr += "-03:00";
+      }
+      return new Date(isoStr);
     };
 
     return {

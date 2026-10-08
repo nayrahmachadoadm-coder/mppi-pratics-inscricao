@@ -551,6 +551,79 @@ const AdminInscricaoDetails = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Informações Adicionais e Institucionalização */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  <CheckCircle className="w-4 h-4" />
+                  Informações Adicionais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Situação Atual</label>
+                    <p className="text-gray-900">{inscricao.situacao_atual || 'Não informada'}</p>
+                  </div>
+                  {inscricao.data_conclusao && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Data de Conclusão</label>
+                      <p className="text-gray-900">{inscricao.data_conclusao}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Participou de Edições Anteriores?</label>
+                    <p className="text-gray-900 flex items-center gap-1">{formatBooleanResponse(inscricao.participou_edicoes_anteriores)}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Foi Vencedor Anterior?</label>
+                    <p className="text-gray-900 flex items-center gap-1">{formatBooleanResponse(inscricao.foi_vencedor_anterior)}</p>
+                  </div>
+                  
+                  {inscricao.area_atuacao?.includes('pratica') && inscricao.cadastro_banco_praticas !== undefined && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Inscrita no Banco de Práticas?</label>
+                      <p className="text-gray-900 flex items-center gap-1">{(inscricao as any).cadastro_banco_praticas === true ? formatBooleanResponse(true) : formatBooleanResponse(false)}</p>
+                    </div>
+                  )}
+                  {inscricao.area_atuacao?.includes('projeto') && inscricao.institucionalizado_ato !== undefined && (
+                    <div>
+                      <label className="text-xs font-medium text-gray-600">Institucionalizado (Ato PGJ/PI)?</label>
+                      <p className="text-gray-900 flex items-center gap-1">{(inscricao as any).institucionalizado_ato === true ? formatBooleanResponse(true) : formatBooleanResponse(false)}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {((inscricao as any).observacoes || (inscricao as any).identificacao_projeto_metodologia || (inscricao as any).identificacao_banco_praticas) && (
+                  <div className="mt-4 space-y-4">
+                    <Separator />
+                    <h4 className="text-xs font-semibold text-gray-700">Outras Informações e Links</h4>
+                    
+                    {(inscricao as any).observacoes && (
+                      <div>
+                        <label className="text-xs font-medium text-gray-600">Observações (incluindo edições anteriores ou links anexos)</label>
+                        <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks((inscricao as any).observacoes)}</p>
+                      </div>
+                    )}
+                    
+                    {(inscricao as any).identificacao_projeto_metodologia && (
+                      <div>
+                        <label className="text-xs font-medium text-gray-600">Identificação do Projeto / Metodologia (Links anexos)</label>
+                        <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks((inscricao as any).identificacao_projeto_metodologia)}</p>
+                      </div>
+                    )}
+
+                    {(inscricao as any).identificacao_banco_praticas && (
+                      <div>
+                        <label className="text-xs font-medium text-gray-600">Identificação Banco de Práticas (Links anexos)</label>
+                        <p className="text-gray-900 whitespace-pre-wrap text-justify">{renderTextWithLinks((inscricao as any).identificacao_banco_praticas)}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
         </div>
       </div>
     </div>
