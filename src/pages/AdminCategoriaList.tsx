@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllInscricoes, AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
-import { ArrowLeft, Eye, Award, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Eye, Award, BarChart3, Trash2 } from 'lucide-react';
 import { hasRole } from '@/lib/auth';
+import DeleteInscricaoModal, { InscricaoDeleteTarget } from '@/components/DeleteInscricaoModal';
 
 const areaLabelMap: Record<string, string> = {
   'finalistica-projeto': 'Projetos Finalísticos',
@@ -54,6 +55,8 @@ const AdminCategoriaList = () => {
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<InscricaoDeleteTarget | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const itemsPerPage = 10;
 
   const areaLabel = useMemo(() => areaLabelMap[area || ''] || (area || ''), [area]);
@@ -98,6 +101,11 @@ const AdminCategoriaList = () => {
   const sortedInscricoes = useMemo(() => {
     return [...inscricoes].sort((a, b) => (a.titulo_iniciativa || '').localeCompare(b.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' }));
   }, [inscricoes]);
+
+  const handleDeleteSuccess = (deletedId: string) => {
+    setInscricoes((prev) => prev.filter((item) => item.id !== deletedId));
+    load();
+  };
 
   return (
     <div className="bg-gray-50">
@@ -195,7 +203,32 @@ const AdminCategoriaList = () => {
                             </div>
                           </div>
                         </div>
-                        {/* Botões removidos: o container inteiro é clicável para ver detalhes */}
+                        {/* Botão de Excluir Trabalho (Apenas Administrador) */}
+                        {isAdmin && (
+                          <div className="flex items-center self-center flex-shrink-0 ml-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md border border-transparent hover:border-red-200 transition-colors"
+                              title="Excluir trabalho inscrito (duplicidade ou categoria errada)"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setItemToDelete({
+                                  id: item.id,
+                                  titulo_iniciativa: item.titulo_iniciativa,
+                                  nome_completo: item.nome_completo,
+                                  lotacao: item.lotacao,
+                                  area_atuacao: item.area_atuacao,
+                                });
+                                setIsDeleteModalOpen(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="sr-only">Excluir trabalho</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -211,6 +244,17 @@ const AdminCategoriaList = () => {
           </main>
         </div>
       </div>
+
+      {/* Modal de confirmação em duas etapas para exclusão */}
+      <DeleteInscricaoModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        inscricao={itemToDelete}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 };

@@ -173,22 +173,39 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
   try {
     console.log('💾 Iniciando salvamento no Supabase...', { formData });
     
-    // Converter dados do formulário para formato do banco e gerar ID localmente
-    const inscricaoId = crypto.randomUUID();
+    // Obter o usuário logado
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Você precisa estar logado para salvar uma prática.' };
+    }
+
+    const inscricaoId = formData.id || crypto.randomUUID();
     const inscricaoData = {
       ...convertFormDataToSupabase(formData),
-      id: inscricaoId
+      id: inscricaoId,
+      user_id: user.id
     };
     
     console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
-    console.log('📊 Estrutura dos dados:', Object.keys(inscricaoData));
     
-    // Inserir dados na tabela inscricoes usando o cliente público que bypassa RLS
     console.log('📤 Enviando dados para Supabase...');
     
-    const { error } = await supabasePublic
-      .from('inscricoes')
-      .insert([inscricaoData]);
+    let error;
+    if (formData.id) {
+      // Atualizar existente
+      const { error: updateError } = await supabase
+        .from('inscricoes')
+        .update(inscricaoData)
+        .eq('id', inscricaoId)
+        .eq('user_id', user.id);
+      error = updateError;
+    } else {
+      // Inserir novo
+      const { error: insertError } = await supabase
+        .from('inscricoes')
+        .insert([inscricaoData]);
+      error = insertError;
+    }
     
     if (error) {
       console.error('❌ Erro ao salvar no Supabase:', error);

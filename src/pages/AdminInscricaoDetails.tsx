@@ -17,11 +17,13 @@ import {
   Users,
   Award,
   CheckCircle,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getInscricaoById, AdminInscricaoData, updateInscricaoStatus } from '@/lib/adminService';
 import { generatePDF } from '@/lib/pdfGenerator';
+import DeleteInscricaoModal from '@/components/DeleteInscricaoModal';
 import { useToast } from '@/hooks/use-toast';
 import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
 
@@ -77,6 +79,7 @@ const AdminInscricaoDetails = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [showIndeferirForm, setShowIndeferirForm] = useState<boolean>(false);
   const [parecerText, setParecerText] = useState<string>('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -323,13 +326,25 @@ const AdminInscricaoDetails = () => {
               </div>
             </div>
             
-            <Button
-              onClick={handleDownloadPDF}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Baixar PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              {viewerIsAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir Trabalho
+                </Button>
+              )}
+              <Button
+                onClick={handleDownloadPDF}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Baixar PDF
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -626,6 +641,30 @@ const AdminInscricaoDetails = () => {
             </Card>
         </div>
       </div>
+
+      {/* Modal de confirmação em duas etapas para exclusão */}
+      <DeleteInscricaoModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        inscricao={
+          inscricao
+            ? {
+                id: inscricao.id,
+                titulo_iniciativa: inscricao.titulo_iniciativa,
+                nome_completo: inscricao.nome_completo,
+                lotacao: inscricao.lotacao,
+                area_atuacao: inscricao.area_atuacao,
+              }
+            : null
+        }
+        onSuccess={() => {
+          navigate(
+            inscricao?.area_atuacao
+              ? `/admin/inscritos?categoria=${encodeURIComponent(inscricao.area_atuacao)}`
+              : '/admin/inscritos'
+          );
+        }}
+      />
     </div>
   );
 };

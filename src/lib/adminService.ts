@@ -534,3 +534,70 @@ export async function updateInscricaoStatus(
     return { success: false, error: err?.message || 'Erro inesperado ao atualizar status' };
   }
 }
+
+/**
+ * Exclui permanentemente um trabalho inscrito do sistema e do banco de dados
+ */
+export async function deleteInscricao(
+  id: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    console.log('🗑️ deleteInscricao iniciada para ID:', id);
+
+    // ── Tentativa 1: via RPC SECURITY DEFINER (rpc_delete_inscricao) ──
+    try {
+      const { data, error } = await (supabase as any).rpc('rpc_delete_inscricao', {
+        p_inscricao_id: id,
+      });
+
+      console.log('📡 RPC rpc_delete_inscricao – data:', data, '– error:', error);
+
+      if (!error && data) {
+        const result = typeof data === 'string' ? JSON.parse(data) : data;
+        if (result?.success) {
+          console.log('✅ Inscrição excluída via RPC com sucesso');
+          return { success: true, message: result.message || 'Trabalho excluído com sucesso' };
+        }
+        if (result?.error) {
+          console.warn('⚠️ RPC rpc_delete_inscricao retornou erro:', result.error);
+        }
+      }
+      if (error) {
+        console.warn('⚠️ Erro na chamada da RPC rpc_delete_inscricao, tentando fallback direto:', error.message);
+      }
+    } catch (rpcErr: any) {
+      console.warn('⚠️ Exceção ao executar RPC rpc_delete_inscricao, usando fallback direto:', rpcErr?.message);
+    }
+
+    // ── Tentativa 2: Exclusão direta no banco de dados (com limpeza defensiva de dependências) ──
+    console.log('🗑️ Fallback: Limpando tabelas associadas e excluindo inscrição diretamente...');
+
+    // Limpeza defensiva de dependências caso não haja ON DELETE CASCADE ativo no schema
+    await Promise.allSettled([
+      supabase.from('avaliacoes').delete().eq('inscricao_id', id),
+      supabase.from('votos_populares').delete().eq('inscricao_id', id),
+      (supabase as any).from('inscricao_status_historico').delete().eq('inscricao_id', id),
+      (supabase as any).from('finalistas_snapshot').delete().eq('inscricao_id', id),
+      (supabase as any).from('apuracao_resultados').delete().eq('inscricao_id', id),
+    ]);
+
+    // Exclusão do registro principal em inscricoes
+    const { data: deletedRows, error: deleteError } = await supabase
+      .from('inscricoes')
+      .delete()
+      .eq('id', id)
+      .select('id');
+
+    if (deleteError) {
+      console.error('❌ Erro no DELETE de inscricoes:', deleteError);
+      return { success: false, error: `Erro ao excluir inscrição: ${deleteError.message}` };
+    }
+
+    console.log('✅ Inscrição excluída com sucesso via DELETE direto:', deletedRows);
+    return { success: true, message: 'Trabalho inscrito excluído com sucesso' };
+  } catch (err: any) {
+    console.error('❌ Erro inesperado ao excluir inscrição:', err);
+    return { success: false, error: err?.message || 'Erro inesperado ao excluir inscrição' };
+  }
+}
+

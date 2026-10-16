@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getInscricoesStats, getAllInscricoes, AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
 import { hasRole, currentUserMustChangePassword } from '@/lib/auth';
-import { Key } from 'lucide-react';
-import { Users } from 'lucide-react';
-import { Award } from 'lucide-react';
+import { Key, Users, Award, Trash2 } from 'lucide-react';
+import DeleteInscricaoModal, { InscricaoDeleteTarget } from '@/components/DeleteInscricaoModal';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 
@@ -24,6 +23,11 @@ const AdminCategorias = () => {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  // Estados para exclusão com confirmação em duas etapas
+  const [itemToDelete, setItemToDelete] = useState<InscricaoDeleteTarget | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   // Estado para exibição inline da lista
   const [selectedArea, setSelectedArea] = useState<CategoriaKey | null>(null);
@@ -40,28 +44,60 @@ const AdminCategorias = () => {
     'estruturante-pratica': 'Práticas Estruturantes'
   };
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        const res = await getInscricoesStats();
-        if (res.success && res.data) {
-          const map: Record<string, number> = {};
-          res.data.por_area.forEach((item) => {
-            map[item.area] = item.count;
-          });
-          setCounts(map);
-        } else {
-          setError(res.error || 'Erro ao obter estatísticas');
-        }
-      } catch (e) {
-        setError('Erro inesperado ao carregar estatísticas');
-      } finally {
-        setLoading(false);
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await getInscricoesStats();
+      if (res.success && res.data) {
+        const map: Record<string, number> = {};
+        res.data.por_area.forEach((item) => {
+          map[item.area] = item.count;
+        });
+        setCounts(map);
+      } else {
+        setError(res.error || 'Erro ao obter estatísticas');
       }
+    } catch (e) {
+      setError('Erro inesperado ao carregar estatísticas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadList = async () => {
+    if (!selectedArea) return;
+    try {
+      setListLoading(true);
+      setListError('');
+      const filters: InscricaoFilters = { area_atuacao: selectedArea };
+      const res = await getAllInscricoes(currentPage, itemsPerPage, filters);
+      if (res.success) {
+        setInscricoes(res.data || []);
+        // Scroll suave para a seção da lista
+        setTimeout(() => {
+          const el = document.getElementById('lista-inscritos');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      } else {
+        setListError(res.error || 'Erro ao carregar inscrições');
+        setInscricoes([]);
+      }
+    } catch (e) {
+      setListError('Erro inesperado ao carregar inscrições');
+      setInscricoes([]);
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const admin = await hasRole('admin');
+      setIsAdmin(admin);
     };
-    load();
+    checkRole();
+    loadStats();
   }, []);
 
   // Ler parâmetro da URL para selecionar categoria automaticamente
@@ -82,34 +118,15 @@ const AdminCategorias = () => {
 
   // Carregar lista quando uma categoria é selecionada ou a página muda
   useEffect(() => {
-    const loadList = async () => {
-      if (!selectedArea) return;
-      try {
-        setListLoading(true);
-        setListError('');
-        const filters: InscricaoFilters = { area_atuacao: selectedArea };
-        const res = await getAllInscricoes(currentPage, itemsPerPage, filters);
-        if (res.success) {
-          setInscricoes(res.data || []);
-          // Scroll suave para a seção da lista
-          setTimeout(() => {
-            const el = document.getElementById('lista-inscritos');
-            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 50);
-        } else {
-          setListError(res.error || 'Erro ao carregar inscrições');
-          setInscricoes([]);
-        }
-      } catch (e) {
-        setListError('Erro inesperado ao carregar inscrições');
-        setInscricoes([]);
-      } finally {
-        setListLoading(false);
-      }
-    };
     loadList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedArea, currentPage]);
+
+  const handleDeleteSuccess = async (deletedId: string) => {
+    setInscricoes((prev) => prev.filter((item) => item.id !== deletedId));
+    await loadStats();
+    await loadList();
+  };
 
   return (
     <div className="bg-gray-50">
@@ -219,7 +236,32 @@ const AdminCategorias = () => {
                               <div className="mt-0.5 text-xs text-gray-600 truncate"><span className="font-medium">Lotação:</span> {item.lotacao}</div>
                             </div>
                           </div>
-                          {/* Botões removidos: o container inteiro é clicável para ver detalhes */}
+                          {/* Botão de Excluir Trabalho (Apenas Administrador) */}
+                          {isAdmin && (
+                            <div className="flex items-center self-center flex-shrink-0 ml-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md border border-transparent hover:border-red-200 transition-colors"
+                                title="Excluir trabalho inscrito (duplicidade ou categoria errada)"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setItemToDelete({
+                                    id: item.id,
+                                    titulo_iniciativa: item.titulo_iniciativa,
+                                    nome_completo: item.nome_completo,
+                                    lotacao: item.lotacao,
+                                    area_atuacao: item.area_atuacao,
+                                  });
+                                  setIsDeleteModalOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="sr-only">Excluir trabalho</span>
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -237,6 +279,17 @@ const AdminCategorias = () => {
           </main>
         </div>
       </div>
+
+      {/* Modal de confirmação em duas etapas para exclusão */}
+      <DeleteInscricaoModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        inscricao={itemToDelete}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 };

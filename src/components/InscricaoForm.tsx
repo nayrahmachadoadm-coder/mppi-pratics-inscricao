@@ -61,6 +61,7 @@ interface FormData {
   // Declaração
   concordaTermos: boolean;
   localData: string;
+  id?: string; // Para edição
 }
 
 const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) => {
@@ -105,50 +106,62 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
   const [datasPeriodo, setDatasPeriodo] = useState<{ inicio: Date | null, fim: Date | null }>({ inicio: null, fim: null });
 
   useEffect(() => {
-    const fetchPeriodo = async () => {
-      try {
-        if (isAdminBypass) {
-          console.log("DEBUG: Forced bypass active (admin test route)");
-          const periodo = await getPeriodoInscricao();
-          setDatasPeriodo(periodo);
-          setPeriodoInscricaoStatus('aberto');
-          return;
+    const initForm = async () => {
+      // O formulário é agora permanente (Banco de Práticas)
+      setPeriodoInscricaoStatus('aberto');
+      
+      const searchParams = new URLSearchParams(window.location.search);
+      const editId = searchParams.get('id');
+      
+      if (editId) {
+        try {
+          const { data, error } = await supabase
+            .from('inscricoes')
+            .select('*')
+            .eq('id', editId)
+            .single();
+            
+          if (data && !error) {
+            setFormData({
+              id: data.id,
+              nomeCompleto: data.nome_completo || '',
+              cargoFuncao: data.cargo_funcao || '',
+              matricula: data.matricula || '',
+              unidadeSetor: data.lotacao || '',
+              telefoneInstitucional: data.telefone || '',
+              emailInstitucional: data.email_institucional || '',
+              equipeEnvolvida: data.publico_alvo || '',
+              area: data.area_atuacao || '',
+              tituloIniciativa: data.titulo_iniciativa || '',
+              anoInicioExecucao: data.data_inicio || '',
+              situacaoAtual: data.situacao_atual || '',
+              cadastroBancoPraticas: data.cadastro_banco_praticas ? 'sim' : 'nao',
+              institucionalizadoAto: data.institucionalizado_ato ? 'sim' : 'nao',
+              identificacaoProjetoMetodologia: data.identificacao_projeto_metodologia || '',
+              resumoExecutivo: data.descricao_iniciativa || '',
+              problemaNecessidade: data.problema_necessidade || '',
+              objetivosEstrategicos: data.objetivos || '',
+              etapasMetodologia: data.metodologia || '',
+              resultadosAlcancados: data.principais_resultados || '',
+              cooperacao: data.cooperacao || '',
+              inovacao: data.inovacao || '',
+              resolutividade: data.resolutividade || '',
+              impactoSocial: data.impacto_social || '',
+              alinhamentoODS: data.alinhamento_ods || '',
+              replicabilidade: data.replicabilidade || '',
+              participouEdicoesAnteriores: data.participou_edicoes_anteriores ? 'sim' : 'nao',
+              foiVencedorAnterior: data.foi_vencedor_anterior ? 'sim' : 'nao',
+              especificarEdicoesAnteriores: data.observacoes || '',
+              concordaTermos: data.declaracao || false,
+              localData: data.local_data || '',
+            });
+          }
+        } catch (error) {
+          console.error("Erro ao carregar prática para edição:", error);
         }
-
-        console.log("DEBUG: Checking admin role...");
-        // Fast direct check for admin
-        let isAdmin = await hasRole('admin');
-        
-        console.log("DEBUG: isAdmin result:", isAdmin);
-
-        const periodo = await getPeriodoInscricao();
-        setDatasPeriodo(periodo);
-
-        if (isAdmin) {
-          console.log("DEBUG: Bypassing date check for admin");
-          setPeriodoInscricaoStatus('aberto');
-          return;
-        }
-
-        if (!periodo.inicio || !periodo.fim) {
-          setPeriodoInscricaoStatus('aberto'); // Fallback if no timeline defined
-          return;
-        }
-        
-        const now = new Date();
-        if (now < periodo.inicio) {
-          setPeriodoInscricaoStatus('fechado_antes');
-        } else if (now > periodo.fim) {
-          setPeriodoInscricaoStatus('fechado_depois');
-        } else {
-          setPeriodoInscricaoStatus('aberto');
-        }
-      } catch (error) {
-        console.error("DEBUG: Error in fetchPeriodo:", error);
-        setPeriodoInscricaoStatus('fechado_antes');
       }
     };
-    fetchPeriodo();
+    initForm();
   }, []);
 
   useEffect(() => {
