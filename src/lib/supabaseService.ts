@@ -173,35 +173,42 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
   try {
     console.log('💾 Iniciando salvamento no Supabase...', { formData });
     
-    // Obter o usuário logado
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { success: false, error: 'Você precisa estar logado para salvar uma prática.' };
+    // Obter o usuário logado se houver (opcional para o formulário público)
+    let userId: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
+    } catch {
+      // Proponente não autenticado (inscrição pública direta)
     }
 
     const inscricaoId = formData.id || crypto.randomUUID();
-    const inscricaoData = {
+    const inscricaoData: any = {
       ...convertFormDataToSupabase(formData),
       id: inscricaoId,
-      user_id: user.id
     };
+    if (userId) {
+      inscricaoData.user_id = userId;
+    }
     
     console.log('🔄 Dados convertidos para Supabase:', inscricaoData);
-    
     console.log('📤 Enviando dados para Supabase...');
     
     let error;
     if (formData.id) {
       // Atualizar existente
-      const { error: updateError } = await supabase
-        .from('inscricoes')
-        .update(inscricaoData)
-        .eq('id', inscricaoId)
-        .eq('user_id', user.id);
+      const client = userId ? supabase : supabasePublic;
+      let query = client.from('inscricoes').update(inscricaoData).eq('id', inscricaoId);
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      const { error: updateError } = await query;
       error = updateError;
     } else {
-      // Inserir novo
-      const { error: insertError } = await supabase
+      // Inserir novo registro usando supabasePublic
+      const { error: insertError } = await supabasePublic
         .from('inscricoes')
         .insert([inscricaoData]);
       error = insertError;

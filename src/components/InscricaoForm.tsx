@@ -442,7 +442,7 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
          console.error('❌ Erro ao salvar no Supabase:', supabaseResult.error);
          toast({
            title: "Erro ao processar inscrição",
-           description: "Houve um problema ao salvar sua inscrição. Tente novamente ou entre em contato conosco.",
+           description: supabaseResult.error || "Houve um problema ao salvar sua inscrição. Tente novamente ou entre em contato conosco.",
            variant: "destructive",
          });
        }

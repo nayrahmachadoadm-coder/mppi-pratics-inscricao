@@ -47,16 +47,8 @@ const App = () => (
           {/* Página principal para inscrição do público */}
           <Route path="/" element={<Index />} />
           <Route path="/index" element={<Index />} />
-          <Route path="/inscricao" element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } />
-          <Route path="/confirmacao" element={
-            <ProtectedRoute>
-              <ConfirmacaoInscricao />
-            </ProtectedRoute>
-          } />
+          <Route path="/inscricao" element={<Index />} />
+          <Route path="/confirmacao" element={<ConfirmacaoInscricao />} />
           
           <Route path="/login" element={<ProponenteAuth />} />
           <Route path="/minhas-praticas" element={
