@@ -18,14 +18,19 @@ import {
   Award,
   CheckCircle,
   XCircle,
-  Trash2
+  Trash2,
+  Clock,
+  AlertTriangle,
+  CheckCircle2
 } from 'lucide-react';
 import { isAuthenticated, hasRole } from '@/lib/auth';
-import { getInscricaoById, AdminInscricaoData, updateInscricaoStatus } from '@/lib/adminService';
+import { getInscricaoById, getAllInscricoes, AdminInscricaoData, updateInscricaoStatus } from '@/lib/adminService';
 import { generatePDF } from '@/lib/pdfGenerator';
 import DeleteInscricaoModal from '@/components/DeleteInscricaoModal';
 import { useToast } from '@/hooks/use-toast';
 import { formatObjetivoEstrategico } from '@/utils/objetivosEstrategicos';
+import { formatDateTime } from '@/utils/date';
+import { analyzeDuplicates, DuplicateItemMeta } from '@/utils/duplicateInscricoes';
 
 // Utilitário para transformar URLs em links clicáveis com estilo
 const renderTextWithLinks = (text?: string) => {
@@ -80,6 +85,7 @@ const AdminInscricaoDetails = () => {
   const [showIndeferirForm, setShowIndeferirForm] = useState<boolean>(false);
   const [parecerText, setParecerText] = useState<string>('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [duplicateMeta, setDuplicateMeta] = useState<DuplicateItemMeta | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -110,14 +116,26 @@ const AdminInscricaoDetails = () => {
       setLoading(true);
       setError('');
       
-      
       const result = await getInscricaoById(inscricaoId);
       
       if (result.success && result.data && result.data.length > 0) {
-          const inscricaoData = result.data[0];
-          
-          setInscricao(inscricaoData);
-        } else {
+        const inscricaoData = result.data[0];
+        setInscricao(inscricaoData);
+
+        // Verificar duplicidades na categoria para orientar o administrador conforme o Edital (Item 6.3)
+        if (inscricaoData.area_atuacao) {
+          try {
+            const catRes = await getAllInscricoes(1, 100, { area_atuacao: inscricaoData.area_atuacao });
+            if (catRes.success && catRes.data) {
+              const analysis = analyzeDuplicates(catRes.data);
+              const meta = analysis.metaById.get(inscricaoData.id);
+              setDuplicateMeta(meta || null);
+            }
+          } catch (dupErr) {
+            console.warn('Erro ao verificar duplicidades da inscrição:', dupErr);
+          }
+        }
+      } else {
         setError(result.error || 'Inscrição não encontrada');
       }
     } catch (err) {
@@ -320,9 +338,16 @@ const AdminInscricaoDetails = () => {
                 <h1 className="text-lg font-semibold text-gray-900">
                   Detalhes da Inscrição
                 </h1>
-                <p className="text-xs text-gray-500">
-                  ID: {inscricao.id}
-                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-500">
+                    ID: {inscricao.id}
+                  </p>
+                  <span className="text-gray-300">•</span>
+                  <div className="inline-flex items-center gap-1.5 text-xs text-blue-900 bg-blue-50 border border-blue-200/70 px-2 py-0.5 rounded font-medium">
+                    <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                    <span>Inscrição realizada em: <strong>{formatDateTime(inscricao.created_at)}</strong></span>
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -331,7 +356,12 @@ const AdminInscricaoDetails = () => {
                 <Button
                   variant="outline"
                   onClick={() => setIsDeleteModalOpen(true)}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  className={`flex items-center gap-2 text-xs ${
+                    duplicateMeta?.isOlder
+                      ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-300 font-semibold'
+                      : 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200'
+                  }`}
+                  title={duplicateMeta?.isOlder ? 'Excluir esta inscrição anterior (substituída)' : 'Excluir trabalho'}
                 >
                   <Trash2 className="w-4 h-4" />
                   Excluir Trabalho
@@ -352,6 +382,100 @@ const AdminInscricaoDetails = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Conteúdo principal sem barra lateral */}
         <div className="space-y-6">
+
+            {/* Banner de Aviso de Inscrição Anterior (Substituída) - Edital 6.3 */}
+            {duplicateMeta?.isDuplicate && duplicateMeta.isOlder && (
+              <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 shadow-sm text-amber-950">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide flex items-center gap-1.5">
+                        <span>⚠️ Atenção: Inscrição Anterior (Substituída)</span>
+                      </h3>
+                      <Badge variant="destructive" className="bg-amber-600 text-white text-xs">
+                        Versão {duplicateMeta.positionInGroup} de {duplicateMeta.totalInGroup}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-amber-900 mt-1.5 leading-relaxed">
+                      Esta inscrição foi enviada em <strong>{formatDateTime(inscricao.created_at)}</strong>.
+                      {duplicateMeta.latestInscricao && (
+                        <span>
+                          {' '}Posteriormente, o proponente encaminhou uma nova versão deste trabalho em <strong>{formatDateTime(duplicateMeta.latestInscricao.created_at)}</strong>.
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs font-semibold text-amber-950 mt-1">
+                      De acordo com o Edital (Item 6.3), havendo mais de uma inscrição do mesmo trabalho/proponente, <u>apenas a última inscrição encaminhada é considerada válida</u>.
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-amber-200/80 flex flex-wrap items-center gap-2">
+                      {duplicateMeta.latestInscricao && (
+                        <Button
+                          size="sm"
+                          className="bg-primary text-white hover:bg-primary-dark text-xs flex items-center gap-1.5 shadow-sm"
+                          onClick={() => navigate(`/admin/inscricao/${duplicateMeta.latestInscricao!.id}`)}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Visualizar Última Inscrição (Válida)
+                        </Button>
+                      )}
+                      {viewerIsAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-300 text-red-700 bg-white hover:bg-red-50 text-xs flex items-center gap-1.5 shadow-sm"
+                          onClick={() => setIsDeleteModalOpen(true)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Excluir Esta Inscrição Anterior
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Banner de Confirmação de Última Inscrição Válida - Edital 6.3 */}
+            {duplicateMeta?.isDuplicate && duplicateMeta.isLatest && (
+              <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm text-emerald-950">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-emerald-900 uppercase tracking-wide">
+                        ✅ Última Inscrição Encaminhada (Válida pelo Edital)
+                      </h3>
+                      <Badge className="bg-emerald-600 text-white text-xs">
+                        Versão {duplicateMeta.positionInGroup} de {duplicateMeta.totalInGroup} (Mais Recente)
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                      Esta é a inscrição mais recente deste trabalho/proponente, realizada em <strong>{formatDateTime(inscricao.created_at)}</strong>.
+                      Conforme as normas do certame (Edital Item 6.3), <strong>esta é a versão oficial considerada válida para avaliação da comissão julgadora</strong>.
+                    </p>
+                    {duplicateMeta.olderInscricoes && duplicateMeta.olderInscricoes.length > 0 && (
+                      <div className="mt-2.5 pt-2 border-t border-emerald-200 text-xs text-emerald-900">
+                        <span className="font-medium">Inscrição(ões) anterior(es) arquivada(s):</span>
+                        <div className="flex flex-wrap gap-2 mt-1.5">
+                          {duplicateMeta.olderInscricoes.map((old) => (
+                            <Button
+                              key={old.id}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100"
+                              onClick={() => navigate(`/admin/inscricao/${old.id}`)}
+                            >
+                              Ver envio anterior de {formatDateTime(old.created_at)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {viewerIsAdmin && inscricao.status_inscricao !== 'Substituída' && (
               <Card className="border-blue-200 shadow-sm">
@@ -473,18 +597,25 @@ const AdminInscricaoDetails = () => {
                   <label className="text-xs font-medium text-gray-600">Título da Iniciativa</label>
                   <p className="text-gray-900 font-medium">{inscricao.titulo_iniciativa}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-600">Área de Atuação</label>
-                    <Badge variant="outline" className="mt-1">
+                    <Badge variant="outline" className="mt-1 block w-fit">
                       {formatAreaAtuacao(inscricao.area_atuacao)}
                     </Badge>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-600">Ano de Início</label>
-                    <p className="text-gray-900 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
+                    <p className="text-gray-900 flex items-center gap-2 mt-1">
+                      <Calendar className="w-4 h-4 text-gray-500" />
                       {formatDataInicio(inscricao.data_inicio)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Data e Hora de Envio</label>
+                    <p className="text-blue-900 font-semibold flex items-center gap-1.5 mt-1">
+                      <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      {formatDateTime(inscricao.created_at)}
                     </p>
                   </div>
                 </div>
@@ -654,6 +785,9 @@ const AdminInscricaoDetails = () => {
                 nome_completo: inscricao.nome_completo,
                 lotacao: inscricao.lotacao,
                 area_atuacao: inscricao.area_atuacao,
+                created_at: inscricao.created_at,
+                isOlderDuplicate: duplicateMeta?.isOlder,
+                latestCreatedAt: duplicateMeta?.latestInscricao?.created_at,
               }
             : null
         }

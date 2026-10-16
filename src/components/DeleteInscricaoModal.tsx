@@ -23,8 +23,11 @@ import {
   Loader2, 
   FileText,
   User,
-  Building
+  Building,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
+import { formatDateTime } from '@/utils/date';
 
 export interface InscricaoDeleteTarget {
   id: string;
@@ -32,6 +35,9 @@ export interface InscricaoDeleteTarget {
   nome_completo?: string;
   lotacao?: string;
   area_atuacao?: string;
+  created_at?: string;
+  isOlderDuplicate?: boolean;
+  latestCreatedAt?: string;
 }
 
 interface DeleteInscricaoModalProps {
@@ -203,12 +209,32 @@ export const DeleteInscricaoModal: React.FC<DeleteInscricaoModalProps> = ({
                 </div>
               )}
 
+              {inscricao.created_at && (
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-200/60 text-blue-800">
+                  <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                  <span>
+                    <strong className="text-blue-900">Data e Hora da Inscrição:</strong> {formatDateTime(inscricao.created_at)}
+                  </span>
+                </div>
+              )}
+
               <div className="pt-1 border-t border-gray-200/60">
                 <span className="inline-block px-2 py-0.5 bg-white border border-gray-200 rounded text-gray-700 font-medium text-[11px]">
                   Categoria: {categoriaFormatada}
                 </span>
               </div>
             </div>
+
+            {inscricao.isOlderDuplicate && (
+              <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <AlertDescription className="text-xs leading-relaxed">
+                  <strong>Adequação ao Edital:</strong> Esta inscrição é anterior à versão mais recente
+                  {inscricao.latestCreatedAt ? ` (enviada em ${formatDateTime(inscricao.latestCreatedAt)})` : ''}.
+                  Ao excluí-la, você regulariza o certame e a <strong>última inscrição permanecerá válida</strong> para avaliação da comissão julgadora.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <p className="text-xs text-gray-600 leading-relaxed">
               Ao avançar, este trabalho e todos os registros associados (avaliações de jurados, votos populares e histórico) serão marcados para eliminação definitiva.

@@ -110,7 +110,7 @@ const AdminRegulamento = () => {
               <li>I — 1 (uma) prática, na área finalística ou estruturante;</li>
               <li>II — 1 (um) projeto, na área finalística ou estruturante; e</li>
             </ul>
-            <p className="text-gray-700">6.3 Havendo mais de uma inscrição do mesmo participante em uma das modalidades previstas nos incisos do item 6.2, será considerada válida apenas a primeira inscrição encaminhada.</p>
+            <p className="text-gray-700">6.3 Havendo mais de uma inscrição do mesmo participante em uma das modalidades previstas nos incisos do item 6.2, será considerada válida apenas a última inscrição encaminhada.</p>
             <p className="text-gray-700">6.4 Para concorrer ao Prêmio:</p>
             <ul className="list-none pl-6 text-gray-700 space-y-1">
               <li>I — as práticas deverão estar regularmente inscritas no Banco de Práticas do MPPI, nos termos do Ato PGJ/PI nº 1.335/2023; e</li>
