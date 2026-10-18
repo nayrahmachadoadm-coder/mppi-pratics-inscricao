@@ -11,6 +11,7 @@ import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerpr
 import { submitVotoPopular } from '@/lib/votoPopularService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
+type FinalistaExibido = Pick<CategoriaRankingItem, 'inscricao' | 'media_total'>;
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
@@ -23,7 +24,7 @@ const AdminVotoPopular = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [finalistas, setFinalistas] = useState<Record<CategoriaKey, CategoriaRankingItem[]>>({
+  const [finalistas, setFinalistas] = useState<Record<CategoriaKey, FinalistaExibido[]>>({
     'finalistica-projeto': [],
     'estruturante-projeto': [],
     'finalistica-pratica': [],
@@ -40,7 +41,7 @@ const AdminVotoPopular = () => {
       setLoading(true);
       setError('');
       try {
-        const results: Record<CategoriaKey, CategoriaRankingItem[]> = {
+        const results: Record<CategoriaKey, FinalistaExibido[]> = {
           'finalistica-projeto': [],
           'estruturante-projeto': [],
           'finalistica-pratica': [],
