@@ -14,9 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      apuracao_execucoes: {
+        Row: {
+          data_execucao: string
+          executor: string
+          hash_insumos: string | null
+          id: string
+        }
+        Insert: {
+          data_execucao?: string
+          executor: string
+          hash_insumos?: string | null
+          id?: string
+        }
+        Update: {
+          data_execucao?: string
+          executor?: string
+          hash_insumos?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      apuracao_resultados: {
+        Row: {
+          categoria: string
+          classificacao_final: number | null
+          criterio_desempate: string | null
+          execucao_id: string | null
+          id: string
+          inscricao_id: string | null
+          is_finalista: boolean
+          maior_voto_categoria: number
+          nota_popular: number | null
+          nota_tecnica: number
+          pontuacao_final: number | null
+          votos_validos: number
+        }
+        Insert: {
+          categoria: string
+          classificacao_final?: number | null
+          criterio_desempate?: string | null
+          execucao_id?: string | null
+          id?: string
+          inscricao_id?: string | null
+          is_finalista?: boolean
+          maior_voto_categoria?: number
+          nota_popular?: number | null
+          nota_tecnica: number
+          pontuacao_final?: number | null
+          votos_validos?: number
+        }
+        Update: {
+          categoria?: string
+          classificacao_final?: number | null
+          criterio_desempate?: string | null
+          execucao_id?: string | null
+          id?: string
+          inscricao_id?: string | null
+          is_finalista?: boolean
+          maior_voto_categoria?: number
+          nota_popular?: number | null
+          nota_tecnica?: number
+          pontuacao_final?: number | null
+          votos_validos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apuracao_resultados_execucao_id_fkey"
+            columns: ["execucao_id"]
+            isOneToOne: false
+            referencedRelation: "apuracao_execucoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apuracao_resultados_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apuracao_resultados_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_duplicidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avaliacoes: {
         Row: {
-          alinhamento_ods: number
+          alinhamento_ods: number | null
           cooperacao: number
           created_at: string
           id: string
@@ -30,7 +118,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          alinhamento_ods: number
+          alinhamento_ods?: number | null
           cooperacao: number
           created_at?: string
           id?: string
@@ -44,7 +132,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          alinhamento_ods?: number
+          alinhamento_ods?: number | null
           cooperacao?: number
           created_at?: string
           id?: string
@@ -65,6 +153,187 @@ export type Database = {
             referencedRelation: "inscricoes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "avaliacoes_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_duplicidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categoria_parametros: {
+        Row: {
+          divisor: number
+          tipo_iniciativa: string
+        }
+        Insert: {
+          divisor: number
+          tipo_iniciativa: string
+        }
+        Update: {
+          divisor?: number
+          tipo_iniciativa?: string
+        }
+        Relationships: []
+      }
+      cronograma_parametros: {
+        Row: {
+          chave: string
+          descricao: string | null
+          valor_data: string | null
+        }
+        Insert: {
+          chave: string
+          descricao?: string | null
+          valor_data?: string | null
+        }
+        Update: {
+          chave?: string
+          descricao?: string | null
+          valor_data?: string | null
+        }
+        Relationships: []
+      }
+      finalistas_execucoes: {
+        Row: {
+          data_execucao: string
+          executor: string
+          id: string
+          ignorar_pendencias: boolean | null
+          julgadores_considerados: number
+          justificativa: string | null
+        }
+        Insert: {
+          data_execucao?: string
+          executor: string
+          id?: string
+          ignorar_pendencias?: boolean | null
+          julgadores_considerados: number
+          justificativa?: string | null
+        }
+        Update: {
+          data_execucao?: string
+          executor?: string
+          id?: string
+          ignorar_pendencias?: boolean | null
+          julgadores_considerados?: number
+          justificativa?: string | null
+        }
+        Relationships: []
+      }
+      finalistas_snapshot: {
+        Row: {
+          categoria: string
+          created_at: string
+          divisor: number
+          id: string
+          inscricao_id: string | null
+          julgadores_count: number
+          media_cooperacao: number | null
+          media_impacto: number | null
+          media_inovacao: number | null
+          media_replicabilidade: number | null
+          media_resolutividade: number | null
+          nota_tecnica_calculada: number
+          posicao_tecnica: number
+          publicado_por: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          divisor: number
+          id?: string
+          inscricao_id?: string | null
+          julgadores_count: number
+          media_cooperacao?: number | null
+          media_impacto?: number | null
+          media_inovacao?: number | null
+          media_replicabilidade?: number | null
+          media_resolutividade?: number | null
+          nota_tecnica_calculada: number
+          posicao_tecnica: number
+          publicado_por: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          divisor?: number
+          id?: string
+          inscricao_id?: string | null
+          julgadores_count?: number
+          media_cooperacao?: number | null
+          media_impacto?: number | null
+          media_inovacao?: number | null
+          media_replicabilidade?: number | null
+          media_resolutividade?: number | null
+          nota_tecnica_calculada?: number
+          posicao_tecnica?: number
+          publicado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finalistas_snapshot_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finalistas_snapshot_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_duplicidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inscricao_status_historico: {
+        Row: {
+          autor: string
+          created_at: string
+          id: string
+          inscricao_id: string | null
+          motivo: string | null
+          numero_sei: string | null
+          status_anterior: string | null
+          status_novo: string
+        }
+        Insert: {
+          autor: string
+          created_at?: string
+          id?: string
+          inscricao_id?: string | null
+          motivo?: string | null
+          numero_sei?: string | null
+          status_anterior?: string | null
+          status_novo: string
+        }
+        Update: {
+          autor?: string
+          created_at?: string
+          id?: string
+          inscricao_id?: string | null
+          motivo?: string | null
+          numero_sei?: string | null
+          status_anterior?: string | null
+          status_novo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscricao_status_historico_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscricao_status_historico_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_duplicidades"
+            referencedColumns: ["id"]
+          },
         ]
       }
       inscricoes: {
@@ -73,6 +342,7 @@ export type Database = {
           ano_inicio_execucao: string | null
           area: string | null
           area_atuacao: string
+          cadastro_banco_praticas: boolean | null
           cargo_funcao: string
           concorda_termos: boolean | null
           cooperacao: string
@@ -82,14 +352,18 @@ export type Database = {
           data_inicio: string
           declaracao: boolean | null
           descricao_iniciativa: string
+          edicao_ano: number | null
           email_institucional: string
           equipe_envolvida: string | null
           especificar_edicoes_anteriores: string | null
           etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
+          identificacao_banco_praticas: string | null
+          identificacao_projeto_metodologia: string | null
           impacto_social: string
           inovacao: string
+          institucionalizado_ato: boolean | null
           local_data: string | null
           lotacao: string
           matricula: string | null
@@ -98,6 +372,7 @@ export type Database = {
           objetivos: string
           objetivos_estrategicos: string | null
           observacoes: string | null
+          parecer_triagem: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
           problema_necessidade: string | null
@@ -108,8 +383,10 @@ export type Database = {
           resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
+          status_inscricao: string | null
           telefone: string
           telefone_institucional: string | null
+          tipo_iniciativa: string | null
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
@@ -119,6 +396,7 @@ export type Database = {
           ano_inicio_execucao?: string | null
           area?: string | null
           area_atuacao: string
+          cadastro_banco_praticas?: boolean | null
           cargo_funcao: string
           concorda_termos?: boolean | null
           cooperacao: string
@@ -128,14 +406,18 @@ export type Database = {
           data_inicio: string
           declaracao?: boolean | null
           descricao_iniciativa: string
+          edicao_ano?: number | null
           email_institucional: string
           equipe_envolvida?: string | null
           especificar_edicoes_anteriores?: string | null
           etapas_metodologia?: string | null
           foi_vencedor_anterior?: boolean | null
           id?: string
+          identificacao_banco_praticas?: string | null
+          identificacao_projeto_metodologia?: string | null
           impacto_social: string
           inovacao: string
+          institucionalizado_ato?: boolean | null
           local_data?: string | null
           lotacao: string
           matricula?: string | null
@@ -144,6 +426,7 @@ export type Database = {
           objetivos: string
           objetivos_estrategicos?: string | null
           observacoes?: string | null
+          parecer_triagem?: string | null
           participou_edicoes_anteriores?: boolean | null
           principais_resultados: string
           problema_necessidade?: string | null
@@ -154,8 +437,10 @@ export type Database = {
           resumo_executivo?: string | null
           situacao_atual?: string | null
           status?: string | null
+          status_inscricao?: string | null
           telefone: string
           telefone_institucional?: string | null
+          tipo_iniciativa?: string | null
           titulo_iniciativa: string
           unidade_setor?: string | null
           updated_at?: string
@@ -165,6 +450,7 @@ export type Database = {
           ano_inicio_execucao?: string | null
           area?: string | null
           area_atuacao?: string
+          cadastro_banco_praticas?: boolean | null
           cargo_funcao?: string
           concorda_termos?: boolean | null
           cooperacao?: string
@@ -174,14 +460,18 @@ export type Database = {
           data_inicio?: string
           declaracao?: boolean | null
           descricao_iniciativa?: string
+          edicao_ano?: number | null
           email_institucional?: string
           equipe_envolvida?: string | null
           especificar_edicoes_anteriores?: string | null
           etapas_metodologia?: string | null
           foi_vencedor_anterior?: boolean | null
           id?: string
+          identificacao_banco_praticas?: string | null
+          identificacao_projeto_metodologia?: string | null
           impacto_social?: string
           inovacao?: string
+          institucionalizado_ato?: boolean | null
           local_data?: string | null
           lotacao?: string
           matricula?: string | null
@@ -190,6 +480,7 @@ export type Database = {
           objetivos?: string
           objetivos_estrategicos?: string | null
           observacoes?: string | null
+          parecer_triagem?: string | null
           participou_edicoes_anteriores?: boolean | null
           principais_resultados?: string
           problema_necessidade?: string | null
@@ -200,8 +491,10 @@ export type Database = {
           resumo_executivo?: string | null
           situacao_atual?: string | null
           status?: string | null
+          status_inscricao?: string | null
           telefone?: string
           telefone_institucional?: string | null
+          tipo_iniciativa?: string | null
           titulo_iniciativa?: string
           unidade_setor?: string | null
           updated_at?: string
@@ -302,25 +595,37 @@ export type Database = {
           categoria: string
           created_at: string
           email: string | null
+          execucao_id: string | null
           fingerprint: string
           id: string
           inscricao_id: string
+          ip_address: string | null
+          motivo_invalidacao: string | null
+          valido: boolean | null
         }
         Insert: {
           categoria: string
           created_at?: string
           email?: string | null
+          execucao_id?: string | null
           fingerprint: string
           id?: string
           inscricao_id: string
+          ip_address?: string | null
+          motivo_invalidacao?: string | null
+          valido?: boolean | null
         }
         Update: {
           categoria?: string
           created_at?: string
           email?: string | null
+          execucao_id?: string | null
           fingerprint?: string
           id?: string
           inscricao_id?: string
+          ip_address?: string | null
+          motivo_invalidacao?: string | null
+          valido?: boolean | null
         }
         Relationships: [
           {
@@ -330,16 +635,103 @@ export type Database = {
             referencedRelation: "inscricoes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "votos_populares_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_duplicidades"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      triagem_duplicidades: {
+        Row: {
+          area: string | null
+          created_at: string | null
+          id: string | null
+          is_duplicata_posterior: boolean | null
+          matricula: string | null
+          ordem_envio: number | null
+          status_inscricao: string | null
+          tipo_iniciativa: string | null
+          titulo_iniciativa: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      apurar_resultados_finais: {
+        Args: { p_executor: string }
+        Returns: string
+      }
+      apurar_resultados_finais_v2: {
+        Args: { p_dry_run?: boolean; p_justificativa?: string }
+        Returns: Database["public"]["CompositeTypes"]["apuracao_preview"][]
+        SetofOptions: {
+          from: "*"
+          to: "apuracao_preview"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      consolidar_finalistas: {
+        Args: { p_publicado_por: string }
+        Returns: boolean
+      }
+      consolidar_finalistas_v2:
+        | {
+            Args: {
+              p_dry_run?: boolean
+              p_ignorar_pendencias?: boolean
+              p_justificativa?: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["finalista_preview"][]
+            SetofOptions: {
+              from: "*"
+              to: "finalista_preview"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
+        | {
+            Args: {
+              p_dry_run?: boolean
+              p_ignorar_pendencias?: boolean
+              p_justificativa?: string
+            }
+            Returns: Database["public"]["CompositeTypes"]["finalista_preview"][]
+            SetofOptions: {
+              from: "*"
+              to: "finalista_preview"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       current_user_has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      get_jury_evaluations_count: {
+        Args: never
+        Returns: {
+          avaliacoes_count: number
+          jurado_username: string
+        }[]
+      }
+      get_voto_popular_candidatos: {
+        Args: { p_categoria: string; p_session_seed: number }
+        Returns: {
+          descricao_iniciativa: string
+          inscricao_id: string
+          lotacao: string
+          metodologia: string
+          nome_completo: string
+          principais_resultados: string
+          problema_necessidade: string
+          titulo_iniciativa: string
+        }[]
       }
       has_role: {
         Args: {
@@ -373,6 +765,7 @@ export type Database = {
         }
         Returns: string
       }
+      rpc_delete_inscricao: { Args: { p_inscricao_id: string }; Returns: Json }
       rpc_inscricao_by_id: {
         Args: { _id: string }
         Returns: {
@@ -380,6 +773,7 @@ export type Database = {
           ano_inicio_execucao: string | null
           area: string | null
           area_atuacao: string
+          cadastro_banco_praticas: boolean | null
           cargo_funcao: string
           concorda_termos: boolean | null
           cooperacao: string
@@ -389,14 +783,18 @@ export type Database = {
           data_inicio: string
           declaracao: boolean | null
           descricao_iniciativa: string
+          edicao_ano: number | null
           email_institucional: string
           equipe_envolvida: string | null
           especificar_edicoes_anteriores: string | null
           etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
+          identificacao_banco_praticas: string | null
+          identificacao_projeto_metodologia: string | null
           impacto_social: string
           inovacao: string
+          institucionalizado_ato: boolean | null
           local_data: string | null
           lotacao: string
           matricula: string | null
@@ -405,6 +803,7 @@ export type Database = {
           objetivos: string
           objetivos_estrategicos: string | null
           observacoes: string | null
+          parecer_triagem: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
           problema_necessidade: string | null
@@ -415,8 +814,10 @@ export type Database = {
           resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
+          status_inscricao: string | null
           telefone: string
           telefone_institucional: string | null
+          tipo_iniciativa: string | null
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
@@ -435,6 +836,7 @@ export type Database = {
           ano_inicio_execucao: string | null
           area: string | null
           area_atuacao: string
+          cadastro_banco_praticas: boolean | null
           cargo_funcao: string
           concorda_termos: boolean | null
           cooperacao: string
@@ -444,14 +846,18 @@ export type Database = {
           data_inicio: string
           declaracao: boolean | null
           descricao_iniciativa: string
+          edicao_ano: number | null
           email_institucional: string
           equipe_envolvida: string | null
           especificar_edicoes_anteriores: string | null
           etapas_metodologia: string | null
           foi_vencedor_anterior: boolean | null
           id: string
+          identificacao_banco_praticas: string | null
+          identificacao_projeto_metodologia: string | null
           impacto_social: string
           inovacao: string
+          institucionalizado_ato: boolean | null
           local_data: string | null
           lotacao: string
           matricula: string | null
@@ -460,6 +866,7 @@ export type Database = {
           objetivos: string
           objetivos_estrategicos: string | null
           observacoes: string | null
+          parecer_triagem: string | null
           participou_edicoes_anteriores: boolean | null
           principais_resultados: string
           problema_necessidade: string | null
@@ -470,8 +877,10 @@ export type Database = {
           resumo_executivo: string | null
           situacao_atual: string | null
           status: string | null
+          status_inscricao: string | null
           telefone: string
           telefone_institucional: string | null
+          tipo_iniciativa: string | null
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
@@ -500,10 +909,18 @@ export type Database = {
           username: string
         }[]
       }
+      rpc_update_status_inscricao: {
+        Args: { p_inscricao_id: string; p_parecer?: string; p_status: string }
+        Returns: Json
+      }
       unaccent: { Args: { "": string }; Returns: string }
       update_profile_password_flag: {
         Args: { _must_change: boolean; _profile_id: string }
         Returns: undefined
+      }
+      verificar_duplicidade_inscricao: {
+        Args: { p_matricula: string; p_tipo_iniciativa: string }
+        Returns: boolean
       }
       voto_popular_top3_por_categoria: {
         Args: { area_key: string }
@@ -547,7 +964,27 @@ export type Database = {
       app_role: "admin" | "jurado" | "user"
     }
     CompositeTypes: {
-      [_ in never]: never
+      apuracao_preview: {
+        inscricao_id: string | null
+        categoria: string | null
+        is_finalista: boolean | null
+        nota_tecnica: number | null
+        votos_validos: number | null
+        maior_voto_categoria: number | null
+        nota_popular: number | null
+        pontuacao_final: number | null
+        classificacao_final: number | null
+        criterio_desempate: string | null
+        status_diff: string | null
+      }
+      finalista_preview: {
+        inscricao_id: string | null
+        categoria: string | null
+        nota_tecnica_calculada: number | null
+        posicao_tecnica: number | null
+        julgadores_count: number | null
+        status_diff: string | null
+      }
     }
   }
 }
@@ -560,12 +997,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -589,11 +1026,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -614,11 +1051,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -639,11 +1076,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -656,11 +1093,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -676,4 +1113,3 @@ export const Constants = {
     },
   },
 } as const
-
