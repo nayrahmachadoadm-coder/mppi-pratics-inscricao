@@ -129,7 +129,7 @@ const VotoPopular: React.FC = () => {
           setVotosCountById({});
         }
       } catch (e: unknown) {
-        setError(e?.message || 'Erro ao carregar os finalistas.');
+        setError(e instanceof Error ? e.message : 'Erro ao carregar os finalistas.');
       } finally {
         setLoading(false);
       }
@@ -233,6 +233,12 @@ const VotoPopular: React.FC = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 14;
+    const tableWidth = pageWidth - 2 * margin;
+    const xPos = margin;
+    const xWork = xPos + 14;
+    const xPct = pageWidth - margin - 20;
+    const xVotes = xPct - 22;
+    const colWorkW = xVotes - xWork;
 
     // Header com favicon, título e subtítulo
     const iconDataUrl = await loadImageDataUrl('/favicon.ico');

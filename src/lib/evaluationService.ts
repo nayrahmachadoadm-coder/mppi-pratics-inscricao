@@ -417,7 +417,12 @@ export async function finalizeVotacao(juradoUsername: string, areaKey: string): 
     return { success: false, error: e?.message || 'Erro ao finalizar votação' };
   }
 }
-export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
+export type FinalistaPublicoItem = Pick<CategoriaRankingItem,
+  'inscricao' | 'avaliacoes_count' | 'total_geral' | 'media_total' |
+  'media_resolutividade' | 'media_replicabilidade' |
+  'total_resolutividade' | 'total_replicabilidade'>;
+
+export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success: boolean; error?: string; data?: FinalistaPublicoItem[] }>{
   try {
     const { data, error } = await (supabase as any).rpc('voto_popular_top3_por_categoria', { area_key: areaKey });
     if (error) {
@@ -451,7 +456,7 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
       posicao: number;
     }>;
 
-    const items: CategoriaRankingItem[] = rows.map((r) => {
+    const items: FinalistaPublicoItem[] = rows.map((r) => {
       const inscricao: AdminInscricaoData = {
         id: r.inscricao_id,
         nome_completo: r.nome_completo,

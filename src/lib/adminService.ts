@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { InscricaoData } from './supabaseService';
+import type { Database } from '@/integrations/supabase/types';
 
 // Interface para dados de inscrição com informações adicionais para admin
 export interface AdminInscricaoData extends InscricaoData {
@@ -479,7 +480,7 @@ export async function updateInscricaoStatus(
 
   // ── Tentativa 2: UPDATE direto na tabela (com parecer_triagem) ──
   try {
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Database['public']['Tables']['inscricoes']['Update'] = {
       status_inscricao: status,
       updated_at: new Date().toISOString()
     };
