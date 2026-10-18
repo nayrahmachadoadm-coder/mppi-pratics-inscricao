@@ -7,7 +7,9 @@ const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KE
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('[Supabase] Variáveis de ambiente ausentes: VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY');
 }
-const supabasePublic = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabasePublic = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
 
 // Interface para os dados da inscrição que serão salvos no Supabase
 // Baseada na estrutura atual da tabela (migração 006_fix_table_structure.sql)
@@ -69,6 +71,10 @@ export interface InscricaoData {
   etapas_metodologia?: string;
   resultados_alcancados?: string;
   concorda_termos?: boolean;
+  cadastro_banco_praticas?: boolean;
+  institucionalizado_ato?: boolean;
+  identificacao_banco_praticas?: string | null;
+  identificacao_projeto_metodologia?: string | null;
 }
 
 // Interface para o resultado da operação
