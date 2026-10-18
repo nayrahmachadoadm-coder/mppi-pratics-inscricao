@@ -390,6 +390,7 @@ export type Database = {
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           alinhamento_ods: string
@@ -444,6 +445,7 @@ export type Database = {
           titulo_iniciativa: string
           unidade_setor?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           alinhamento_ods?: string
@@ -498,6 +500,7 @@ export type Database = {
           titulo_iniciativa?: string
           unidade_setor?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -821,6 +824,7 @@ export type Database = {
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
+          user_id: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -884,6 +888,7 @@ export type Database = {
           titulo_iniciativa: string
           unidade_setor: string | null
           updated_at: string
+          user_id: string | null
         }[]
         SetofOptions: {
           from: "*"
