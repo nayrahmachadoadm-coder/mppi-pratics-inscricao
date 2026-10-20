@@ -10,15 +10,14 @@ import { hasRole } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminInscricaoData, getAllInscricoes, getInscricaoById, InscricaoFilters } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
-import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao, isVotacaoFinalizada, finalizeVotacao, limparNotasTeste2026 } from '@/lib/evaluationService';
+import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao, isVotacaoFinalizada, finalizeVotacao } from '@/lib/evaluationService';
 import { getRelatorioCategoria, CategoriaRankingItem } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, RotateCcw, AlertTriangle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { getJuryMembers, JuryMember } from '@/lib/juryManagement';
 import { exportCategoryVotesPdf, exportCategoryVotesByWorkPdf } from '@/lib/pdfCategoryVotes';
@@ -101,9 +100,6 @@ const AdminJulgamento: React.FC = () => {
   const [adminVotesItems, setAdminVotesItems] = useState<MinhasAvaliacaoItem[]>([]);
   const [juradosList, setJuradosList] = useState<JuryMember[]>([]);
   const [selectedAdminJurado, setSelectedAdminJurado] = useState<string>('');
-  const [isCleanOpen, setIsCleanOpen] = useState<boolean>(false);
-  const [cleanInput, setCleanInput] = useState<string>('');
-  const [cleaning, setCleaning] = useState<boolean>(false);
   const votingClosed = false;
 
   const total = useMemo(() => {
@@ -337,89 +333,7 @@ const AdminJulgamento: React.FC = () => {
                       <p className="text-xs text-white/90 mt-1">Jurado: <span className="font-medium">{juradoUsername}</span></p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {adminState && (
-                      <Dialog open={isCleanOpen} onOpenChange={setIsCleanOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 bg-white/10 text-white border-white/20 hover:bg-white/25 hover:text-white text-xs gap-1.5"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Limpar Notas de Teste (2026)
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2 text-rose-700">
-                              <AlertTriangle className="w-5 h-5 text-rose-600" />
-                              Limpar Notas de Teste da Edição 2026
-                            </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-600 text-justify pt-1">
-                              Esta operação excluirá permanentemente todas as <strong>avaliações</strong>, <strong>notas de jurados</strong> e <strong>finalizações de teste</strong> referentes à 10ª Edição (2026).
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-3 py-2 text-xs">
-                            <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-900 space-y-1">
-                              <div className="font-semibold text-amber-950">Atenção Administrador:</div>
-                              <p>• As <strong>inscrições de trabalhos permanecem intactas</strong>.</p>
-                              <p>• Usuários e jurados cadastrados <strong>NÃO são excluídos</strong>.</p>
-                              <p>• Apenas o histórico de notas e finalizações de teste será zerado para o início oficial do julgamento.</p>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label htmlFor="cleanConfirmJulg" className="text-xs font-semibold text-slate-800">
-                                Digite <span className="font-mono text-rose-700">LIMPAR</span> para confirmar:
-                              </Label>
-                              <Input
-                                id="cleanConfirmJulg"
-                                value={cleanInput}
-                                onChange={(e) => setCleanInput(e.target.value)}
-                                placeholder="LIMPAR"
-                                className="h-8 text-xs font-mono"
-                                disabled={cleaning}
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter className="gap-2 sm:gap-0">
-                            <Button variant="secondary" size="sm" onClick={() => setIsCleanOpen(false)} disabled={cleaning}>
-                              Cancelar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={async () => {
-                                if (cleanInput.trim().toUpperCase() !== 'LIMPAR') return;
-                                setCleaning(true);
-                                try {
-                                  const res = await limparNotasTeste2026();
-                                  if (res.success) {
-                                    toast({
-                                      title: "Notas de teste excluídas com sucesso!",
-                                      description: `${res.data?.avaliacoes_excluidas || 0} avaliações e ${res.data?.finalizacoes_excluidas || 0} finalizações foram removidas do banco de dados.`,
-                                    });
-                                    setIsCleanOpen(false);
-                                    setCleanInput('');
-                                    setVotedIds(new Set());
-                                    setScores({ cooperacao: -1, inovacao: -1, resolutividade: -1, impacto_social: -1, replicabilidade: -1 });
-                                  } else {
-                                    toast({ title: "Erro ao executar limpeza", description: res.error, variant: "destructive" });
-                                  }
-                                } catch (e: any) {
-                                  toast({ title: "Erro inesperado", description: e?.message, variant: "destructive" });
-                                } finally {
-                                  setCleaning(false);
-                                }
-                              }}
-                              disabled={cleaning || cleanInput.trim().toUpperCase() !== 'LIMPAR'}
-                            >
-                              {cleaning ? 'Limpando...' : 'Confirmar Limpeza'}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
+
                 </div>
               </CardHeader>
               <CardContent className="pt-3">
