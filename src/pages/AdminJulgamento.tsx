@@ -699,39 +699,45 @@ const AdminJulgamento: React.FC = () => {
             <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="text-left p-2">Posição</th>
-                  <th className="text-left p-2 w-[320px]">Título</th>
-                  <th className="text-left p-2 w-[220px]">Proponente</th>
-                  <th className="text-center p-2">Avaliações</th>
-                  <th className="text-center p-2">Total geral (Nota Técnica)</th>
-                  <th className="text-center p-2">Total cooperação</th>
-                  <th className="text-center p-2">Total impacto social</th>
-                  <th className="text-center p-2">Total replicabilidade</th>
-                  <th className="text-center p-2">Total inovação</th>
+                  <th className="text-left p-2 w-[50px]">Pos.</th>
+                  <th className="text-left p-2 w-[240px]">Título</th>
+                  <th className="text-left p-2 w-[180px]">Proponente</th>
+                  <th className="text-center p-2 w-[70px]">Jurados</th>
+                  <th className="text-center p-2 w-[90px]">Média (0-25)</th>
+                  <th className="text-center p-2 w-[90px] font-bold text-primary">Nota Téc. (100)</th>
+                  <th className="text-center p-2">Coop.</th>
+                  <th className="text-center p-2">Resol.</th>
+                  <th className="text-center p-2">Imp.</th>
+                  <th className="text-center p-2">Repl.</th>
+                  <th className="text-center p-2">Inov.</th>
                 </tr>
               </thead>
               <tbody>
                 {totalsItems.map((it, idx) => (
-                  <tr key={it.inscricao.id} className="border-t">
-                    <td className="p-2">{idx + 1}</td>
-                    <td className="p-2 font-medium w-[320px] break-words">{it.inscricao.titulo_iniciativa}</td>
-                    <td className="p-2 w-[220px] break-words">{it.inscricao.nome_completo}</td>
+                  <tr key={it.inscricao.id} className="border-t hover:bg-gray-50/50">
+                    <td className="p-2 font-semibold">{idx + 1}º</td>
+                    <td className="p-2 font-medium w-[240px] break-words">{it.inscricao.titulo_iniciativa}</td>
+                    <td className="p-2 w-[180px] break-words text-gray-700">{it.inscricao.nome_completo}</td>
                     <td className="p-2 text-center">{it.avaliacoes_count}</td>
-                    <td className="p-2 text-center">{it.total_geral.toFixed(2)}</td>
-                    <td className="p-2 text-center">{(it as any).total_cooperacao?.toFixed(2) || '0.00'}</td>
-                    <td className="p-2 text-center">{(it as any).total_impacto_social?.toFixed(2) || '0.00'}</td>
-                    <td className="p-2 text-center">{it.total_replicabilidade.toFixed(2)}</td>
-                    <td className="p-2 text-center">{(it as any).total_inovacao?.toFixed(2) || '0.00'}</td>
+                    <td className="p-2 text-center font-medium">{it.media_total.toFixed(2)}</td>
+                    <td className="p-2 text-center font-bold text-primary">{it.nota_tecnica_100.toFixed(2)}</td>
+                    <td className="p-2 text-center text-xs">{it.media_cooperacao.toFixed(2)}</td>
+                    <td className="p-2 text-center text-xs">{it.media_resolutividade.toFixed(2)}</td>
+                    <td className="p-2 text-center text-xs">{it.media_impacto_social.toFixed(2)}</td>
+                    <td className="p-2 text-center text-xs">{it.media_replicabilidade.toFixed(2)}</td>
+                    <td className="p-2 text-center text-xs">{it.media_inovacao.toFixed(2)}</td>
                   </tr>
                 ))}
                 {totalsItems.length === 0 && (
                   <tr>
-                    <td className="p-4 text-center text-gray-600" colSpan={7}>Nenhum trabalho encontrado na categoria.</td>
+                    <td className="p-4 text-center text-gray-600" colSpan={11}>Nenhum trabalho encontrado na categoria.</td>
                   </tr>
                 )}
               </tbody>
             </table>
-            <div className="mt-2 text-xs text-gray-600 px-2 pb-2">Ordenação: maior nota técnica; desempate por notas de cooperação, impacto social, replicabilidade e inovação, sucessivamente.</div>
+            <div className="mt-2 text-xs text-gray-600 px-3 py-2 bg-gray-50 border-t">
+              <strong>Regra do Edital nº 88/2026 (Item 8.2 e 8.9):</strong> A Nota Técnica é a média aritmética das notas válidas convertida para escala 0 a 100 <em>((Média ÷ 25) × 100)</em>. Desempate sucessivo por maior nota em: I — Nota Técnica; II — Cooperação; III — Resolutividade; IV — Impacto Social ou Institucional; V — Replicabilidade; VI — Inovação; VII — Decisão da Comissão Julgadora.
+            </div>
           </div>
         )}
       </DialogContent>

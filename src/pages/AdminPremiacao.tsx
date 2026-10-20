@@ -258,25 +258,41 @@ const AdminPremiacao = () => {
 
                     {showResultado && ranking.length > 0 && (
                       <div className="mt-3 rounded border overflow-hidden">
-                        <div className="grid grid-cols-12 bg-gray-100 px-3 py-2 text-[11px] font-semibold">
+                        <div className="grid grid-cols-12 bg-gray-100 px-3 py-2 text-[11px] font-semibold text-gray-700">
                           <div className="col-span-1">Pos</div>
                           <div className="col-span-1"></div>
-                          <div className="col-span-4">Trabalho</div>
+                          <div className="col-span-5">Iniciativa / Proponente</div>
                           <div className="col-span-2 text-right text-gray-700">Nota Téc. (80%)</div>
-                          <div className="col-span-2 text-right text-gray-700">Nota Pop. (20%)</div>
+                          <div className="col-span-1 text-right text-gray-700">Nota Pop. (20%)</div>
                           <div className="col-span-2 text-right">Pontuação Final</div>
                         </div>
                         <div className="divide-y">
                           {ranking.map((it, idx) => (
-                            <div key={it.inscricao.id} className="grid grid-cols-12 items-center px-3 py-2 text-xs">
-                              <div className="col-span-1">{String(idx + 1).padStart(2, '0')}</div>
+                            <div key={it.inscricao.id} className={`grid grid-cols-12 items-center px-3 py-2 text-xs ${idx < 3 ? 'bg-amber-50/20' : ''}`}>
+                              <div className="col-span-1 font-semibold">{String(idx + 1).padStart(2, '0')}º</div>
                               <div className="col-span-1 flex justify-center">
                                 {idx === 0 ? <Medal className="w-4 h-4 text-yellow-500" /> : idx === 1 ? <Medal className="w-4 h-4 text-gray-400" /> : idx === 2 ? <Medal className="w-4 h-4 text-amber-700" /> : null}
                               </div>
-                              <div className="col-span-4 text-gray-900">{it.inscricao.titulo_iniciativa}</div>
-                              <div className="col-span-2 text-right text-gray-700">{it.nota_tecnica_100.toFixed(2)}</div>
-                              <div className="col-span-2 text-right text-gray-700">{it.nota_popular_100.toFixed(2)}</div>
-                              <div className="col-span-2 text-right font-bold text-gray-900">{it.pontuacao_final.toFixed(2)}</div>
+                              <div className="col-span-5 pr-2">
+                                <div className="text-gray-900 font-medium truncate">{it.inscricao.titulo_iniciativa}</div>
+                                <div className="text-[10px] text-gray-500 truncate">{it.inscricao.nome_completo} • {it.inscricao.lotacao}</div>
+                                {it.criterio_desempate && it.criterio_desempate !== 'Sem empate' && (
+                                  <span className="inline-block mt-0.5 text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-medium border border-amber-200">
+                                    Desempate: {it.criterio_desempate}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="col-span-2 text-right text-gray-700 font-mono">
+                                <div>{it.nota_tecnica_100.toFixed(2)}</div>
+                                <div className="text-[10px] text-gray-500">{(it.nota_tecnica_100 * 0.8).toFixed(2)} pts</div>
+                              </div>
+                              <div className="col-span-1 text-right text-gray-700 font-mono">
+                                <div>{it.nota_popular_100.toFixed(2)}</div>
+                                <div className="text-[10px] text-gray-500">{(it.nota_popular_100 * 0.2).toFixed(2)} pts</div>
+                              </div>
+                              <div className="col-span-2 text-right font-bold text-gray-900 font-mono text-sm text-primary">
+                                {it.pontuacao_final.toFixed(2)}
+                              </div>
                             </div>
                           ))}
                         </div>

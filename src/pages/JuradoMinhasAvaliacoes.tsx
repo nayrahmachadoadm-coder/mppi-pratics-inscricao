@@ -131,9 +131,12 @@ const JuradoMinhasAvaliacoes: React.FC = () => {
                         <TableRow>
                           <TableHead className="text-white">Título</TableHead>
                           <TableHead className="text-white">Área</TableHead>
-                          <TableHead className="text-white text-center">Total</TableHead>
-                          <TableHead className="text-white text-center">Resolutividade</TableHead>
-                          <TableHead className="text-white text-center">Replicabilidade</TableHead>
+                          <TableHead className="text-white text-center">Coop.</TableHead>
+                          <TableHead className="text-white text-center">Inov.</TableHead>
+                          <TableHead className="text-white text-center">Resol.</TableHead>
+                          <TableHead className="text-white text-center">Imp.</TableHead>
+                          <TableHead className="text-white text-center">Repl.</TableHead>
+                          <TableHead className="text-white text-center font-bold">Total (25)</TableHead>
                           <TableHead className="text-white">Data</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -142,15 +145,18 @@ const JuradoMinhasAvaliacoes: React.FC = () => {
                           <TableRow key={it.avaliacao.id}>
                             <TableCell className="font-medium">{it.inscricao?.titulo_iniciativa || '—'}</TableCell>
                             <TableCell>{it.inscricao?.area_atuacao || '—'}</TableCell>
-                            <TableCell className="text-center">{(it.avaliacao?.total ?? 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-center">{it.avaliacao?.cooperacao ?? 0}</TableCell>
+                            <TableCell className="text-center">{it.avaliacao?.inovacao ?? 0}</TableCell>
                             <TableCell className="text-center">{it.avaliacao?.resolutividade ?? 0}</TableCell>
+                            <TableCell className="text-center">{it.avaliacao?.impacto_social ?? 0}</TableCell>
                             <TableCell className="text-center">{it.avaliacao?.replicabilidade ?? 0}</TableCell>
-                            <TableCell>{(it.avaliacao?.created_at || '').slice(0, 19).replace('T',' ')}</TableCell>
+                            <TableCell className="text-center font-bold text-primary">{(it.avaliacao?.total ?? 0)}</TableCell>
+                            <TableCell className="text-xs text-gray-500">{(it.avaliacao?.created_at || '').slice(0, 19).replace('T',' ')}</TableCell>
                           </TableRow>
                         ))}
                         {items.length === 0 && !loading && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-gray-600 py-6">Você ainda não possui avaliações neste filtro.</TableCell>
+                            <TableCell colSpan={9} className="text-center text-gray-600 py-6">Você ainda não possui avaliações neste filtro.</TableCell>
                           </TableRow>
                         )}
                       </TableBody>

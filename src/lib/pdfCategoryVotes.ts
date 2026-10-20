@@ -317,8 +317,12 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
 
   works.sort((a, b) => {
     if (b.totalWork !== a.totalWork) return b.totalWork - a.totalWork;
+    // Critérios sucessivos de desempate conforme Item 8.9 do Edital:
+    if (b.sumCoop !== a.sumCoop) return b.sumCoop - a.sumCoop;
     if (b.sumResol !== a.sumResol) return b.sumResol - a.sumResol;
+    if (b.sumImp !== a.sumImp) return b.sumImp - a.sumImp;
     if (b.sumRep !== a.sumRep) return b.sumRep - a.sumRep;
+    if (b.sumInov !== a.sumInov) return b.sumInov - a.sumInov;
     return (a.insc.titulo_iniciativa || '').localeCompare(b.insc.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' });
   });
 

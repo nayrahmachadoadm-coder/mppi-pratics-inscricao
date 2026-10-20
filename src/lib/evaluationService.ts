@@ -27,12 +27,12 @@ export type AvaliacaoRecord = {
 };
 
 export const computeTotal = (s: ScoreEntry): number => {
+  // Edital nº 88/2026: Cada avaliador atribui notas inteiras de 0 a 5 para os 5 critérios oficiais (máx. 25 pontos).
   return (
     (s.cooperacao || 0) +
     (s.inovacao || 0) +
     (s.resolutividade || 0) +
     (s.impacto_social || 0) +
-    (s.alinhamento_ods || 0) +
     (s.replicabilidade || 0)
   );
 };
@@ -101,19 +101,23 @@ export type CategoriaRankingItem = {
   inscricao: AdminInscricaoData;
   avaliacoes_count: number;
   total_geral: number; // soma dos totais dos jurados
-  media_total: number; // média do total por jurado
-  media_resolutividade: number;
-  media_replicabilidade: number;
-  media_impacto_social: number;
+  media_total: number; // média do total por jurado (0 a 25)
+  media_cooperacao: number;
   media_inovacao: number;
-  total_resolutividade: number; // soma das notas de resolutividade de todos os jurados
-  total_replicabilidade: number; // soma das notas de replicabilidade de todos os jurados
-  total_impacto_social: number;
+  media_resolutividade: number;
+  media_impacto_social: number;
+  media_replicabilidade: number;
+  total_cooperacao: number;
   total_inovacao: number;
-  nota_tecnica_100: number; // nota técnica convertida para 0-100
-  votos_populares: number; // quantidade de votos populares válidos
-  nota_popular_100: number; // nota popular proporcional de 0-100
-  pontuacao_final: number; // 80% nota técnica + 20% nota popular
+  total_resolutividade: number;
+  total_impacto_social: number;
+  total_replicabilidade: number;
+  nota_tecnica_100: number; // Edital 8.3: (media_total / 25) * 100
+  votos_populares: number; // Edital 8.4: quantidade de votos válidos
+  nota_popular_100: number; // Edital 8.5: (votos / max_votos) * 100
+  pontuacao_final: number; // Edital 8.6 & 8.8: (nota_tecnica * 0.8) + (nota_popular * 0.2) com até 2 casas
+  posicao?: number;
+  criterio_desempate?: string; // Edital 8.9: Critério aplicado em caso de empate
 };
 
 export async function getRelatorioCategoria(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
@@ -135,70 +139,121 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
         const list = av.success ? (av.data || []) : [];
         const count = list.length;
         const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
-        const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
-        const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
-        const sumImpacto = list.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
-        const sumInovacao = list.reduce((sum, r) => sum + (r.inovacao || 0), 0);
         const sumCoop = list.reduce((sum, r) => sum + (r.cooperacao || 0), 0);
+        const sumInovacao = list.reduce((sum, r) => sum + (r.inovacao || 0), 0);
+        const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
+        const sumImpacto = list.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
+        const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+
+        // Edital 8.2 & 8.2.3: Média aritmética das notas válidas (ausência de nota não é computada como zero nem integra divisor)
         const mediaTotal = count > 0 ? totalGeral / count : 0;
-        const mediaResol = count > 0 ? sumResol / count : 0;
-        const mediaReplic = count > 0 ? sumReplic / count : 0;
-        const mediaImpacto = count > 0 ? sumImpacto / count : 0;
-        const mediaInovacao = count > 0 ? sumInovacao / count : 0;
         const mediaCoop = count > 0 ? sumCoop / count : 0;
+        const mediaInovacao = count > 0 ? sumInovacao / count : 0;
+        const mediaResol = count > 0 ? sumResol / count : 0;
+        const mediaImpacto = count > 0 ? sumImpacto / count : 0;
+        const mediaReplic = count > 0 ? sumReplic / count : 0;
 
-        // Converter média para escala 0-100 (a pontuação máxima de 5 critérios é 25 pontos por jurado)
-        const maxPontosPossivel = 25;
-        const notaTecnica100 = count > 0 ? (mediaTotal / maxPontosPossivel) * 100 : 0;
+        // Edital 8.3: Nota Técnica = (média das notas válidas atribuídas pela Comissão Julgadora / 25) x 100
+        const notaTecnica100 = count > 0 ? (mediaTotal / 25.0) * 100.0 : 0;
 
-        // Obter número de votos para esta iniciativa e calcular nota proporcional
+        // Edital 8.4 e 8.5: Nota Popular proporcional (o mais votado da categoria recebe 100)
         const votosIniciativa = votosCount[insc.id] || 0;
-        const notaPopular100 = maxVotos > 0 ? (votosIniciativa / maxVotos) * 100 : 0;
+        const notaPopular100 = maxVotos > 0 ? (votosIniciativa / maxVotos) * 100.0 : 0;
 
-        // Calcular pontuação final
-        const pontuacaoFinal = (notaTecnica100 * 0.8) + (notaPopular100 * 0.2);
+        // Edital 8.6 e 8.8: Pontuação Final = (Nota Técnica × 0,80) + (Nota Popular × 0,20), com até 2 casas decimais
+        const pontuacaoFinal = Number(((notaTecnica100 * 0.80) + (notaPopular100 * 0.20)).toFixed(2));
 
         return {
           inscricao: insc,
           avaliacoes_count: count,
           total_geral: totalGeral,
           media_total: mediaTotal,
-          media_resolutividade: mediaResol,
-          media_replicabilidade: mediaReplic,
-          media_impacto_social: mediaImpacto,
-          media_inovacao: mediaInovacao,
           media_cooperacao: mediaCoop,
-          total_resolutividade: sumResol,
-          total_replicabilidade: sumReplic,
-          total_impacto_social: sumImpacto,
-          total_inovacao: sumInovacao,
+          media_inovacao: mediaInovacao,
+          media_resolutividade: mediaResol,
+          media_impacto_social: mediaImpacto,
+          media_replicabilidade: mediaReplic,
           total_cooperacao: sumCoop,
-          nota_tecnica_100: notaTecnica100,
+          total_inovacao: sumInovacao,
+          total_resolutividade: sumResol,
+          total_impacto_social: sumImpacto,
+          total_replicabilidade: sumReplic,
+          nota_tecnica_100: Number(notaTecnica100.toFixed(2)),
           votos_populares: votosIniciativa,
-          nota_popular_100: notaPopular100,
+          nota_popular_100: Number(notaPopular100.toFixed(2)),
           pontuacao_final: pontuacaoFinal,
         } as CategoriaRankingItem;
       })
     );
 
-  items.sort((a, b) => {
-    // 8.9 Em caso de empate na Pontuação Final, serão aplicados sucessivamente:
-    // I — maior Nota Técnica;
-    // II — maior nota em cooperação;
-    // III — maior nota em impacto social ou institucional;
-    // IV — maior nota em replicabilidade;
-    // V — maior nota em inovação;
-    if (Math.abs(b.pontuacao_final - a.pontuacao_final) > 0.0001) return b.pontuacao_final - a.pontuacao_final;
-    if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) return b.nota_tecnica_100 - a.nota_tecnica_100;
-    // (a propriedade media_cooperacao foi adicionada acima ao objeto retornado, mas se o TypeScript reclamar precisaremos adicionar ao interface. 
-    // Como a interface CategoriaRankingItem no arquivo pode não ter media_cooperacao, vamos converter o cast implícito se necessário. 
-    // Vou usar a.media_cooperacao com segurança acessando via `any` se TS der erro, mas primeiro farei sem tipagem explícita para não complicar).
-    if (Math.abs((b as any).media_cooperacao - (a as any).media_cooperacao) > 0.0001) return (b as any).media_cooperacao - (a as any).media_cooperacao;
-    if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) return b.media_impacto_social - a.media_impacto_social;
-    if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) return b.media_replicabilidade - a.media_replicabilidade;
-    if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) return b.media_inovacao - a.media_inovacao;
-    return a.inscricao.titulo_iniciativa.localeCompare(b.inscricao.titulo_iniciativa);
-  });
+    // Edital 8.7 e 8.9: Classificação decrescente com critérios sucessivos de desempate
+    // I — maior Nota Técnica atribuída pela Comissão Julgadora;
+    // II — maior nota no critério cooperação;
+    // III — maior nota no critério resolutividade;
+    // IV — maior nota no critério impacto social ou institucional;
+    // V — maior nota no critério replicabilidade;
+    // VI — maior nota no critério inovação; e
+    // VII — persistindo o empate, decisão fundamentada da Comissão Julgadora.
+    items.sort((a, b) => {
+      if (Math.abs(b.pontuacao_final - a.pontuacao_final) > 0.0001) {
+        return b.pontuacao_final - a.pontuacao_final;
+      }
+      // I — maior Nota Técnica
+      if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) {
+        return b.nota_tecnica_100 - a.nota_tecnica_100;
+      }
+      // II — maior nota no critério cooperação
+      if (Math.abs(b.media_cooperacao - a.media_cooperacao) > 0.0001) {
+        return b.media_cooperacao - a.media_cooperacao;
+      }
+      // III — maior nota no critério resolutividade
+      if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) {
+        return b.media_resolutividade - a.media_resolutividade;
+      }
+      // IV — maior nota no critério impacto social ou institucional
+      if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) {
+        return b.media_impacto_social - a.media_impacto_social;
+      }
+      // V — maior nota no critério replicabilidade
+      if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) {
+        return b.media_replicabilidade - a.media_replicabilidade;
+      }
+      // VI — maior nota no critério inovação
+      if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) {
+        return b.media_inovacao - a.media_inovacao;
+      }
+      // VII — persistindo o empate, alfabético como ordenação determinística
+      return (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR');
+    });
+
+    // Atribuir posição e identificar o critério de desempate se houve empate na pontuação final
+    items.forEach((item, idx) => {
+      item.posicao = idx + 1;
+      if (idx > 0) {
+        const prev = items[idx - 1];
+        if (Math.abs(item.pontuacao_final - prev.pontuacao_final) < 0.001) {
+          if (Math.abs(prev.nota_tecnica_100 - item.nota_tecnica_100) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, I (Nota Técnica)';
+          } else if (Math.abs(prev.media_cooperacao - item.media_cooperacao) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, II (Cooperação)';
+          } else if (Math.abs(prev.media_resolutividade - item.media_resolutividade) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, III (Resolutividade)';
+          } else if (Math.abs(prev.media_impacto_social - item.media_impacto_social) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, IV (Impacto Social/Institucional)';
+          } else if (Math.abs(prev.media_replicabilidade - item.media_replicabilidade) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, V (Replicabilidade)';
+          } else if (Math.abs(prev.media_inovacao - item.media_inovacao) >= 0.001) {
+            item.criterio_desempate = 'Item 8.9, VI (Inovação)';
+          } else {
+            item.criterio_desempate = 'Item 8.9, VII (Decisão Comissão Julgadora)';
+          }
+        } else {
+          item.criterio_desempate = 'Sem empate';
+        }
+      } else {
+        item.criterio_desempate = 'Sem empate';
+      }
+    });
 
     return { success: true, data: items };
   } catch (e: any) {
@@ -208,19 +263,40 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
 
 export function exportRelatorioCsv(items: CategoriaRankingItem[], areaLabel: string): string {
   const headers = [
-    'Posicao','Titulo','Proponente','Lotacao','Media Jurados','Nota Tecnica (80%)','Votos Populares','Nota Popular (20%)','Pontuacao Final (100)','Media Resolutividade','Avaliacoes'];
+    'Posicao',
+    'Titulo',
+    'Proponente',
+    'Lotacao',
+    'Avaliacoes Validas',
+    'Media Tecnica (0 a 25)',
+    'Nota Tecnica 100 (80%)',
+    'Votos Populares',
+    'Nota Popular 100 (20%)',
+    'Pontuacao Final (0 a 100)',
+    'Criterio Desempate',
+    'Media Cooperacao',
+    'Media Resolutividade',
+    'Media Impacto Social',
+    'Media Replicabilidade',
+    'Media Inovacao'
+  ];
   const rows = items.map((item, idx) => [
-    String(idx + 1),
+    String(item.posicao || idx + 1),
     sanitize(item.inscricao.titulo_iniciativa),
     sanitize(item.inscricao.nome_completo),
     sanitize(item.inscricao.lotacao),
+    String(item.avaliacoes_count),
     String(item.media_total.toFixed(2)),
     String(item.nota_tecnica_100.toFixed(2)),
     String(item.votos_populares),
     String(item.nota_popular_100.toFixed(2)),
     String(item.pontuacao_final.toFixed(2)),
+    sanitize(item.criterio_desempate || 'Sem empate'),
+    String(item.media_cooperacao.toFixed(2)),
     String(item.media_resolutividade.toFixed(2)),
-    String(item.avaliacoes_count),
+    String(item.media_impacto_social.toFixed(2)),
+    String(item.media_replicabilidade.toFixed(2)),
+    String(item.media_inovacao.toFixed(2)),
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   return `Relatorio_${areaLabel.replace(/\s+/g,'_')}.csv::${csv}`;
@@ -362,13 +438,23 @@ export async function getMinhasAvaliacoes(juradoUsername: string, areaKey?: stri
       const ta = a.avaliacao?.total || 0;
       const tb = b.avaliacao?.total || 0;
       if (tb !== ta) return tb - ta;
+      // Desempate conforme Edital 8.9: Cooperação -> Resolutividade -> Impacto Social -> Replicabilidade -> Inovação
+      const ca = a.avaliacao?.cooperacao || 0;
+      const cb = b.avaliacao?.cooperacao || 0;
+      if (cb !== ca) return cb - ca;
       const ra = a.avaliacao?.resolutividade || 0;
       const rb = b.avaliacao?.resolutividade || 0;
       if (rb !== ra) return rb - ra;
+      const ia = a.avaliacao?.impacto_social || 0;
+      const ib = b.avaliacao?.impacto_social || 0;
+      if (ib !== ia) return ib - ia;
       const pa = a.avaliacao?.replicabilidade || 0;
       const pb = b.avaliacao?.replicabilidade || 0;
       if (pb !== pa) return pb - pa;
-      return (a.inscricao?.titulo_iniciativa || '').localeCompare(b.inscricao?.titulo_iniciativa || '');
+      const va = a.avaliacao?.inovacao || 0;
+      const vb = b.avaliacao?.inovacao || 0;
+      if (vb !== va) return vb - va;
+      return (a.inscricao?.titulo_iniciativa || '').localeCompare(b.inscricao?.titulo_iniciativa || '', 'pt-BR');
     });
 
     return { success: true, data: items };
@@ -378,15 +464,18 @@ export async function getMinhasAvaliacoes(juradoUsername: string, areaKey?: stri
 }
 
 export function exportMinhasAvaliacoesCsv(items: MinhasAvaliacaoItem[], areaLabel?: string): string {
-  const headers = ['Titulo','Area','Nome','Lotacao','Total','Resolutividade','Replicabilidade','Data'];
+  const headers = ['Titulo','Area','Nome','Lotacao','Cooperação','Inovação','Resolutividade','Impacto Social','Replicabilidade','Total','Data'];
   const rows = items.map((it) => [
     sanitize(it.inscricao?.titulo_iniciativa || ''),
     sanitize(it.inscricao?.area_atuacao || ''),
     sanitize(it.inscricao?.nome_completo || ''),
     sanitize(it.inscricao?.lotacao || ''),
-    String((it.avaliacao?.total ?? 0).toFixed(2)),
+    String(it.avaliacao?.cooperacao ?? 0),
+    String(it.avaliacao?.inovacao ?? 0),
     String(it.avaliacao?.resolutividade ?? 0),
+    String(it.avaliacao?.impacto_social ?? 0),
     String(it.avaliacao?.replicabilidade ?? 0),
+    String((it.avaliacao?.total ?? 0).toFixed(2)),
     sanitize((it.avaliacao?.created_at || '').slice(0, 19).replace('T',' ')),
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -419,8 +508,9 @@ export async function finalizeVotacao(juradoUsername: string, areaKey: string): 
 }
 export type FinalistaPublicoItem = Pick<CategoriaRankingItem,
   'inscricao' | 'avaliacoes_count' | 'total_geral' | 'media_total' |
-  'media_resolutividade' | 'media_replicabilidade' |
-  'total_resolutividade' | 'total_replicabilidade'>;
+  'media_cooperacao' | 'media_inovacao' | 'media_resolutividade' | 'media_impacto_social' | 'media_replicabilidade' |
+  'total_cooperacao' | 'total_inovacao' | 'total_resolutividade' | 'total_impacto_social' | 'total_replicabilidade' |
+  'nota_tecnica_100' | 'votos_populares' | 'nota_popular_100' | 'pontuacao_final'>;
 
 export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success: boolean; error?: string; data?: FinalistaPublicoItem[] }>{
   try {
