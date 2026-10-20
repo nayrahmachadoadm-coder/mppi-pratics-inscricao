@@ -4,6 +4,9 @@
 --           preservando integralmente todas as inscrições e contas de usuários.
 -- ==============================================================================
 
+-- 0. Garantir existência da coluna edicao_ano em profiles (caso ainda não exista)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS edicao_ano INTEGER DEFAULT 2026;
+
 -- 1. Criar a RPC segura para limpeza de notas de teste da edição 2026
 CREATE OR REPLACE FUNCTION public.rpc_limpar_avaliacoes_teste_2026(p_confirmacao text DEFAULT '')
 RETURNS jsonb
@@ -43,67 +46,47 @@ BEGIN
     SELECT COUNT(*) INTO v_count_avaliacoes
     FROM public.avaliacoes a
     WHERE a.inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
+        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2026) = 2026
     );
 
     DELETE FROM public.avaliacoes a
     WHERE a.inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
+        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2026) = 2026
     );
 
     -- 2. Contar e excluir registros de votação finalizada de testes
     SELECT COUNT(*) INTO v_count_finalizacoes
-    FROM public.votacao_finalizada
-    WHERE jurado_username IN (
-        SELECT username FROM public.profiles WHERE edicao_ano = 2026
-    ) OR created_at >= '2026-09-01' OR finalized_at >= '2026-09-01';
+    FROM public.votacao_finalizada;
 
-    DELETE FROM public.votacao_finalizada
-    WHERE jurado_username IN (
-        SELECT username FROM public.profiles WHERE edicao_ano = 2026
-    ) OR created_at >= '2026-09-01' OR finalized_at >= '2026-09-01';
+    DELETE FROM public.votacao_finalizada;
 
     -- 3. Contar e excluir snapshots e execuções de finalistas gerados em testes
     SELECT COUNT(*) INTO v_count_snapshots
-    FROM public.finalistas_snapshot
-    WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    );
+    FROM public.finalistas_snapshot;
 
-    DELETE FROM public.finalistas_snapshot
-    WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    );
-
-    DELETE FROM public.finalistas_execucoes
-    WHERE created_at >= '2026-09-01';
+    DELETE FROM public.finalistas_snapshot;
+    DELETE FROM public.finalistas_execucoes;
 
     -- 4. Contar e excluir apurações e memórias de cálculo de teste
     SELECT COUNT(*) INTO v_count_apuracoes
-    FROM public.apuracao_resultados
-    WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    );
+    FROM public.apuracao_resultados;
 
-    DELETE FROM public.apuracao_resultados
-    WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    );
-
-    DELETE FROM public.apuracao_execucoes
-    WHERE data_execucao >= '2026-09-01';
+    DELETE FROM public.apuracao_resultados;
+    DELETE FROM public.apuracao_execucoes;
 
     -- 5. Contar e excluir votos populares de teste da edição 2026
     SELECT COUNT(*) INTO v_count_votos_pop
     FROM public.votos_populares
     WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    ) OR created_at >= '2026-09-01';
+        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2026) = 2026
+    ) 
+    OR created_at >= '2026-01-01';
 
     DELETE FROM public.votos_populares
     WHERE inscricao_id IN (
-        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2025) = 2026
-    ) OR created_at >= '2026-09-01';
+        SELECT id FROM public.inscricoes WHERE COALESCE(edicao_ano, 2026) = 2026
+    ) 
+    OR created_at >= '2026-01-01';
 
     RETURN jsonb_build_object(
         'sucesso', true,
