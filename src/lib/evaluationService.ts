@@ -592,3 +592,34 @@ export async function getTop3ByCategoriaSql(areaKey: string): Promise<{ success:
     return { success: false, error: e?.message || 'Erro ao consolidar top3 via SQL' };
   }
 }
+
+/**
+ * Executa a limpeza completa de notas e dados de teste da Edição 2026
+ * Preserva todas as inscrições e contas de usuários intactas.
+ */
+export async function limparNotasTeste2026(): Promise<{
+  success: boolean;
+  data?: {
+    sucesso: boolean;
+    mensagem: string;
+    avaliacoes_excluidas: number;
+    finalizacoes_excluidas: number;
+    snapshots_excluidos: number;
+    apuracoes_excluidas: number;
+    votos_populares_excluidos: number;
+  };
+  error?: string;
+}> {
+  try {
+    const { data, error } = await (supabase as any).rpc('rpc_limpar_avaliacoes_teste_2026', {
+      p_confirmacao: 'LIMPAR_2026'
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro inesperado ao limpar notas de teste' };
+  }
+}
+

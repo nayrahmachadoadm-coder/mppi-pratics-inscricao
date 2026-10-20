@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Key, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Key, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { 
@@ -19,6 +19,7 @@ import {
 } from '@/lib/juryManagement';
 import { hasRole, getCurrentProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { limparNotasTeste2026 } from '@/lib/evaluationService';
 
 // Vagas conforme item 6 do edital
 const SEATS = [
@@ -45,7 +46,48 @@ const JuryManagement = () => {
     seatCode: '',
     seatLabel: '',
   });
+  const [isCleanDialogOpen, setIsCleanDialogOpen] = useState(false);
+  const [cleanConfirmInput, setCleanConfirmInput] = useState('');
+  const [isCleaning, setIsCleaning] = useState(false);
   const { toast } = useToast();
+
+  const handleCleanTestNotes = async () => {
+    if (cleanConfirmInput.trim().toUpperCase() !== 'LIMPAR') {
+      toast({
+        title: "Confirmação necessária",
+        description: "Digite exatamente LIMPAR para confirmar a exclusão.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsCleaning(true);
+    try {
+      const res = await limparNotasTeste2026();
+      if (res.success) {
+        toast({
+          title: "Notas de teste excluídas com sucesso!",
+          description: `${res.data?.avaliacoes_excluidas || 0} avaliações e ${res.data?.finalizacoes_excluidas || 0} finalizações de teste foram removidas do banco de dados.`,
+        });
+        setIsCleanDialogOpen(false);
+        setCleanConfirmInput('');
+        loadJuryMembers();
+      } else {
+        toast({
+          title: "Erro ao executar limpeza",
+          description: res.error || "Não foi possível executar a limpeza no servidor.",
+          variant: "destructive"
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro inesperado",
+        description: err?.message || "Ocorreu uma falha ao comunicar com o servidor.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCleaning(false);
+    }
+  };
 
   useEffect(() => {
     loadJuryMembers();
@@ -266,13 +308,68 @@ const JuryManagement = () => {
             Total de jurados: <Badge variant="secondary">{juryMembers.length}</Badge>
           </div>
           {isAdmin && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  Cadastrar Jurado
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center gap-2">
+              <Dialog open={isCleanDialogOpen} onOpenChange={setIsCleanDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2 text-rose-700 border-rose-300 hover:bg-rose-50 hover:text-rose-800">
+                    <RotateCcw className="w-4 h-4 text-rose-600" />
+                    Limpar Notas de Teste (2026)
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-rose-700">
+                      <AlertTriangle className="w-5 h-5 text-rose-600" />
+                      Limpar Notas de Teste da Edição 2026
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-600 text-justify pt-1">
+                      Esta operação excluirá permanentemente todas as <strong>avaliações</strong>, <strong>notas de jurados</strong> e <strong>finalizações de categoria de teste</strong> referentes à 10ª Edição (2026).
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2 text-xs">
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-900 space-y-1">
+                      <div className="font-semibold text-amber-950">Garantia de Integridade:</div>
+                      <p>• As <strong>inscrições de trabalhos permanecem 100% intactas</strong>.</p>
+                      <p>• Os <strong>usuários e jurados cadastrados NÃO são excluídos</strong>.</p>
+                      <p>• Apenas o histórico de notas e bloqueios de teste será zerado para o início oficial do julgamento.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirmClean" className="text-xs font-semibold text-slate-800">
+                        Digite <span className="font-mono text-rose-700">LIMPAR</span> para confirmar:
+                      </Label>
+                      <Input
+                        id="confirmClean"
+                        value={cleanConfirmInput}
+                        onChange={(e) => setCleanConfirmInput(e.target.value)}
+                        placeholder="LIMPAR"
+                        className="h-8 text-xs font-mono"
+                        disabled={isCleaning}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="secondary" size="sm" onClick={() => setIsCleanDialogOpen(false)} disabled={isCleaning}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleCleanTestNotes}
+                      disabled={isCleaning || cleanConfirmInput.trim().toUpperCase() !== 'LIMPAR'}
+                    >
+                      {isCleaning ? 'Limpando...' : 'Confirmar Limpeza'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    Cadastrar Jurado
+                  </Button>
+                </DialogTrigger>
               
               <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
@@ -351,7 +448,8 @@ const JuryManagement = () => {
                 </form>
               </DialogContent>
             </Dialog>
-          )}
+          </div>
+        )}
         </div>
 
         {juryMembers.length === 0 ? (
