@@ -235,27 +235,27 @@ const AdminRegulamento = () => {
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação da relação provisória das inscrições deferidas e indeferidas</td>
-                  <td className="p-2">13/10/2026</td>
+                  <td className="p-2">21/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Prazo para pedido de reconsideração</td>
-                  <td className="p-2">14/10/2026 a 16/10/2026</td>
+                  <td className="p-2">22/10/2026 a 26/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação da relação definitiva das inscrições habilitadas</td>
-                  <td className="p-2">20/10/2026</td>
+                  <td className="p-2">29/10/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Julgamento técnico pela Comissão Julgadora</td>
-                  <td className="p-2">20/10/2026 a 30/10/2026</td>
+                  <td className="p-2">29/10/2026 a 09/11/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Divulgação dos finalistas</td>
-                  <td className="p-2">03/11/2026</td>
+                  <td className="p-2">11/11/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Votação popular</td>
-                  <td className="p-2">04/11/2026 a 13/11/2026</td>
+                  <td className="p-2">12/11/2026 a 23/11/2026</td>
                 </tr>
                 <tr>
                   <td className="p-2">Cerimônia de premiação</td>

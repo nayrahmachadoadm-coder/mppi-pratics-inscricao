@@ -15,12 +15,21 @@ import { useToast } from '@/hooks/use-toast';
 
 const scoreOptions = [0,1,2,3,4,5];
 
+export const scoreScaleLabels: Record<number, string> = {
+  0: '0 ponto: critério não demonstrado',
+  1: '1 ponto: atendimento incipiente',
+  2: '2 pontos: atendimento parcial ou pouco consistente',
+  3: '3 pontos: atendimento satisfatório',
+  4: '4 pontos: atendimento relevante e bem demonstrado',
+  5: '5 pontos: atendimento excelente, amplamente demonstrado por dados, resultados ou evidências',
+};
+
 const criterionDescriptions: Record<string, string> = {
-  'Cooperação': 'Atuação colaborativa intra e interinstitucional ou em parceria com a sociedade civil.',
-  'Inovação': 'Introdução de novidade que resulte em produtos, serviços ou agregação de funcionalidades, com ganho de qualidade ou desempenho.',
-  'Resolutividade': 'Solução efetiva e concreta de um problema (eficácia da ação).',
-  'Impacto Social': 'Dimensão e profundidade da mudança gerada, com foco no número de pessoas beneficiadas e no efeito transformador para comunidade/instituição.',
-  'Replicabilidade': 'Capacidade de reaplicação ou adaptação em outras unidades, áreas ou contextos, com viabilidade prática e potencial de gerar resultados semelhantes ou superiores.',
+  'Cooperação': 'Grau de articulação e de colaboração entre unidades do MPPI, instituições parceiras ou organizações da sociedade civil.',
+  'Inovação': 'Adoção de solução, método, processo, ferramenta ou forma de atuação nova ou significativamente aperfeiçoada, capaz de produzir ganho de qualidade, eficiência ou desempenho.',
+  'Resolutividade': 'Capacidade da iniciativa de solucionar, prevenir, reduzir ou enfrentar de maneira concreta o problema que motivou sua implementação.',
+  'Impacto Social': 'Dimensão, relevância e profundidade das mudanças produzidas para a sociedade, para o público beneficiado ou para o funcionamento da Instituição.',
+  'Replicabilidade': 'Possibilidade de a iniciativa ser reaplicada ou adaptada em outras unidades, áreas ou contextos institucionais, considerando sua viabilidade prática e seu potencial de produzir resultados semelhantes.',
 };
 
 const AdminAvaliacao = () => {
@@ -236,9 +245,9 @@ const ScoreRadio: React.FC<{ label: string; value: number; invalid?: boolean; on
           {scoreOptions.map((opt) => {
             const id = `${label.replace(/\s+/g, '-')}-opt-${opt}`;
             return (
-              <div key={opt} className="flex items-center gap-1.5">
+              <div key={opt} className="flex items-center gap-1.5" title={scoreScaleLabels[opt]}>
                 <RadioGroupItem value={String(opt)} id={id} className="h-3.5 w-3.5" />
-                <Label htmlFor={id} className="text-xs text-gray-700">{opt}</Label>
+                <Label htmlFor={id} className="text-xs text-gray-700 cursor-pointer">{opt}</Label>
               </div>
             );
           })}

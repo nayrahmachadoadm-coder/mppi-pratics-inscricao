@@ -1,7 +1,11 @@
 import InscricaoForm from '@/components/InscricaoForm';
+import InscricoesEncerradas from '@/components/InscricoesEncerradas';
 
 const Index = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) => {
-  return <InscricaoForm isAdminBypass={isAdminBypass} />;
+  if (isAdminBypass) {
+    return <InscricaoForm isAdminBypass={true} />;
+  }
+  return <InscricoesEncerradas />;
 };
 
 export default Index;

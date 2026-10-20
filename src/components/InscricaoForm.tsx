@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import Step1 from '@/components/FormSteps/Step1';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import InscricoesEncerradas from '@/components/InscricoesEncerradas';
 
 interface FormData {
   // Dados do proponente
@@ -107,8 +108,12 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
 
   useEffect(() => {
     const initForm = async () => {
-      // O formulário é agora permanente (Banco de Práticas)
-      setPeriodoInscricaoStatus('aberto');
+      // O prazo de inscrições encerrou-se em 18/10/2026 às 23h59
+      if (isAdminBypass) {
+        setPeriodoInscricaoStatus('aberto');
+      } else {
+        setPeriodoInscricaoStatus('fechado_depois');
+      }
       
       const searchParams = new URLSearchParams(window.location.search);
       const editId = searchParams.get('id');
@@ -345,6 +350,15 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
     e.preventDefault();
     
     if (isSubmitting) return;
+
+    if (!isAdminBypass) {
+      toast({
+        title: "Inscrições Encerradas",
+        description: "O prazo para envio de novas inscrições ou alterações encerrou-se em 18/10/2026.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // IMPORTANTE: handleSubmit só deve ser executado quando estiver no Step 5 (último step)
     // Se não estiver no Step 5, não deve processar o submit
@@ -1039,6 +1053,10 @@ const InscricaoForm = ({ isAdminBypass = false }: { isAdminBypass?: boolean }) =
       </div>
     </div>
   );
+
+  if (!isAdminBypass && periodoInscricaoStatus === 'fechado_depois') {
+    return <InscricoesEncerradas />;
+  }
 
   return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 py-8 relative overflow-hidden">

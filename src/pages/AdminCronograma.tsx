@@ -13,16 +13,16 @@ const AdminCronograma = () => {
   // Eventos
   const singleEvents: { date: string; label: string }[] = [
     { date: '2026-09-04', label: 'Lançamento do Edital' },
-    { date: '2026-10-13', label: 'Divulgação provisória (deferidas/indeferidas)' },
-    { date: '2026-10-20', label: 'Divulgação definitiva das inscrições habilitadas' },
-    { date: '2026-11-03', label: 'Divulgação dos finalistas' },
+    { date: '2026-10-21', label: 'Divulgação da relação provisória das inscrições deferidas e indeferidas' },
+    { date: '2026-10-29', label: 'Divulgação da relação definitiva das inscrições habilitadas' },
+    { date: '2026-11-11', label: 'Divulgação dos finalistas' },
   ];
 
   const rangeEvents: { start: string; end: string; label: string }[] = [
-    { start: '2026-09-08', end: '2026-10-08', label: 'Período de inscrições' },
-    { start: '2026-10-14', end: '2026-10-16', label: 'Prazo para pedido de reconsideração' },
-    { start: '2026-10-20', end: '2026-10-30', label: 'Julgamento técnico pela Comissão Julgadora' },
-    { start: '2026-11-04', end: '2026-11-13', label: 'Votação popular' },
+    { start: '2026-09-08', end: '2026-10-18', label: 'Período de inscrições' },
+    { start: '2026-10-22', end: '2026-10-26', label: 'Prazo para pedido de reconsideração' },
+    { start: '2026-10-29', end: '2026-11-09', label: 'Julgamento técnico pela Comissão Julgadora' },
+    { start: '2026-11-12', end: '2026-11-23', label: 'Votação popular' },
   ];
 
   const isInRange = (iso: string, start: string, end: string) => iso >= start && iso <= end;
@@ -75,13 +75,15 @@ const AdminCronograma = () => {
 
             let className = 'aspect-square rounded-md flex items-center justify-center text-sm';
             let title = '';
-            if (range && !single) {
-              className += ' bg-primary/10 border border-primary/30';
-              title = `${formatPtBR(iso)} – ${range.label}`;
-            }
-            if (single) {
+            if (single && range) {
+              className += ' bg-primary text-primary-foreground font-semibold ring-2 ring-yellow-400';
+              title = `${formatPtBR(iso)} – ${single.label} / ${range.label}`;
+            } else if (single) {
               className += ' bg-primary text-primary-foreground font-semibold';
               title = `${formatPtBR(iso)} – ${single.label}`;
+            } else if (range) {
+              className += ' bg-primary/10 border border-primary/30';
+              title = `${formatPtBR(iso)} – ${range.label}`;
             }
 
             return (
@@ -127,15 +129,15 @@ const AdminCronograma = () => {
               <div className="text-sm font-medium text-muted-foreground mb-2">Legenda textual</div>
               <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
                 <li>04/09/2026 — Lançamento do Edital</li>
-                <li>08/09/2026 a 08/10/2026 — Período de inscrições</li>
-                <li>13/10/2026 — Divulgação da relação provisória das inscrições deferidas e indeferidas</li>
-                <li>14/10/2026 a 16/10/2026 — Prazo para pedido de reconsideração</li>
-                <li>20/10/2026 — Divulgação da relação definitiva das inscrições habilitadas</li>
-                <li>20/10/2026 a 30/10/2026 — Julgamento técnico pela Comissão Julgadora</li>
-                <li>03/11/2026 — Divulgação dos finalistas</li>
-                <li>04/11/2026 a 13/11/2026 — Votação popular</li>
+                <li>08/09/2026 a 18/10/2026 — Período de inscrições</li>
+                <li>21/10/2026 — Divulgação da relação provisória das inscrições deferidas e indeferidas</li>
+                <li>22/10/2026 a 26/10/2026 — Prazo para pedido de reconsideração</li>
+                <li>29/10/2026 — Divulgação da relação definitiva das inscrições habilitadas</li>
+                <li>29/10/2026 a 09/11/2026 — Julgamento técnico pela Comissão Julgadora</li>
+                <li>11/11/2026 — Divulgação dos finalistas</li>
+                <li>12/11/2026 a 23/11/2026 — Votação popular</li>
                 <li>Dezembro de 2026 — Cerimônia de premiação</li>
-                <li>Após cerimônia — Publicação e homologação do resultado final</li>
+                <li>Após a cerimônia — Publicação e homologação do resultado final</li>
               </ul>
             </div>
           </CardContent>

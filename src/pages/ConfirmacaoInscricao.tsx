@@ -158,7 +158,7 @@ const ConfirmacaoInscricao: React.FC = () => {
               size="lg"
             >
               <Home className="h-5 w-5 mr-2" />
-              Nova Inscrição
+              Página Inicial
             </Button>
           </div>
 
