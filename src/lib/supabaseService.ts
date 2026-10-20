@@ -7,7 +7,7 @@ const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KE
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('[Supabase] Variáveis de ambiente ausentes: VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY');
 }
-const supabasePublic = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabasePublic = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
@@ -505,3 +505,40 @@ export async function getPeriodoInscricao(): Promise<{
     return { inicio: null, fim: null };
   }
 }
+
+export async function getPeriodoVotacao(): Promise<{
+  inicio: Date | null;
+  fim: Date | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('cronograma_parametros')
+      .select('chave, valor_data')
+      .in('chave', ['inicio_votacao', 'fim_votacao']);
+
+    if (error || !data) return { inicio: null, fim: null };
+
+    const inicioStr = data.find(item => item.chave === 'inicio_votacao')?.valor_data;
+    const fimStr = data.find(item => item.chave === 'fim_votacao')?.valor_data;
+
+    const parseDateLocal = (dateStr: string | undefined) => {
+      if (!dateStr) return null;
+      let isoStr = dateStr.replace(' ', 'T');
+      if (isoStr.length === 10) {
+        isoStr += "T00:00:00";
+      }
+      const timePart = isoStr.split('T')[1];
+      if (timePart && !timePart.includes('Z') && !timePart.includes('-') && !timePart.includes('+')) {
+        isoStr += "-03:00";
+      }
+      return new Date(isoStr);
+    };
+
+    return {
+      inicio: parseDateLocal(inicioStr),
+      fim: parseDateLocal(fimStr),
+    };
+  } catch (error) {
+    return { inicio: null, fim: null };
+  }
+}

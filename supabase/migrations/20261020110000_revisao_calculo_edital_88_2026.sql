@@ -544,3 +544,110 @@ BEGIN
     RETURN QUERY SELECT * FROM temp_apuracao_resultados;
 END;
 $$;
+
+
+-- 4. Atualizar RPC votos_count para filtrar apenas votos válidos (Item 9.6 e 9.7) e da edição 2026
+DROP FUNCTION IF EXISTS public.votos_count(text);
+CREATE OR REPLACE FUNCTION public.votos_count(categoria text)
+RETURNS TABLE (inscricao_id uuid, votos integer)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT vp.inscricao_id, count(*)::int AS votos
+  FROM public.votos_populares vp
+  JOIN public.inscricoes i ON i.id = vp.inscricao_id
+  WHERE vp.categoria = categoria 
+    AND COALESCE(vp.valido, true) = true
+    AND COALESCE(i.edicao_ano, 2025) = 2026
+  GROUP BY vp.inscricao_id
+  ORDER BY votos DESC;
+$$;
+
+
+-- 5. Atualizar RPC get_voto_popular_candidatos (Item 9.1 a 9.4)
+-- Retorna os 3 finalistas consolidados em ordem aleatória para o público (Item 9.2).
+-- Permite visualização prévia da comissão julgadora/administração fora do período.
+DROP FUNCTION IF EXISTS public.get_voto_popular_candidatos(text, double precision);
+CREATE OR REPLACE FUNCTION public.get_voto_popular_candidatos(p_categoria TEXT, p_session_seed DOUBLE PRECISION)
+RETURNS TABLE (
+    inscricao_id UUID,
+    titulo_iniciativa TEXT,
+    nome_completo TEXT,
+    lotacao TEXT,
+    descricao_iniciativa TEXT,
+    problema_necessidade TEXT,
+    metodologia TEXT,
+    principais_resultados TEXT
+)
+SECURITY DEFINER
+SET search_path = public, pg_temp
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_inicio TIMESTAMP;
+    v_fim TIMESTAMP;
+    v_is_admin BOOLEAN := false;
+BEGIN
+    SELECT valor_data INTO v_inicio FROM public.cronograma_parametros WHERE chave = 'inicio_votacao';
+    SELECT valor_data INTO v_fim FROM public.cronograma_parametros WHERE chave = 'fim_votacao';
+
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_roles 
+        WHERE user_id = auth.uid() AND role::text IN ('admin', 'jurado')
+    ) INTO v_is_admin;
+
+    IF (now() < v_inicio OR now() > v_fim) AND NOT v_is_admin THEN
+        RAISE EXCEPTION 'Fora do período de votação popular (período oficial: % a %).', 
+            to_char(v_inicio, 'DD/MM/YYYY'), to_char(v_fim, 'DD/MM/YYYY');
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        i.id,
+        i.titulo_iniciativa,
+        i.nome_completo,
+        COALESCE(i.lotacao, i.unidade_setor) AS lotacao,
+        COALESCE(i.descricao_iniciativa, i.resumo_executivo) AS descricao_iniciativa,
+        i.problema_necessidade,
+        COALESCE(i.metodologia, i.etapas_metodologia) AS metodologia,
+        COALESCE(i.principais_resultados, i.resultados_alcancados) AS principais_resultados
+    FROM public.finalistas_snapshot fs
+    JOIN public.inscricoes i ON i.id = fs.inscricao_id
+    WHERE fs.categoria = p_categoria 
+      AND COALESCE(i.edicao_ano, 2025) = 2026
+    ORDER BY md5(fs.inscricao_id::text || p_session_seed::text);
+END;
+$$;
+
+
+-- 6. Garantir restrição de período na inserção direta de votos populares (Item 9.4 e 9.7)
+CREATE OR REPLACE FUNCTION public.check_periodo_voto_popular()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_inicio TIMESTAMP;
+    v_fim TIMESTAMP;
+BEGIN
+    SELECT valor_data INTO v_inicio FROM public.cronograma_parametros WHERE chave = 'inicio_votacao';
+    SELECT valor_data INTO v_fim FROM public.cronograma_parametros WHERE chave = 'fim_votacao';
+
+    IF v_inicio IS NOT NULL AND v_fim IS NOT NULL THEN
+        IF now() < v_inicio OR now() > v_fim THEN
+            RAISE EXCEPTION 'Votação popular bloqueada. O período oficial de votação é de % a %.',
+                to_char(v_inicio, 'DD/MM/YYYY'), to_char(v_fim, 'DD/MM/YYYY');
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_check_periodo_voto_popular ON public.votos_populares;
+CREATE TRIGGER trg_check_periodo_voto_popular
+BEFORE INSERT ON public.votos_populares
+FOR EACH ROW
+EXECUTE FUNCTION public.check_periodo_voto_popular();
+

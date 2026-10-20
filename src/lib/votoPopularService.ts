@@ -1,4 +1,6 @@
-import { supabase as client } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import { supabasePublic } from '@/lib/supabaseService';
+import { isAuthenticated } from '@/lib/auth';
 
 export type SubmitVotoPayload = {
   categoria: string;
@@ -8,6 +10,7 @@ export type SubmitVotoPayload = {
 };
 
 export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<{ success: boolean; error?: string }>{
+  const client = supabasePublic || supabase;
   if (!client) {
     console.warn('[VotoPopular] Supabase não configurado. Voto será apenas local.');
     return { success: true };
@@ -33,9 +36,9 @@ export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<{ s
 }
 
 export async function getVotosCountByCategoria(categoria: string): Promise<Record<string, number>> {
-  if (!client) return {};
+  if (!supabase) return {};
   try {
-    const { data, error } = await (client as any).rpc('votos_count', { categoria });
+    const { data, error } = await (supabase as any).rpc('votos_count', { categoria });
     if (error || !data) return {};
     const counts: Record<string, number> = {};
     for (const row of data as any[]) {
@@ -62,9 +65,11 @@ export type VotoPopularCandidato = {
 };
 
 export async function getVotoPopularCandidatos(categoria: string, seed: number): Promise<{ success: boolean; data?: VotoPopularCandidato[]; error?: string }> {
-  if (!client) return { success: false, error: 'Sem conexão' };
   try {
-    const { data, error } = await (client as any).rpc('get_voto_popular_candidatos', { p_categoria: categoria, p_session_seed: seed });
+    const isAuth = await isAuthenticated();
+    const activeClient = isAuth ? supabase : (supabasePublic || supabase);
+    if (!activeClient) return { success: false, error: 'Sem conexão' };
+    const { data, error } = await (activeClient as any).rpc('get_voto_popular_candidatos', { p_categoria: categoria, p_session_seed: seed });
     if (error) {
       return { success: false, error: error.message };
     }
