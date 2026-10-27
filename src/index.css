@@ -36,11 +36,11 @@ All colors MUST be HSL for proper theming.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 345 12% 90%;
+    --border: 0 0% 20%;
     --input: 0 0% 100%;
     --ring: 345 85% 25%;
 
-    --radius: 0.75rem;
+    --radius: 0.125rem;
 
     /* Custom MPPI colors */
     --institutional: 345 85% 25%;

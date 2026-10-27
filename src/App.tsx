@@ -23,7 +23,7 @@ import AdminApuracao from "./pages/AdminApuracao";
 import AdminRelatorioCategoria from "./pages/AdminRelatorioCategoria";
 import AdminRelatorioJurados from "./pages/AdminRelatorioJurados";
 import JuradoMinhasAvaliacoes from "./pages/JuradoMinhasAvaliacoes";
-import ProponenteAuth from "./pages/ProponenteAuth";
+import AreaProponente from "./pages/AreaProponente";
 import MinhasPraticas from "./pages/MinhasPraticas";
 import AdminCronograma from "./pages/AdminCronograma";
 import AdminEdicoesAnteriores from "./pages/AdminEdicoesAnteriores";
@@ -50,7 +50,9 @@ const App = () => (
           <Route path="/inscricao" element={<Index />} />
           <Route path="/confirmacao" element={<ConfirmacaoInscricao />} />
           
-          <Route path="/login" element={<ProponenteAuth />} />
+          <Route path="/login" element={<AreaProponente />} />
+          <Route path="/proponente" element={<AreaProponente />} />
+          <Route path="/area-proponente" element={<AreaProponente />} />
           <Route path="/minhas-praticas" element={
             <ProtectedRoute>
               <MinhasPraticas />
