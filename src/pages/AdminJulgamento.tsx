@@ -197,7 +197,12 @@ const AdminJulgamento: React.FC = () => {
         const filters: InscricaoFilters = { area_atuacao: selectedArea };
         const res = await getAllInscricoes(1, 1000, filters);
         if (res.success) {
-          const list = (res.data || []).sort((a,b) => (a.titulo_iniciativa||'').localeCompare(b.titulo_iniciativa||'', 'pt-BR', { sensitivity: 'base' }));
+          // Filtrar trabalhos indeferidos: não aparecem na página de julgamento pois foram indeferidos
+          const aptasParaJulgamento = (res.data || []).filter((item) => {
+            const status = (item.status_inscricao || '').trim().toLowerCase();
+            return status !== 'indeferida' && status !== 'indeferido';
+          });
+          const list = aptasParaJulgamento.sort((a,b) => (a.titulo_iniciativa||'').localeCompare(b.titulo_iniciativa||'', 'pt-BR', { sensitivity: 'base' }));
           setInscricoes(list);
           // posicionar conforme preferência e persistência
           let idx = 0;
@@ -241,7 +246,11 @@ const AdminJulgamento: React.FC = () => {
         try {
           const res = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
           if (res.success) {
-            const list = res.data || [];
+            // Filtrar trabalhos indeferidos também no resumo de julgamento
+            const list = (res.data || []).filter((item) => {
+              const status = (item.status_inscricao || '').trim().toLowerCase();
+              return status !== 'indeferida' && status !== 'indeferido';
+            });
             const total = list.length;
             const done = list.reduce((acc, i) => acc + (i.id && votedIds.has(i.id) ? 1 : 0), 0);
             nextResumo[cat.key] = { total, done } as any;

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getAllInscricoes, AdminInscricaoData, InscricaoFilters } from '@/lib/adminService';
-import { ArrowLeft, Eye, Award, BarChart3, Trash2, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Eye, Award, BarChart3, Trash2, Clock, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { hasRole } from '@/lib/auth';
 import DeleteInscricaoModal, { InscricaoDeleteTarget } from '@/components/DeleteInscricaoModal';
@@ -62,9 +62,10 @@ const AdminCategoriaList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const itemsPerPage = 50;
 
-  // Filtros e ordenação para análise de duplicidades
+  // Filtros e ordenação para análise de duplicidades e situação de triagem
   const [sortBy, setSortBy] = useState<InscricaoSortOption>('duplicates');
   const [onlyDuplicates, setOnlyDuplicates] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'deferidas' | 'indeferidas'>('all');
 
   const areaLabel = useMemo(() => areaLabelMap[area || ''] || (area || ''), [area]);
 
@@ -109,14 +110,40 @@ const AdminCategoriaList = () => {
     return analyzeDuplicates(inscricoes);
   }, [inscricoes]);
 
+  // Contadores de situação de triagem
+  const statusCounts = useMemo(() => {
+    let deferidas = 0;
+    let indeferidas = 0;
+    for (const item of inscricoes) {
+      const s = (item.status_inscricao || '').trim().toLowerCase();
+      if (s === 'indeferida' || s === 'indeferido') {
+        indeferidas++;
+      } else {
+        deferidas++;
+      }
+    }
+    return { all: inscricoes.length, deferidas, indeferidas };
+  }, [inscricoes]);
+
   // Inscrições filtradas e ordenadas para exibição
   const displayedInscricoes = useMemo(() => {
     let list = inscricoes;
     if (onlyDuplicates) {
       list = list.filter((item) => duplicateAnalysis.metaById.get(item.id)?.isDuplicate);
     }
+    if (statusFilter === 'deferidas') {
+      list = list.filter((item) => {
+        const s = (item.status_inscricao || '').trim().toLowerCase();
+        return s !== 'indeferida' && s !== 'indeferido';
+      });
+    } else if (statusFilter === 'indeferidas') {
+      list = list.filter((item) => {
+        const s = (item.status_inscricao || '').trim().toLowerCase();
+        return s === 'indeferida' || s === 'indeferido';
+      });
+    }
     return sortInscricoes(list, sortBy, duplicateAnalysis);
-  }, [inscricoes, onlyDuplicates, sortBy, duplicateAnalysis]);
+  }, [inscricoes, onlyDuplicates, statusFilter, sortBy, duplicateAnalysis]);
 
   const handleDeleteSuccess = (deletedId: string) => {
     setInscricoes((prev) => prev.filter((item) => item.id !== deletedId));
@@ -167,7 +194,46 @@ const AdminCategoriaList = () => {
               <p className="text-xs opacity-90">{areaLabel}</p>
 
               {/* Controles de Ordenação e Filtro */}
-              <div className="flex items-center flex-wrap gap-1.5 text-xs">
+              <div className="flex items-center flex-wrap gap-2 text-xs">
+                {/* Filtro de Triagem */}
+                <div className="inline-flex rounded-md shadow-xs bg-white/10 p-0.5 text-white">
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      statusFilter === 'all'
+                        ? 'bg-white text-primary font-bold shadow-xs'
+                        : 'text-white/90 hover:bg-white/20'
+                    }`}
+                  >
+                    Todas ({statusCounts.all})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('deferidas')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors flex items-center gap-1 ${
+                      statusFilter === 'deferidas'
+                        ? 'bg-emerald-500 text-white font-bold shadow-xs'
+                        : 'text-white/90 hover:bg-white/20'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    Deferidas ({statusCounts.deferidas})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('indeferidas')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors flex items-center gap-1 ${
+                      statusFilter === 'indeferidas'
+                        ? 'bg-rose-500 text-white font-bold shadow-xs'
+                        : 'text-white/90 hover:bg-white/20'
+                    }`}
+                  >
+                    <XCircle className="w-3 h-3" />
+                    Indeferidas ({statusCounts.indeferidas})
+                  </button>
+                </div>
+
                 <span className="text-[hsl(var(--primary-foreground))] opacity-90 text-[11px] font-medium">Ordenar:</span>
                 <div className="inline-flex rounded-md shadow-xs bg-white/10 p-0.5 text-white">
                   <button
@@ -266,18 +332,26 @@ const AdminCategoriaList = () => {
               ) : displayedInscricoes.length === 0 ? (
                 <div className="py-10 text-center text-gray-600">
                   {onlyDuplicates
-                    ? 'Nenhuma duplicidade encontrada nesta categoria.'
+                    ? 'Nenhuma duplicidade encontrada com o filtro atual.'
+                    : statusFilter === 'indeferidas'
+                    ? 'Nenhuma inscrição indeferida nesta categoria.'
+                    : statusFilter === 'deferidas'
+                    ? 'Nenhuma inscrição deferida encontrada nesta categoria.'
                     : 'Nenhum trabalho encontrado nesta categoria.'}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {displayedInscricoes.map((item) => {
                     const meta = duplicateAnalysis.metaById.get(item.id);
+                    const isIndeferida = (item.status_inscricao || '').trim().toLowerCase().includes('indeferid');
+                    const isValidada = (item.status_inscricao || '').trim().toLowerCase() === 'validada' || (item.status_inscricao || '').trim().toLowerCase() === 'deferida';
                     return (
                       <div
                         key={item.id}
                         className={`group border rounded-md p-3 sm:p-4 bg-white shadow-md hover:shadow-lg transition-all cursor-pointer relative ${
-                          meta?.isOlder
+                          isIndeferida
+                            ? 'border-rose-300 bg-rose-50/20 hover:bg-rose-50/40'
+                            : meta?.isOlder
                             ? 'border-amber-300 bg-amber-50/20 hover:bg-amber-50/40'
                             : meta?.isLatest
                             ? 'border-emerald-300/80 bg-white hover:bg-emerald-50/20'
@@ -330,6 +404,32 @@ const AdminCategoriaList = () => {
                               <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-blue-900 bg-blue-50/90 border border-blue-200/70 px-2 py-0.5 rounded w-fit">
                                 <Clock className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                                 <span>Inscrito em: <strong>{formatDateTime(item.created_at)}</strong></span>
+                              </div>
+
+                              {/* Situação da Inscrição (Triagem) */}
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                {isIndeferida ? (
+                                  <div className="space-y-1 w-full">
+                                    <Badge variant="destructive" className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] px-2 py-0.5 flex items-center gap-1 w-fit font-bold shadow-xs">
+                                      <XCircle className="w-3 h-3" />
+                                      INDEFERIDA (Não participará do julgamento)
+                                    </Badge>
+                                    {item.parecer_triagem && (
+                                      <p className="text-[11px] text-rose-800 bg-rose-50 border border-rose-200/80 p-1.5 rounded leading-snug">
+                                        <span className="font-bold">Motivo:</span> {item.parecer_triagem}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : isValidada ? (
+                                  <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2 py-0.5 flex items-center gap-1 font-semibold shadow-xs">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Deferida / Apta ao Julgamento
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 text-[10px] px-2 py-0.5 font-medium">
+                                    Situação: {item.status_inscricao || 'Inscrita'}
+                                  </Badge>
+                                )}
                               </div>
 
                               {/* Indicador de Duplicidade / Conformidade com Edital */}

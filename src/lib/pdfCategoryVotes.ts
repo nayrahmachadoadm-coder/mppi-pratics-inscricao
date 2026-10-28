@@ -300,8 +300,11 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     { key: 'total', label: 'Total', width: numW },
   ];
 
-  const { data: inscricoes } = await getAllInscricoes(1, 1000, { area_atuacao: areaKey } as any);
-  const list = inscricoes || [];
+  const { data: rawInscricoes } = await getAllInscricoes(1, 1000, { area_atuacao: areaKey } as any);
+  const list = (rawInscricoes || []).filter((insc) => {
+    const status = (insc.status_inscricao || '').trim().toLowerCase();
+    return status !== 'indeferida' && status !== 'indeferido';
+  });
   const works: Array<{ insc: any; avs: any[]; sumCoop: number; sumInov: number; sumResol: number; sumImp: number; sumRep: number; totalWork: number }> = [];
   for (const insc of list) {
     const avRes = await getAvaliacoesByInscricao(insc.id);

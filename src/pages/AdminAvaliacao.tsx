@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, CheckCircle, Award, Info } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Award, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { AdminInscricaoData, getInscricaoById } from '@/lib/adminService';
 import { getCurrentProfile, isAuthenticated } from '@/lib/auth';
 import { ScoreEntry, submitAvaliacao } from '@/lib/evaluationService';
@@ -53,6 +53,11 @@ const AdminAvaliacao = () => {
   const [showValidation, setShowValidation] = useState<boolean>(false);
 
   const isPratica = inscricao?.area?.includes('pratica') ?? false;
+
+  const isIndeferida = useMemo(() => {
+    const s = (inscricao?.status_inscricao || '').trim().toLowerCase();
+    return s === 'indeferida' || s === 'indeferido';
+  }, [inscricao?.status_inscricao]);
 
   const total = useMemo(() => {
     return Object.entries(scores).reduce((sum, [key, v]) => {
@@ -182,35 +187,68 @@ const AdminAvaliacao = () => {
               </CardContent>
             </Card>
 
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5" /> Atribuir Notas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <ScoreRadio label="Cooperação" value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
-                  <ScoreRadio label="Inovação" value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
-                  <ScoreRadio label="Resolutividade" value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
-                  <ScoreRadio label="Impacto Social" value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
-                  <ScoreRadio label="Replicabilidade" value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">Soma automática da pontuação</div>
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <CheckCircle className="w-5 h-5 text-green-600" /> Total: {total}
+            {isIndeferida ? (
+              <Card className="shadow-md border-red-200 bg-red-50/20">
+                <CardHeader>
+                  <CardTitle className="text-base text-red-800 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    Inscrição Indeferida na Triagem Formal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert variant="destructive" className="bg-red-50 text-red-900 border-red-300">
+                    <AlertDescription className="space-y-2">
+                      <p>
+                        Esta iniciativa consta como <strong>Indeferida</strong> no sistema e, portanto, <strong>não será julgada</strong> pela Comissão Julgadora conforme o regulamento do certame.
+                      </p>
+                      {inscricao.parecer_triagem && (
+                        <p className="text-xs bg-white/80 p-2 rounded border border-red-200">
+                          <strong>Parecer / Justificativa da Triagem:</strong> {inscricao.parecer_triagem}
+                        </p>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" onClick={() => navigate('/admin/inscritos')}>
+                      Ver Lista de Inscritos
+                    </Button>
+                    <Button onClick={() => navigate('/admin/julgamento')}>
+                      Ir para o Painel de Julgamento
+                    </Button>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Award className="w-5 h-5" /> Atribuir Notas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <ScoreRadio label="Cooperação" value={scores.cooperacao} invalid={showValidation && scores.cooperacao < 0} onChange={(v) => handleChange('cooperacao', v)} />
+                    <ScoreRadio label="Inovação" value={scores.inovacao} invalid={showValidation && scores.inovacao < 0} onChange={(v) => handleChange('inovacao', v)} />
+                    <ScoreRadio label="Resolutividade" value={scores.resolutividade} invalid={showValidation && scores.resolutividade < 0} onChange={(v) => handleChange('resolutividade', v)} />
+                    <ScoreRadio label="Impacto Social" value={scores.impacto_social} invalid={showValidation && scores.impacto_social < 0} onChange={(v) => handleChange('impacto_social', v)} />
+                    <ScoreRadio label="Replicabilidade" value={scores.replicabilidade} invalid={showValidation && scores.replicabilidade < 0} onChange={(v) => handleChange('replicabilidade', v)} />
+                  </div>
 
-                <div className="flex justify-end">
-                  <Button onClick={handleSave} disabled={saving || !isComplete}>
-                    {saving ? 'Salvando...' : 'Salvar avaliação'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">Soma automática da pontuação</div>
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <CheckCircle className="w-5 h-5 text-green-600" /> Total: {total}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={handleSave} disabled={saving || !isComplete}>
+                      {saving ? 'Salvando...' : 'Salvar avaliação'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : null}
       </main>

@@ -127,7 +127,11 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
     if (!res.success) {
       return { success: false, error: res.error || 'Erro ao buscar inscrições.' };
     }
-    const inscricoes = res.data || [];
+    // Filtrar inscrições indeferidas: não entram no ranking nem totalização de julgamento
+    const inscricoes = (res.data || []).filter((insc) => {
+      const status = (insc.status_inscricao || '').trim().toLowerCase();
+      return status !== 'indeferida' && status !== 'indeferido';
+    });
     // Obter votos populares da categoria
     const votosCount = await getVotosCountByCategoria(area);
     const votosArray = Object.values(votosCount);
