@@ -541,4 +541,38 @@ export async function getPeriodoVotacao(): Promise<{
   } catch (error) {
     return { inicio: null, fim: null };
   }
-}
+}
+
+export async function getCronogramaParametros(): Promise<Record<string, Date | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('cronograma_parametros')
+      .select('chave, valor_data');
+
+    if (error || !data) return {};
+
+    const parseDateLocal = (dateStr: string | undefined) => {
+      if (!dateStr) return null;
+      let isoStr = dateStr.replace(' ', 'T');
+      if (isoStr.length === 10) {
+        isoStr += "T00:00:00";
+      }
+      const timePart = isoStr.split('T')[1];
+      if (timePart && !timePart.includes('Z') && !timePart.includes('-') && !timePart.includes('+')) {
+        isoStr += "-03:00";
+      }
+      return new Date(isoStr);
+    };
+
+    const result: Record<string, Date | null> = {};
+    for (const item of data) {
+      if (item.chave) {
+        result[item.chave] = parseDateLocal(item.valor_data);
+      }
+    }
+    return result;
+  } catch (error) {
+    return {};
+  }
+}
+

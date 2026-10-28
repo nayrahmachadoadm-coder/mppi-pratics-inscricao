@@ -8,13 +8,54 @@ export type UserRole = 'admin' | 'jurado';
  */
 export async function authenticateUser(email: string, password: string): Promise<{ success: boolean; error?: string; mustChangePassword?: boolean }> {
   try {
+    let cleanEmail = email.trim().toLowerCase();
+    
+    // Suporte para digitar apenas o nome de usuário comum
+    if (!cleanEmail.includes('@')) {
+      if (cleanEmail === 'planejamento') {
+        cleanEmail = 'planejamento@mppi.mp.br';
+      } else if (cleanEmail === 'admin') {
+        cleanEmail = 'admin@mppi.gov.br';
+      } else {
+        cleanEmail = `${cleanEmail}@mppi.mp.br`;
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: cleanEmail,
       password,
     });
 
     if (error) {
-      return { success: false, error: 'Credenciais inválidas' };
+      console.error('[Supabase Auth Debug]', { status: error.status, message: error.message, name: error.name });
+      
+      const msg = (error.message || '').toLowerCase();
+      
+      // Erro de conexão, rede ou projeto pausado no Supabase
+      if (msg.includes('fetch') || error.name === 'AuthRetryableFetchError' || error.status === 0) {
+        return { 
+          success: false, 
+          error: 'Falha de comunicação com o servidor do Supabase. Verifique sua conexão ou se o projeto está pausado no painel do Supabase.' 
+        };
+      }
+      
+      // Erro de e-mail não confirmado
+      if (msg.includes('email not confirmed')) {
+        return { 
+          success: false, 
+          error: 'E-mail cadastrado, mas ainda não foi confirmado no Supabase Auth.' 
+        };
+      }
+
+      // Credenciais incorretas ou usuário não encontrado
+      if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+        return { 
+          success: false, 
+          error: 'Credenciais inválidas. Verifique o e-mail cadastrado no Supabase Auth (planejamento@mppi.mp.br ou admin@mppi.gov.br) e a senha.' 
+        };
+      }
+
+      return { success: false, error: error.message || 'Credenciais inválidas' };
     }
 
     // Verificar se precisa trocar senha
@@ -29,6 +70,14 @@ export async function authenticateUser(email: string, password: string): Promise
       mustChangePassword: profileData?.must_change_password || false 
     };
   } catch (e: any) {
+    console.error('[Auth Exception]', e);
+    const msg = (e?.message || '').toLowerCase();
+    if (msg.includes('fetch')) {
+      return { 
+        success: false, 
+        error: 'Não foi possível conectar ao Supabase. Verifique se o projeto está ativo no painel.' 
+      };
+    }
     return { success: false, error: e?.message || 'Erro ao autenticar' };
   }
 }

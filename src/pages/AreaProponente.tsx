@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Trophy, 
@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Compass,
   FileCheck,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,77 +29,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { calcularCertameStatus } from '@/utils/cronogramaEtapas';
+import { getCronogramaParametros } from '@/lib/supabaseService';
 
 const AreaProponente: React.FC = () => {
   const navigate = useNavigate();
   const [isRegulamentoOpen, setIsRegulamentoOpen] = useState(false);
+  const [certameStatus, setCertameStatus] = useState(() => calcularCertameStatus());
 
-  const etapasCronograma = [
-    {
-      etapa: '01',
-      titulo: 'Submissão das Inscrições',
-      periodo: '08/09 a 18/10/2026',
-      status: 'concluido',
-      statusLabel: 'Encerrado',
-      desc: 'Período oficial de cadastro e envio das práticas e projetos inovadores via formulário eletrônico público.',
-    },
-    {
-      etapa: '02',
-      titulo: 'Relação Provisória de Inscrições',
-      periodo: '21/10/2026',
-      status: 'em_andamento',
-      statusLabel: 'Em Andamento',
-      desc: 'Divulgação preliminar no Diário Oficial das iniciativas que foram deferidas e indeferidas na triagem formal.',
-    },
-    {
-      etapa: '03',
-      titulo: 'Prazo para Pedido de Reconsideração',
-      periodo: '22/10 a 26/10/2026',
-      status: 'proximo',
-      statusLabel: 'Fase Recursal',
-      desc: 'Prazo para autores de inscrições preliminarmente indeferidas apresentarem justificativa e recurso fundamentado.',
-    },
-    {
-      etapa: '04',
-      titulo: 'Relação Definitiva de Habilitados',
-      periodo: '29/10/2026',
-      status: 'proximo',
-      statusLabel: 'Homologação',
-      desc: 'Publicação da lista definitiva com todas as iniciativas habilitadas a serem julgadas pela Comissão Julgadora.',
-    },
-    {
-      etapa: '05',
-      titulo: 'Julgamento Técnico pelos Jurados',
-      periodo: '29/10 a 09/11/2026',
-      status: 'proximo',
-      statusLabel: 'Avaliação Técnica',
-      desc: 'Análise individual e atribuição de notas de 0 a 5 em cada um dos 5 critérios por parte dos jurados designados.',
-    },
-    {
-      etapa: '06',
-      titulo: 'Divulgação dos Finalistas',
-      periodo: '11/11/2026',
-      status: 'proximo',
-      statusLabel: 'Classificação',
-      desc: 'Apresentação dos 3 (três) trabalhos com maior média técnica em cada categoria habilitados ao voto popular.',
-    },
-    {
-      etapa: '07',
-      titulo: 'Votação Popular Institucional',
-      periodo: '12/11 a 23/11/2026',
-      status: 'proximo',
-      statusLabel: 'Votação Aberta',
-      desc: 'Votação aberta e direta para todos os integrantes (membros e servidores) do Ministério Público do Piauí.',
-    },
-    {
-      etapa: '08',
-      titulo: 'Cerimônia de Premiação e Homologação',
-      periodo: 'Dezembro de 2026',
-      status: 'proximo',
-      statusLabel: 'Resultado Final',
-      desc: 'Solenidade comemorativa dos 10 anos, entrega de troféus aos vencedores e homologação no Diário Oficial.',
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    getCronogramaParametros().then((params) => {
+      if (isMounted && Object.keys(params).length > 0) {
+        setCertameStatus(calcularCertameStatus(new Date(), params));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   const criterios = [
     {
@@ -230,28 +180,31 @@ const AreaProponente: React.FC = () => {
               <CalendarClock className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
                   Fase Atual do Certame
                 </span>
                 <Badge className="bg-amber-600 text-white border border-black/20 text-[10px] font-bold rounded-xs">
-                  Triagem & Habilitação
+                  {certameStatus.bannerBadge}
                 </Badge>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-700 bg-white/90 border border-black/10 px-2 py-0.5 rounded-xs shadow-2xs">
+                  <Calendar className="w-3 h-3 text-primary" />
+                  Hoje: {certameStatus.dataHojeFormatada}
+                </span>
               </div>
               <h3 className="text-base font-bold text-gray-900">
-                Inscrições encerradas • Análise e Julgamento em andamento
+                {certameStatus.bannerTitulo}
               </h3>
               <p className="text-xs text-gray-700 leading-relaxed max-w-3xl mt-1">
-                O prazo de envio de práticas encerrou-se em <strong>18/10/2026</strong>. 
-                Os trabalhos inscritos estão sendo processados pela equipe técnica para publicação das relações de habilitação e posterior avaliação pela Comissão Julgadora.
+                {certameStatus.bannerDescricao}
               </p>
             </div>
           </div>
 
           <div className="shrink-0 bg-white rounded-xs p-3.5 border border-black/15 text-xs space-y-1 w-full md:w-auto shadow-2xs">
             <span className="text-[11px] font-semibold text-gray-500 block uppercase">Próximo Marco:</span>
-            <span className="font-bold text-primary block text-sm">21/10/2026</span>
-            <span className="text-gray-600 block text-[11px]">Relação provisória de inscrições</span>
+            <span className="font-bold text-primary block text-sm">{certameStatus.proximoMarcoData}</span>
+            <span className="text-gray-600 block text-[11px] max-w-[220px]">{certameStatus.proximoMarcoDesc}</span>
           </div>
         </div>
 
@@ -270,7 +223,7 @@ const AreaProponente: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {etapasCronograma.map((item, idx) => {
+            {certameStatus.etapas.map((item, idx) => {
               const isDone = item.status === 'concluido';
               const isCurrent = item.status === 'em_andamento';
 
@@ -279,7 +232,7 @@ const AreaProponente: React.FC = () => {
                   key={idx}
                   className={`rounded-xs p-3.5 border transition-all duration-150 flex flex-col justify-between ${
                     isCurrent
-                      ? 'bg-amber-50/80 border-black/30 shadow-xs ring-1 ring-black/15'
+                      ? 'bg-amber-50/80 border-amber-600/50 shadow-xs ring-2 ring-amber-500/30'
                       : isDone
                         ? 'bg-slate-100/70 border-black/15 text-gray-600'
                         : 'bg-white border-black/15 hover:border-black/30 shadow-2xs'
@@ -289,7 +242,7 @@ const AreaProponente: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-xs border border-black/10 ${
                         isCurrent
-                          ? 'bg-amber-500 text-white font-extrabold'
+                          ? 'bg-amber-500 text-white font-extrabold shadow-2xs'
                           : isDone
                             ? 'bg-gray-200 text-gray-700'
                             : 'bg-primary/10 text-primary'
@@ -298,9 +251,9 @@ const AreaProponente: React.FC = () => {
                       </span>
                       <span className={`text-[10px] font-semibold flex items-center gap-1 ${
                         isCurrent 
-                          ? 'text-amber-900 font-bold' 
+                          ? 'text-amber-900 font-bold bg-amber-100/80 px-2 py-0.5 rounded-xs border border-amber-300' 
                           : isDone 
-                            ? 'text-emerald-700' 
+                            ? 'text-emerald-700 font-medium' 
                             : 'text-gray-500'
                       }`}>
                         {isDone && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
@@ -411,9 +364,25 @@ const AreaProponente: React.FC = () => {
                 Após a divulgação da relação provisória em <strong>21/10/2026</strong>, caso alguma inscrição conste como indeferida por inconformidade formal, 
                 o autor poderá apresentar pedido de reconsideração devidamente fundamentado.
               </p>
-              <div className="bg-amber-50 border border-black/15 rounded-xs p-2.5 text-amber-900">
-                <strong>Prazo Regulamentar:</strong> de <strong>22/10 a 26/10/2026</strong>.
-              </div>
+              {certameStatus.recursoStatus === 'encerrado' ? (
+                <div className="bg-slate-100 border border-black/15 rounded-xs p-2.5 text-gray-700 flex items-center justify-between">
+                  <span><strong>Prazo Regulamentar:</strong> 22/10 a 26/10/2026</span>
+                  <Badge variant="outline" className="text-[10px] bg-gray-200 text-gray-700 border-black/20 font-bold">
+                    Encerrado em 26/10
+                  </Badge>
+                </div>
+              ) : certameStatus.recursoStatus === 'aberto' ? (
+                <div className="bg-amber-50 border border-amber-300 rounded-xs p-2.5 text-amber-900 flex items-center justify-between">
+                  <span><strong>Prazo Regulamentar:</strong> 22/10 a 26/10/2026</span>
+                  <Badge className="text-[10px] bg-amber-600 text-white font-bold">
+                    Prazo Aberto
+                  </Badge>
+                </div>
+              ) : (
+                <div className="bg-slate-50 border border-black/15 rounded-xs p-2.5 text-gray-600">
+                  <strong>Prazo Regulamentar:</strong> de 22/10 a 26/10/2026
+                </div>
+              )}
               <p>
                 Os pedidos deverão ser encaminhados ao canal oficial da comissão com a indicação expressa do número do protocolo e esclarecimentos sobre os requisitos apontados.
               </p>

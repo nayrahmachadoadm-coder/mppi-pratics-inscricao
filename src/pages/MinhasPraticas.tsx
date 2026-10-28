@@ -28,6 +28,7 @@ import {
 import { getSession, logoutUser } from '@/lib/auth';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { calcularCertameStatus } from '@/utils/cronogramaEtapas';
 
 const MinhasPraticas = () => {
   const [praticas, setPraticas] = useState<any[]>([]);
@@ -35,6 +36,7 @@ const MinhasPraticas = () => {
   const [userName, setUserName] = useState('');
   const [selectedPratica, setSelectedPratica] = useState<any | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const certameStatus = calcularCertameStatus();
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -141,12 +143,11 @@ const MinhasPraticas = () => {
         <Alert className="bg-amber-500/10 border-amber-300/80 text-amber-950 rounded-2xl shadow-xs">
           <CalendarClock className="h-5 w-5 text-amber-700 mt-0.5" />
           <AlertTitle className="text-sm font-bold text-amber-900 flex items-center gap-2">
-            Inscrições Encerradas em 18/10/2026 • Etapa de Julgamento Técnico em Andamento
+            Inscrições Encerradas • {certameStatus.etapaAtual ? `${certameStatus.etapaAtual.titulo} em Andamento` : 'Certame em Andamento'}
           </AlertTitle>
           <AlertDescription className="text-xs text-amber-900/90 leading-relaxed mt-1">
-            O prazo para novas inscrições e edição de trabalhos encerrou-se no dia <strong>18 de outubro de 2026</strong>. 
-            O certame segue com a divulgação da relação provisória (21/10), prazo para pedidos de reconsideração (22 a 26/10), relação definitiva (29/10) e julgamento técnico pela Comissão Julgadora (<strong>29/10 a 09/11/2026</strong>). 
-            A divulgação dos finalistas está prevista para o dia <strong>11/11/2026</strong>.
+            {certameStatus.bannerDescricao} Próximo marco:{' '}
+            <strong>{certameStatus.proximoMarcoData}</strong> ({certameStatus.proximoMarcoDesc}).
           </AlertDescription>
         </Alert>
 

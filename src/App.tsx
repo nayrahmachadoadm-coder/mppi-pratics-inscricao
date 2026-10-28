@@ -101,6 +101,12 @@ const App = () => (
                <AdminHome />
              </EitherProtectedRoute>
            } />
+           <Route path="/admin/manual-jurado" element={
+             <EitherProtectedRoute>
+               <AdminHome />
+             </EitherProtectedRoute>
+           } />
+           <Route path="/manual-jurado" element={<AdminHome />} />
            <Route path="/admin/inscricao/:id" element={
              <EitherProtectedRoute>
                <AdminInscricaoDetails />

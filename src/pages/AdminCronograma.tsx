@@ -10,6 +10,9 @@ const AdminCronograma = () => {
     return `${pad(dd)}/${pad(mm)}/${yy}`;
   };
 
+  const today = new Date();
+  const todayIso = toIso(today.getFullYear(), today.getMonth(), today.getDate());
+
   // Eventos
   const singleEvents: { date: string; label: string }[] = [
     { date: '2026-09-04', label: 'Lançamento do Edital' },
@@ -73,6 +76,8 @@ const AdminCronograma = () => {
             const single = singleEvents.find((e) => e.date === iso);
             const range = rangeEvents.find((e) => isInRange(iso, e.start, e.end));
 
+            const isToday = iso === todayIso;
+
             let className = 'aspect-square rounded-md flex items-center justify-center text-sm';
             let title = '';
             if (single && range) {
@@ -84,6 +89,11 @@ const AdminCronograma = () => {
             } else if (range) {
               className += ' bg-primary/10 border border-primary/30';
               title = `${formatPtBR(iso)} – ${range.label}`;
+            }
+
+            if (isToday) {
+              className += ' ring-2 ring-emerald-500 font-bold';
+              title += title ? ' (Hoje)' : `${formatPtBR(iso)} – Hoje`;
             }
 
             return (
@@ -114,6 +124,10 @@ const AdminCronograma = () => {
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-sm bg-primary/10 border border-primary/30" />
                 <span className="text-sm text-muted-foreground">Período (intervalo)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm border-2 border-emerald-500 bg-emerald-50" />
+                <span className="text-sm text-muted-foreground">Hoje ({formatPtBR(todayIso)})</span>
               </div>
             </div>
 
