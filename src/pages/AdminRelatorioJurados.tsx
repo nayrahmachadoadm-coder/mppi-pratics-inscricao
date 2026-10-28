@@ -97,7 +97,7 @@ const AdminRelatorioJurados: React.FC = () => {
                         <TableRow key={`${it.jurado_username}-${idx}`}>
                           <TableCell className="font-medium">{idx + 1}</TableCell>
                           <TableCell>{it.jurado_username}</TableCell>
-                          <TableCell>{it.full_name || '—'}</TableCell>
+                          <TableCell className="uppercase">{it.full_name?.toUpperCase() || '—'}</TableCell>
                           <TableCell>{it.seat_label || '—'}</TableCell>
                           <TableCell className="text-center">{it.count}</TableCell>
                           <TableCell className="text-center">{it.media_total.toFixed(2)}</TableCell>

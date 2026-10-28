@@ -163,7 +163,7 @@ const JuryManagement = () => {
       }
 
       const result = await addJuryMember(
-        newJury.name,
+        newJury.name.trim().toUpperCase(),
         newJury.username,
         'admin',
         newJury.seatCode,
@@ -301,9 +301,10 @@ const JuryManagement = () => {
                     <Input
                       id="name"
                       value={newJury.name}
-                      onChange={(e) => setNewJury({ ...newJury, name: e.target.value })}
-                      placeholder="Ex: João Silva"
+                      onChange={(e) => setNewJury({ ...newJury, name: e.target.value.toUpperCase() })}
+                      placeholder="Ex: JOÃO SILVA"
                       disabled={isLoading}
+                      className="uppercase"
                     />
                   </div>
 
@@ -380,7 +381,9 @@ const JuryManagement = () => {
               <TableBody>
                 {juryMembers.map((jury) => (
                   <TableRow key={jury.username}>
-                    <TableCell className="font-medium py-2">{jury.name}</TableCell>
+                    <TableCell className="font-medium py-2 uppercase">
+                      {jury.name ? jury.name.toUpperCase() : '—'}
+                    </TableCell>
                     <TableCell className="py-2">{jury.username}</TableCell>
                     <TableCell className="py-2">
                       <Badge variant="outline" className="text-xs">{jury.seatLabel || '—'}</Badge>

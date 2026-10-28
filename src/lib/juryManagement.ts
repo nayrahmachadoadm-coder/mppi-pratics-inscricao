@@ -22,7 +22,7 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
       const rows = edgeData.data as any[];
       return rows.map((p: any) => ({
         username: p.username || '',
-        name: p.full_name || '',
+        name: (p.full_name || '').toUpperCase(),
         created_at: new Date(p.created_at).getTime(),
         created_by: 'admin',
         seatCode: p.seat_code || '',
@@ -35,7 +35,7 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
     if (!rpcErr && Array.isArray(rpcData)) {
       return (rpcData as any[]).map((p: any) => ({
         username: p.username || '',
-        name: p.full_name || '',
+        name: (p.full_name || '').toUpperCase(),
         created_at: new Date(p.created_at).getTime(),
         created_by: 'admin',
         seatCode: p.seat_code || '',
@@ -66,7 +66,7 @@ export async function getJuryMembers(): Promise<JuryMember[]> {
 
     return (profiles || []).map((row: any) => ({
       username: row?.username || '',
-      name: row?.full_name || '',
+      name: (row?.full_name || '').toUpperCase(),
       created_at: new Date(row?.created_at).getTime(),
       created_by: 'admin',
       seatCode: row?.seat_code || '',
@@ -87,7 +87,7 @@ export async function addJuryMember(
   seatLabel: string
 ): Promise<{ success: boolean; error?: string }> {
   const normalizedEmail = email.toLowerCase().trim();
-  const normalizedName = name.trim();
+  const normalizedName = name.trim().toUpperCase();
 
   if (!normalizedEmail || !normalizedName) {
     return { success: false, error: 'Nome e e-mail são obrigatórios' };

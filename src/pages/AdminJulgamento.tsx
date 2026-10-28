@@ -857,7 +857,7 @@ const AdminJulgamento: React.FC = () => {
                 <SelectTrigger className="min-w-[28rem] w-[28rem]"><SelectValue placeholder="Escolha o jurado" /></SelectTrigger>
                 <SelectContent>
                   {juradosList.map(j => (
-                    <SelectItem key={j.username} value={j.username}>{j.name} ({j.username})</SelectItem>
+                    <SelectItem key={j.username} value={j.username}>{j.name?.toUpperCase()} ({j.username})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

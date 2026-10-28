@@ -126,7 +126,7 @@ export async function exportCategoryVotesPdf(areaKey: string): Promise<void> {
   const drawJurorHeader = (j: { name: string; username: string }) => {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
-    pdf.text(`${j.name} (${j.username})`, margin, y);
+    pdf.text(`${(j.name || '').toUpperCase()} (${j.username})`, margin, y);
     y += 6;
   };
 
