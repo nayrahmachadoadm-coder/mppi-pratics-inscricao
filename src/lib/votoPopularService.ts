@@ -73,10 +73,14 @@ export async function getVotoPopularCandidatos(categoria: string, seed: number):
     if (error) {
       return { success: false, error: error.message };
     }
-    const items: VotoPopularCandidato[] = (data || []).map((r: any) => ({
-      ...r,
-      area_atuacao: categoria,
-    }));
+    const items: VotoPopularCandidato[] = (data || [])
+      .map((r: any) => ({
+        ...r,
+        area_atuacao: categoria,
+      }))
+      .sort((a, b) =>
+        (a.titulo_iniciativa || '').localeCompare(b.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' })
+      );
     return { success: true, data: items };
   } catch (e: any) {
     return { success: false, error: e?.message || 'Erro ao carregar candidatos' };

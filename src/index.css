@@ -102,8 +102,6 @@ All colors MUST be HSL for proper theming.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    /* Performance optimization: enable hardware acceleration */
-    transform: translateZ(0);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

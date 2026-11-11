@@ -6,10 +6,32 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Eye, FileDown, ShieldCheck, CheckCircle2, Clock, AlertTriangle, Calendar, Info, BarChart3, Users } from 'lucide-react';
+import {
+  FileDown,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Calendar,
+  Info,
+  BarChart3,
+  Users,
+  Award,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Building2,
+  Sparkles,
+  Trophy,
+  Bot,
+  PartyPopper,
+  Star,
+  X,
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
-import { CategoriaRankingItem, getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
+import { getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos } from '@/lib/votoPopularService';
@@ -18,25 +40,49 @@ import { getPeriodoVotacao } from '@/lib/supabaseService';
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
 type VotesById = { [id: string]: number };
 
-interface FinalistaItem {
-  inscricao: {
-    id: string;
-    titulo_iniciativa: string;
-    nome_completo: string;
-    lotacao: string;
-    area_atuacao: string;
-    descricao_iniciativa?: string;
-    problema_necessidade?: string;
-    metodologia?: string;
-    principais_resultados?: string;
-  };
+interface FinalistaPublicSummary {
+  id: string;
+  titulo_iniciativa: string;
+  nome_completo: string;
+  lotacao: string;
+  area_atuacao: string;
+  descricao_iniciativa?: string;
 }
 
-const categorias: { key: CategoriaKey; label: string }[] = [
-  { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
-  { key: 'estruturante-projeto', label: 'Projetos Estruturantes' },
-  { key: 'finalistica-pratica', label: 'Práticas Finalísticas' },
-  { key: 'estruturante-pratica', label: 'Práticas Estruturantes' },
+interface FinalistaItem {
+  inscricao: FinalistaPublicSummary;
+}
+
+const sortFinalistasAlfabetico = (items: FinalistaItem[]): FinalistaItem[] =>
+  [...items].sort((a, b) =>
+    (a.inscricao.titulo_iniciativa || '').localeCompare(
+      b.inscricao.titulo_iniciativa || '',
+      'pt-BR',
+      { sensitivity: 'base' }
+    )
+  );
+
+const categorias: { key: CategoriaKey; label: string; subtitle: string }[] = [
+  {
+    key: 'finalistica-projeto',
+    label: 'Projetos Finalísticos',
+    subtitle: 'Iniciativas voltadas diretamente à atividade-fim e ao atendimento à sociedade',
+  },
+  {
+    key: 'estruturante-projeto',
+    label: 'Projetos Estruturantes',
+    subtitle: 'Iniciativas voltadas ao aprimoramento da gestão, governança e suporte institucional',
+  },
+  {
+    key: 'finalistica-pratica',
+    label: 'Práticas Finalísticas',
+    subtitle: 'Boas práticas consolidadas na atuação finalística do Ministério Público',
+  },
+  {
+    key: 'estruturante-pratica',
+    label: 'Práticas Estruturantes',
+    subtitle: 'Boas práticas de gestão administrativa, tecnológica e organizacional',
+  },
 ];
 
 type PeriodoStatus = 'CARREGANDO' | 'AGUARDANDO_INICIO' | 'ABERTO' | 'ENCERRADO';
@@ -49,6 +95,7 @@ const VotoPopular: React.FC = () => {
   const [allFinalistas, setAllFinalistas] = useState<FinalistaItem[]>([]);
   const [votosCountById, setVotosCountById] = useState<VotesById>({});
   const [selectedIds, setSelectedIds] = useState<Record<string, string>>({});
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [isLogged, setIsLogged] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminTab, setAdminTab] = useState<'publico' | 'apuracao'>('publico');
@@ -57,25 +104,11 @@ const VotoPopular: React.FC = () => {
   const [periodoStatus, setPeriodoStatus] = useState<PeriodoStatus>('CARREGANDO');
   const [datasPeriodo, setDatasPeriodo] = useState<{ inicio: Date | null; fim: Date | null }>({ inicio: null, fim: null });
 
-  // Detalhes da inscrição
-  const [detalheOpen, setDetalheOpen] = useState(false);
-  const [detalheItem, setDetalheItem] = useState<FinalistaItem | null>(null);
-
   // Desafio anti-automação (Item 9.7 do Edital)
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [challenge, setChallenge] = useState<{ a: number; b: number }>({ a: 0, b: 0 });
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const formatAreaAtuacao = (area: string) => {
-    const areaMap: { [key: string]: string } = {
-      'finalistica-pratica': 'Prática Finalística',
-      'finalistica-projeto': 'Projeto Finalístico',
-      'estruturante-pratica': 'Prática Estruturante',
-      'estruturante-projeto': 'Projeto Estruturante'
-    };
-    return areaMap[area] || area;
-  };
 
   const carregarDados = async () => {
     setLoading(true);
@@ -106,20 +139,14 @@ const VotoPopular: React.FC = () => {
       }
       setPeriodoStatus(statusCalc);
 
-      // 2. Carregar candidatos
-      // Session seed para randomização por sessão do eleitor (Item 9.2: igualdade sem ordem técnica)
-      let sessionSeed = sessionStorage.getItem('voto_seed');
-      if (!sessionSeed) {
-        sessionSeed = String(Math.random());
-        sessionStorage.setItem('voto_seed', sessionSeed);
-      }
-
+      // 2. Carregar candidatos e ordenar em ordem alfabética por categoria (Item 9.2: sem indicação de nota ou classificação técnica)
+      const sessionSeed = 0.5;
       const collected: FinalistaItem[] = [];
 
       // Se a votação está aberta OU é administrador/jurado visualizando previamente
       for (const cat of categorias) {
         try {
-          const res = await getVotoPopularCandidatos(cat.key, parseFloat(sessionSeed));
+          const res = await getVotoPopularCandidatos(cat.key, sessionSeed);
           if (res.success && res.data && res.data.length > 0) {
             const mapped: FinalistaItem[] = res.data.map(c => ({
               inscricao: {
@@ -129,12 +156,9 @@ const VotoPopular: React.FC = () => {
                 lotacao: c.lotacao,
                 area_atuacao: c.area_atuacao,
                 descricao_iniciativa: c.descricao_iniciativa,
-                problema_necessidade: c.problema_necessidade,
-                metodologia: c.metodologia,
-                principais_resultados: c.principais_resultados,
               }
             }));
-            collected.push(...mapped);
+            collected.push(...sortFinalistasAlfabetico(mapped));
           } else if (logged) {
             // Fallback para ambiente administrativo antes da publicação de snapshot
             try {
@@ -148,12 +172,9 @@ const VotoPopular: React.FC = () => {
                     lotacao: it.inscricao.lotacao,
                     area_atuacao: it.inscricao.area_atuacao,
                     descricao_iniciativa: it.inscricao.descricao_iniciativa,
-                    problema_necessidade: it.inscricao.problema_necessidade,
-                    metodologia: it.inscricao.metodologia,
-                    principais_resultados: it.inscricao.principais_resultados,
                   }
                 }));
-                collected.push(...top);
+                collected.push(...sortFinalistasAlfabetico(top));
               } else {
                 const rel = await getRelatorioCategoria(cat.key);
                 const list = (rel.data || []).slice(0, 3).map(it => ({
@@ -164,12 +185,9 @@ const VotoPopular: React.FC = () => {
                     lotacao: it.inscricao.lotacao,
                     area_atuacao: it.inscricao.area_atuacao,
                     descricao_iniciativa: it.inscricao.descricao_iniciativa,
-                    problema_necessidade: it.inscricao.problema_necessidade,
-                    metodologia: it.inscricao.metodologia,
-                    principais_resultados: it.inscricao.principais_resultados,
                   }
                 }));
-                collected.push(...list);
+                collected.push(...sortFinalistasAlfabetico(list));
               }
             } catch { void 0; }
           }
@@ -207,9 +225,8 @@ const VotoPopular: React.FC = () => {
     setSelectedIds(prev => ({ ...prev, [categoria]: inscricaoId }));
   };
 
-  const openDetalhes = (item: FinalistaItem) => {
-    setDetalheItem(item);
-    setDetalheOpen(true);
+  const toggleResumo = (inscricaoId: string) => {
+    setExpandedIds(prev => ({ ...prev, [inscricaoId]: !prev[inscricaoId] }));
   };
 
   // Disparo do desafio de segurança anti-robô (Item 9.7)
@@ -400,6 +417,9 @@ const VotoPopular: React.FC = () => {
   };
 
   const categoriesPendingSubmit = Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey));
+  const expectedSum = challenge.a + challenge.b;
+  const isChallengeCorrect = answer.trim() !== '' && Number(answer.trim()) === expectedSum;
+  const isChallengeWrong = answer.trim() !== '' && !isChallengeCorrect;
 
   return (
     <div className="bg-slate-50 min-h-screen py-4">
@@ -528,7 +548,7 @@ const VotoPopular: React.FC = () => {
                   • Escolha <strong>1 (uma) iniciativa finalista em cada categoria</strong> e clique em <strong>Confirmar voto</strong> ao final da página.
                 </p>
                 <p>
-                  • <strong>Igualdade de condições (Item 9.2):</strong> os finalistas são apresentados sem indicação de pontuação ou ordem técnica prévia.
+                  • <strong>Igualdade de condições (Item 9.2):</strong> as iniciativas finalistas são exibidas em <strong>ordem alfabética</strong> dentro de cada categoria, sem divulgação da nota obtida na fase de julgamento técnico para não influenciar a votação popular.
                 </p>
                 <p>
                   • <strong>Segurança e unicidade (Itens 9.4 e 9.7):</strong> o voto é único por categoria para cada dispositivo/eleitor, integrando <strong>20% da Pontuação Final</strong> das iniciativas (Item 9.5).
@@ -597,142 +617,219 @@ const VotoPopular: React.FC = () => {
             ) : (
               /* Interface Pública de Votação (Igualdade de condições - Item 9.2) */
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                    Iniciativas Finalistas por Categoria
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold uppercase tracking-wide text-slate-800">
+                      Iniciativas Finalistas por Categoria
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Candidatos listados em <strong>ordem alfabética</strong> em igualdade de condições (Item 9.2 do Edital nº 88/2026)
+                    </p>
+                  </div>
                   {hasVotedAny() && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
+                      <CheckCircle2 className="h-4 w-4" />
                       Voto registrado neste dispositivo
                     </span>
                   )}
                 </div>
 
                 {loading ? (
-                  <div className="text-xs text-slate-500 py-8 text-center flex items-center justify-center gap-2">
-                    <Clock className="h-4 w-4 animate-spin text-primary" />
-                    Carregando finalistas...
+                  <div className="text-sm text-slate-500 py-10 text-center flex items-center justify-center gap-2">
+                    <Clock className="h-5 w-5 animate-spin text-primary" />
+                    Carregando iniciativas finalistas...
                   </div>
                 ) : allFinalistas.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-lg border border-dashed border-slate-300">
+                  <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
                     <Calendar className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                    <p className="font-medium text-slate-700">Nenhum finalista publicado no momento.</p>
+                    <p className="font-semibold text-slate-700 text-sm">Nenhum finalista publicado no momento.</p>
                     <p className="mt-1 text-slate-500">
                       A relação oficial dos 3 (três) finalistas por categoria será homologada após a conclusão da etapa de julgamento técnico pela Comissão Julgadora (Item 9.1).
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {categorias.map(cat => {
-                      const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
+                      const catFinalistas = sortFinalistasAlfabetico(
+                        allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key)
+                      );
                       if (catFinalistas.length === 0) return null;
                       
                       const catVoted = hasVoted(cat.key);
+                      const hasSelectionInCat = Boolean(selectedIds[cat.key]);
+
                       return (
-                        <div key={cat.key} className="space-y-2">
-                          <div className="flex items-center justify-between bg-slate-100/90 px-3 py-2 rounded-md border border-slate-200">
-                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm">{cat.label}</h4>
-                            {catVoted ? (
-                              <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium border border-emerald-200">
-                                Voto computado
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-500">
-                                Escolha 1 iniciativa
-                              </span>
-                            )}
+                        <section
+                          key={cat.key}
+                          className="rounded-xl border border-slate-200/90 bg-white shadow-sm overflow-hidden"
+                        >
+                          {/* Cabeçalho Elegante da Categoria */}
+                          <div className="bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] border-b-2 border-amber-400/80 px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 text-white">
+                            <div className="flex items-center gap-3">
+                              <div className="h-9 w-9 rounded-lg bg-white/10 border border-amber-300/30 flex items-center justify-center shrink-0 shadow-inner">
+                                <Award className="h-5 w-5 text-amber-300" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-white text-sm sm:text-base tracking-tight">
+                                  {cat.label}
+                                </h4>
+                                <p className="text-[11px] sm:text-xs text-rose-100/85">
+                                  {cat.subtitle}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {catVoted ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/20 text-emerald-100 px-3 py-1 rounded-full font-semibold border border-emerald-400/40">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                                  Voto computado
+                                </span>
+                              ) : hasSelectionInCat ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs bg-amber-400/20 text-amber-100 px-3 py-1 rounded-full font-semibold border border-amber-300/40">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-amber-300" />
+                                  1 iniciativa selecionada
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-xs bg-white/10 text-white/90 px-3 py-1 rounded-full font-medium border border-white/20">
+                                  Escolha 1 finalista
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="space-y-2">
+                          {/* Lista de Candidatos Finalistas (Ordem Alfabética) */}
+                          <div className="p-3 sm:p-4 space-y-3 bg-slate-50/50">
                             {catFinalistas.map((item) => {
                               const id = item.inscricao.id;
                               const selected = selectedIds[cat.key] === id;
                               const isVotedItem = catVoted && getStoredVote(cat.key) === id;
                               const isDisabled = periodoStatus === 'ENCERRADO' || (periodoStatus === 'AGUARDANDO_INICIO' && !isAdmin) || catVoted;
+                              const isExpanded = Boolean(expandedIds[id]);
 
                               return (
-                                <label
+                                <div
                                   key={id}
-                                  className={`flex items-center justify-between rounded-lg border p-3 text-xs transition-all cursor-pointer ${
-                                    isVotedItem ? 'border-emerald-400 bg-emerald-50/60 ring-1 ring-emerald-300' :
-                                    selected ? 'border-primary/80 bg-primary/5 ring-1 ring-primary/40' : 
-                                    'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                                  } ${isDisabled && !isVotedItem ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                  className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                                    isVotedItem
+                                      ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 shadow-sm'
+                                      : selected
+                                      ? 'border-primary bg-rose-50/30 ring-2 ring-primary/20 shadow-md'
+                                      : 'border-slate-200/90 bg-white hover:border-slate-300 shadow-sm hover:shadow'
+                                  }`}
                                 >
-                                  <div className="flex items-center gap-3 pr-2 min-w-0">
-                                    <input
-                                      type="radio"
-                                      name={`sel-${cat.key}`}
-                                      checked={selected || isVotedItem}
-                                      onChange={() => onSelectOne(cat.key, id)}
-                                      className="h-4 w-4 text-primary focus:ring-primary shrink-0"
-                                      disabled={isDisabled}
-                                    />
-                                    <div className="min-w-0">
-                                      <div className="font-semibold text-slate-900 leading-snug">
-                                        {item.inscricao.titulo_iniciativa}
+                                  <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    {/* Área de seleção do candidato */}
+                                    <label
+                                      className={`flex items-start gap-3.5 min-w-0 flex-1 ${
+                                        isDisabled && !isVotedItem ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'
+                                      }`}
+                                    >
+                                      <input
+                                        type="radio"
+                                        name={`sel-${cat.key}`}
+                                        checked={selected || isVotedItem}
+                                        onChange={() => onSelectOne(cat.key, id)}
+                                        className="mt-1 h-4 w-4 sm:h-5 sm:w-5 text-primary focus:ring-primary border-slate-300 shrink-0 cursor-pointer"
+                                        disabled={isDisabled}
+                                      />
+                                      <div className="min-w-0 flex-1 space-y-1.5">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                                            {item.inscricao.titulo_iniciativa}
+                                          </span>
+                                          {isVotedItem ? (
+                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-semibold shadow-sm">
+                                              <CheckCircle2 className="h-3 w-3" />
+                                              Seu Voto
+                                            </span>
+                                          ) : selected ? (
+                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-primary text-white font-semibold shadow-sm">
+                                              Selecionado para votar
+                                            </span>
+                                          ) : null}
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-[13px] text-slate-600">
+                                          <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+                                            <User className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                                            {item.inscricao.nome_completo}
+                                          </span>
+                                          {item.inscricao.lotacao && (
+                                            <span className="inline-flex items-center gap-1.5 text-slate-500">
+                                              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                              {item.inscricao.lotacao}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">
-                                        {item.inscricao.nome_completo} • {item.inscricao.lotacao}
-                                      </div>
+                                    </label>
+
+                                    {/* Botão visível tipo "sandwich" para abrir/fechar o Resumo da Iniciativa */}
+                                    <div className="flex items-center justify-end sm:shrink-0 pl-7 sm:pl-0">
+                                      <Button
+                                        type="button"
+                                        variant={isExpanded ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => toggleResumo(id)}
+                                        aria-expanded={isExpanded}
+                                        className={`h-9 px-3.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${
+                                          isExpanded
+                                            ? 'bg-primary text-white hover:bg-primary/90 shadow-sm'
+                                            : 'border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/50'
+                                        }`}
+                                      >
+                                        <BookOpen className="h-4 w-4 shrink-0" />
+                                        <span>
+                                          {isExpanded ? 'Ocultar resumo' : 'Ler resumo da iniciativa'}
+                                        </span>
+                                        {isExpanded ? (
+                                          <ChevronUp className="h-4 w-4 shrink-0" />
+                                        ) : (
+                                          <ChevronDown className="h-4 w-4 shrink-0" />
+                                        )}
+                                      </Button>
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    {isVotedItem ? (
-                                      <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-medium">
-                                        Seu Voto
-                                      </span>
-                                    ) : selected ? (
-                                      <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-slate-900 text-white font-medium">
-                                        Selecionado
-                                      </span>
-                                    ) : null}
-
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              openDetalhes(item);
-                                            }}
-                                            aria-label="Ver detalhes da iniciativa"
-                                          >
-                                            <Eye className="h-4 w-4" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <span className="text-xs">Conhecer iniciativa</span>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
-                                </label>
+                                  {/* Painel Sandwich Expansível com APENAS o Resumo da Iniciativa em fonte de fácil leitura */}
+                                  {isExpanded && (
+                                    <div className="border-t border-slate-200/80 bg-slate-50/90 px-4 sm:px-6 py-4 sm:py-5 transition-all">
+                                      <div className="max-w-4xl space-y-2">
+                                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+                                          <BookOpen className="h-4 w-4" />
+                                          Resumo da Iniciativa Concorrente
+                                        </div>
+                                        <p className="text-sm sm:text-base text-slate-800 leading-relaxed whitespace-pre-line text-justify font-normal">
+                                          {item.inscricao.descricao_iniciativa?.trim()
+                                            ? item.inscricao.descricao_iniciativa
+                                            : 'Resumo da iniciativa não informado.'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>
-                        </div>
+                        </section>
                       );
                     })}
 
                     {/* Botão de Confirmação de Voto */}
-                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200">
-                      <div className="text-xs text-slate-500">
+                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-white p-4 rounded-xl border shadow-sm">
+                      <div className="text-xs sm:text-sm text-slate-600 font-medium">
                         {categoriesPendingSubmit.length > 0 ? (
-                          <span>{categoriesPendingSubmit.length} categoria(s) pronta(s) para confirmação de voto.</span>
+                          <span className="text-slate-800">
+                            <strong>{categoriesPendingSubmit.length}</strong> categoria(s) selecionada(s) pronta(s) para confirmação de voto.
+                          </span>
                         ) : (
-                          <span>Selecione uma iniciativa para habilitar o envio do voto.</span>
+                          <span>Selecione uma iniciativa finalista acima para habilitar o envio do seu voto.</span>
                         )}
                       </div>
                       <Button
-                        size="sm"
-                        className="w-full sm:w-auto px-5 font-semibold"
+                        size="default"
+                        className="w-full sm:w-auto px-6 font-bold shadow-sm"
                         onClick={openConfirmDialog}
                         disabled={
                           (periodoStatus === 'ENCERRADO') ||
@@ -740,7 +837,7 @@ const VotoPopular: React.FC = () => {
                           categoriesPendingSubmit.length === 0
                         }
                       >
-                        <ShieldCheck className="h-4 w-4 mr-1.5" />
+                        <ShieldCheck className="h-4 w-4 mr-2" />
                         Confirmar Voto(s)
                       </Button>
                     </div>
@@ -749,145 +846,176 @@ const VotoPopular: React.FC = () => {
               </div>
             )}
 
-            {/* Modal de Detalhes da Inscrição (Resumo, Metodologia, Resultados) */}
-            <Dialog open={detalheOpen} onOpenChange={setDetalheOpen}>
-              <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
-                <DialogHeader className="bg-primary text-primary-foreground -mx-6 -mt-6 p-4 rounded-t-lg">
-                  <DialogTitle className="text-sm font-bold text-white">
-                    Ficha Técnica da Iniciativa Finalista
-                  </DialogTitle>
-                </DialogHeader>
-                {detalheItem && (
-                  <div className="space-y-3 text-xs text-justify pt-2">
-                    <div>
-                      <span className="font-semibold text-slate-900">Título da Iniciativa: </span>
-                      <span className="text-slate-800 font-medium">{detalheItem.inscricao.titulo_iniciativa}</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded border border-slate-200">
-                      <div>
-                        <span className="font-semibold text-slate-700">Proponente: </span>
-                        <span className="text-slate-800">{detalheItem.inscricao.nome_completo}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-700">Lotação: </span>
-                        <span className="text-slate-800">{detalheItem.inscricao.lotacao}</span>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="font-semibold text-slate-700">Categoria: </span>
-                        <span className="text-slate-800 font-medium">{formatAreaAtuacao(detalheItem.inscricao.area_atuacao)}</span>
-                      </div>
-                    </div>
-
-                    {detalheItem.inscricao.descricao_iniciativa && (
-                      <div className="space-y-1">
-                        <div className="font-semibold text-slate-900">Resumo da Iniciativa:</div>
-                        <p className="text-slate-700 leading-relaxed bg-slate-50/50 p-2 rounded border border-slate-100">
-                          {detalheItem.inscricao.descricao_iniciativa}
-                        </p>
-                      </div>
-                    )}
-
-                    {detalheItem.inscricao.problema_necessidade && (
-                      <div className="space-y-1">
-                        <div className="font-semibold text-slate-900">Problema ou Necessidade Enfrentada:</div>
-                        <p className="text-slate-700 leading-relaxed bg-slate-50/50 p-2 rounded border border-slate-100">
-                          {detalheItem.inscricao.problema_necessidade}
-                        </p>
-                      </div>
-                    )}
-
-                    {detalheItem.inscricao.metodologia && (
-                      <div className="space-y-1">
-                        <div className="font-semibold text-slate-900">Metodologia e Etapas de Implementação:</div>
-                        <p className="text-slate-700 leading-relaxed bg-slate-50/50 p-2 rounded border border-slate-100">
-                          {detalheItem.inscricao.metodologia}
-                        </p>
-                      </div>
-                    )}
-
-                    {detalheItem.inscricao.principais_resultados && (
-                      <div className="space-y-1">
-                        <div className="font-semibold text-slate-900">Principais Resultados e Impactos Alcançados:</div>
-                        <p className="text-slate-700 leading-relaxed bg-slate-50/50 p-2 rounded border border-slate-100">
-                          {detalheItem.inscricao.principais_resultados}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <DialogFooter className="pt-2 border-t">
-                  <Button variant="secondary" size="sm" onClick={() => setDetalheOpen(false)}>
-                    Fechar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
             {/* Modal de Verificação Anti-Automação e Confirmação de Voto (Item 9.7 do Edital) */}
             <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    Confirmação de Voto Popular
-                  </DialogTitle>
-                </DialogHeader>
+              <DialogContent
+                hideClose
+                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden border-0 shadow-2xl gap-0"
+              >
+                {/* Cabeçalho Elegante com Gradiente Institucional e Elementos Lúdicos */}
+                <div className="shrink-0 bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] text-white px-5 sm:px-6 py-4 border-b-2 border-amber-400/80 relative overflow-hidden">
+                  <div
+                    className="absolute inset-0 opacity-15 pointer-events-none"
+                    style={{
+                      backgroundImage: 'radial-gradient(circle, #FFD700 1.2px, transparent 1.2px)',
+                      backgroundSize: '18px 18px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVerifyOpen(false)}
+                    aria-label="Fechar"
+                    className="absolute right-4 top-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
 
-                <div className="space-y-3 text-xs">
-                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="font-semibold text-slate-800">Iniciativas selecionadas para envio:</div>
-                    <ul className="space-y-1 list-disc list-inside text-slate-700">
+                  <DialogHeader className="relative z-10 text-left pr-8 space-y-1">
+                    <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-semibold uppercase tracking-wider mb-1">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                      <span>Quase lá! Seu voto faz a diferença</span>
+                    </div>
+                    <DialogTitle className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 tracking-tight">
+                      <div className="h-9 w-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 shadow-inner">
+                        <Trophy className="h-5 w-5 text-amber-300" />
+                      </div>
+                      <span>Confirmação do Voto Popular</span>
+                    </DialogTitle>
+                    <p className="text-xs sm:text-sm text-rose-100/90 pl-11">
+                      Confira suas escolhas favoritas para celebrar as melhores práticas do MPPI!
+                    </p>
+                  </DialogHeader>
+                </div>
+
+                {/* Corpo do Modal */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 space-y-4 text-xs sm:text-sm min-w-0 bg-white">
+                  {/* Lista de Escolhas */}
+                  <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-rose-50/30 border border-slate-200/90 space-y-3 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-500 fill-amber-400 shrink-0" />
+                        <span>Suas iniciativas escolhidas para brilhar:</span>
+                      </div>
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                        {categoriesPendingSubmit.length}{' '}
+                        {categoriesPendingSubmit.length === 1 ? 'categoria' : 'categorias'}
+                      </span>
+                    </div>
+
+                    <ul className="space-y-2.5 text-slate-700 min-w-0">
                       {categoriesPendingSubmit.map(cat => {
                         const selId = selectedIds[cat];
                         const cand = allFinalistas.find(f => f.inscricao.id === selId);
                         const catLabel = categorias.find(c => c.key === cat)?.label;
                         return (
-                          <li key={cat} className="truncate">
-                            <span className="font-medium text-slate-900">{catLabel}:</span>{' '}
-                            {cand?.inscricao.titulo_iniciativa || 'Iniciativa selecionada'}
+                          <li
+                            key={cat}
+                            className="p-3 rounded-lg bg-white border border-slate-200/90 border-l-4 border-l-primary shadow-xs min-w-0 break-words leading-snug transition-all"
+                          >
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary mb-1">
+                              <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                              <span>{catLabel}</span>
+                            </div>
+                            <div className="font-semibold text-slate-900 text-xs sm:text-sm break-words">
+                              {cand?.inscricao.titulo_iniciativa || 'Iniciativa selecionada'}
+                            </div>
                           </li>
                         );
                       })}
                     </ul>
                   </div>
 
-                  <div className="text-slate-600 leading-relaxed">
-                    Em conformidade com o <strong>Item 9.4 e 9.7 do Edital nº 88/2026</strong>, cada eleitor possui direito a 1 (um) voto por categoria. Votos automatizados ou repetidos em desacordo com as regras serão desconsiderados.
+                  {/*Desafio Rápido Anti-Robô mais Lúdico e Descontraído */}
+                  <div className="p-4 bg-gradient-to-r from-amber-50 via-orange-50/60 to-amber-50 border border-amber-200/90 rounded-xl space-y-3 min-w-0 shadow-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-bold text-amber-950 flex items-center gap-2 text-xs sm:text-sm">
+                        <div className="h-7 w-7 rounded-lg bg-amber-400/25 border border-amber-400/50 flex items-center justify-center shrink-0">
+                          <Bot className="h-4 w-4 text-amber-800" />
+                        </div>
+                        <span>Desafio rápido: mostre que você é humano!</span>
+                      </div>
+                      {isChallengeCorrect ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Resposta certa!
+                        </span>
+                      ) : isChallengeWrong ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full border border-rose-300">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          Resposta incorreta
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-amber-950 shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-amber-900 mr-1">
+                          Resolva a continha:
+                        </span>
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-lg bg-white border border-amber-300 shadow-xs text-primary font-extrabold">
+                          {challenge.a}
+                        </span>
+                        <span className="text-amber-700 font-extrabold">+</span>
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-lg bg-white border border-amber-300 shadow-xs text-primary font-extrabold">
+                          {challenge.b}
+                        </span>
+                        <span className="text-amber-700 font-extrabold">=</span>
+                      </div>
+
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Digite a soma aqui..."
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value.replace(/\D/g, ''))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && isChallengeCorrect && !isSubmitting) {
+                            e.preventDefault();
+                            confirmarVotos();
+                          }
+                        }}
+                        className={`h-10 text-sm sm:text-base font-semibold bg-white w-full sm:flex-1 rounded-lg ${
+                          isChallengeCorrect
+                            ? 'border-emerald-400 focus-visible:ring-emerald-500 text-emerald-900'
+                            : isChallengeWrong
+                            ? 'border-rose-400 focus-visible:ring-rose-500 text-rose-900'
+                            : 'border-amber-300 focus-visible:ring-amber-500'
+                        }`}
+                        autoFocus
+                      />
+                    </div>
                   </div>
 
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md space-y-2">
-                    <div className="font-semibold text-amber-950 flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4 text-amber-700" />
-                      Verificação de segurança (Anti-robô)
-                    </div>
-                    <div className="text-amber-900">
-                      Quanto é <strong>{challenge.a} + {challenge.b}</strong>?
-                    </div>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Digite o resultado da soma"
-                      value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          confirmarVotos();
-                        }
-                      }}
-                      className="h-8 text-xs bg-white border-amber-300 focus-visible:ring-amber-500"
-                      autoFocus
-                    />
+                  {/* Nota leve sobre as regras do Edital */}
+                  <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed bg-slate-50 px-3.5 py-2.5 rounded-lg border border-slate-200/70 break-words">
+                    <ShieldCheck className="h-4 w-4 text-primary/70 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Voto único e seguro (Itens 9.4 e 9.7 do Edital nº 88/2026):</strong> cada eleitor registra 1 (um) voto por categoria para garantir uma participação justa e transparente para todos.
+                    </span>
                   </div>
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t">
-                  <Button variant="outline" size="sm" onClick={() => setVerifyOpen(false)} disabled={isSubmitting}>
-                    Cancelar
+                {/* Rodapé do Modal */}
+                <DialogFooter className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto px-4 h-10 text-sm font-medium text-slate-700 border-slate-300 bg-white hover:bg-slate-100 rounded-lg"
+                    onClick={() => setVerifyOpen(false)}
+                    disabled={isSubmitting}
+                  >
+                    Voltar e revisar
                   </Button>
-                  <Button size="sm" onClick={confirmarVotos} disabled={isSubmitting || !answer.trim()}>
-                    {isSubmitting ? 'Registrando...' : 'Confirmar e Enviar Voto'}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full sm:w-auto px-5 h-10 text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
+                    onClick={confirmarVotos}
+                    disabled={isSubmitting || !isChallengeCorrect}
+                  >
+                    <PartyPopper className="h-4 w-4 shrink-0" />
+                    <span>{isSubmitting ? 'Registrando seu voto...' : 'Confirmar e Enviar Meu Voto'}</span>
                   </Button>
                 </DialogFooter>
               </DialogContent>

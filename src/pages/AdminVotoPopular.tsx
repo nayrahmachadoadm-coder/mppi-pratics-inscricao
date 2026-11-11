@@ -11,7 +11,20 @@ import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerpr
 import { submitVotoPopular } from '@/lib/votoPopularService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
-type FinalistaExibido = Pick<CategoriaRankingItem, 'inscricao' | 'media_total'>;
+type FinalistaExibido = {
+  inscricao: {
+    id: string;
+    titulo_iniciativa: string;
+    nome_completo: string;
+    lotacao?: string;
+    descricao_iniciativa?: string;
+  };
+};
+
+const sortAlfabetico = (items: FinalistaExibido[]) =>
+  [...items].sort((a, b) =>
+    (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' })
+  );
 
 const categorias: { key: CategoriaKey; label: string }[] = [
   { key: 'finalistica-projeto', label: 'Projetos Finalísticos' },
@@ -50,21 +63,18 @@ const AdminVotoPopular = () => {
         for (const cat of categorias) {
           const res = await getRelatorioCategoria(cat.key);
           if (res.success && res.data && res.data.length > 0) {
-            results[cat.key] = res.data.slice(0, 3);
+            results[cat.key] = sortAlfabetico(
+              res.data.slice(0, 3).map((item) => ({ inscricao: item.inscricao }))
+            );
           } else {
             // Fallback para ambiente de desenvolvimento sem acesso de leitura (RLS): usa dados diretos
             const mock = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
             const list = (mock.data || []).slice(0, 3);
-            results[cat.key] = list.map((insc) => ({
-              inscricao: insc,
-              avaliacoes_count: 0,
-              total_geral: 0,
-              media_total: 0,
-              media_resolutividade: 0,
-              media_replicabilidade: 0,
-              total_resolutividade: 0,
-              total_replicabilidade: 0,
-            }));
+            results[cat.key] = sortAlfabetico(
+              list.map((insc) => ({
+                inscricao: insc,
+              }))
+            );
           }
         }
         setFinalistas(results);
@@ -154,7 +164,12 @@ const AdminVotoPopular = () => {
                 </div>
                 <DialogFooter>
                   <Button variant="secondary" onClick={() => setVerifyOpen(false)}>Cancelar</Button>
-                  <Button onClick={confirmVote}>Confirmar voto</Button>
+                  <Button
+                    onClick={confirmVote}
+                    disabled={answer.trim() === '' || Number(answer.trim()) !== challenge.a + challenge.b}
+                  >
+                    Confirmar voto
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -181,7 +196,6 @@ const AdminVotoPopular = () => {
                           <div className="text-xs text-gray-600 mt-1">
                             {item.inscricao.nome_completo}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">Média geral: {item.media_total.toFixed(2)}</div>
                           <div className="mt-3">
                             <Button
                               disabled={hasVoted(cat.key)}
