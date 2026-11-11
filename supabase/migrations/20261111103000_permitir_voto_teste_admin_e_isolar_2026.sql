@@ -1,0 +1,197 @@
+-- ==============================================================================
+-- Migração: 20261111103000_permitir_voto_teste_admin_e_isolar_2026.sql
+-- Objetivo:
+-- 1. Isolar a unicidade de votos populares da Edição 2026 em relação à Edição 2025
+--    (e votos invalidados), evitando qualquer bloqueio para dispositivos que
+--    participaram em edições anteriores.
+-- 2. Corrigir a verificação de Administrador (vinculando profiles.auth_user_id = auth.uid()
+--    a user_roles.user_id = profiles.id via função SECURITY DEFINER sem bloqueio de RLS)
+--    para permitir testes de votação popular antes de 12/11/2026.
+-- ==============================================================================
+
+-- 1. Garantir coluna edicao_ano em votos_populares e preencher registros antigos
+ALTER TABLE public.votos_populares
+ADD COLUMN IF NOT EXISTS edicao_ano INTEGER DEFAULT 2026;
+
+UPDATE public.votos_populares vp
+SET edicao_ano = COALESCE(i.edicao_ano, 2025)
+FROM public.inscricoes i
+WHERE vp.inscricao_id = i.id
+  AND (vp.edicao_ano IS NULL OR vp.edicao_ano != COALESCE(i.edicao_ano, 2025));
+
+-- 2. Substituir constraint/índice antigo (categoria, fingerprint) por índice único parcial por edição (2026 separado de 2025)
+ALTER TABLE public.votos_populares
+DROP CONSTRAINT IF EXISTS votos_populares_categoria_fingerprint_key;
+
+DROP INDEX IF EXISTS public.votos_unq_categoria_fingerprint;
+DROP INDEX IF EXISTS public.votos_unq_categoria_fingerprint_edicao;
+
+CREATE UNIQUE INDEX votos_unq_categoria_fingerprint_edicao
+ON public.votos_populares (categoria, fingerprint, COALESCE(edicao_ano, 2026))
+WHERE COALESCE(valido, true) = true;
+
+-- 3. Função helper SECURITY DEFINER para checar role sem recursão de RLS
+CREATE OR REPLACE FUNCTION public.current_user_has_role(_role public.app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    LEFT JOIN public.profiles p ON p.id = ur.user_id
+    WHERE (
+      p.auth_user_id = auth.uid()
+      OR ur.user_id = auth.uid()
+      OR (
+        COALESCE(auth.jwt() ->> 'email', '') <> ''
+        AND lower(p.email) = lower(auth.jwt() ->> 'email')
+      )
+    )
+    AND ur.role = _role
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.current_user_has_role(public.app_role) TO anon, authenticated;
+
+-- 4. Atualizar trigger check_periodo_voto_popular usando current_user_has_role('admin')
+CREATE OR REPLACE FUNCTION public.check_periodo_voto_popular()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_inicio TIMESTAMP WITH TIME ZONE;
+    v_fim TIMESTAMP WITH TIME ZONE;
+    v_is_admin BOOLEAN := false;
+    v_edicao INTEGER := 2026;
+BEGIN
+    SELECT COALESCE(edicao_ano, 2026) INTO v_edicao
+    FROM public.inscricoes
+    WHERE id = NEW.inscricao_id;
+
+    NEW.edicao_ano := COALESCE(v_edicao, 2026);
+
+    SELECT valor_data INTO v_inicio FROM public.cronograma_parametros WHERE chave = 'inicio_votacao';
+    SELECT valor_data INTO v_fim FROM public.cronograma_parametros WHERE chave = 'fim_votacao';
+
+    IF auth.uid() IS NOT NULL THEN
+        v_is_admin := public.current_user_has_role('admin'::public.app_role);
+    END IF;
+
+    IF v_inicio IS NOT NULL AND v_fim IS NOT NULL AND NOT v_is_admin THEN
+        IF now() < v_inicio OR now() > v_fim THEN
+            RAISE EXCEPTION 'Votação popular bloqueada. O período oficial de votação é de % a %.',
+                to_char(v_inicio AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY'),
+                to_char(v_fim AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY');
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_check_periodo_voto_popular ON public.votos_populares;
+CREATE TRIGGER trg_check_periodo_voto_popular
+BEFORE INSERT ON public.votos_populares
+FOR EACH ROW
+EXECUTE FUNCTION public.check_periodo_voto_popular();
+
+-- 5. Atualizar política de INSERT em votos_populares usando a função SECURITY DEFINER
+DROP POLICY IF EXISTS "Permitir voto na janela de votacao" ON public.votos_populares;
+CREATE POLICY "Permitir voto na janela de votacao" ON public.votos_populares
+    FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (
+        (
+            now() >= (SELECT valor_data FROM public.cronograma_parametros WHERE chave = 'inicio_votacao') AND
+            now() <= (SELECT valor_data FROM public.cronograma_parametros WHERE chave = 'fim_votacao')
+        )
+        OR public.current_user_has_role('admin'::public.app_role)
+    );
+
+-- 6. RPC administrativa para limpar votos de teste da Edição 2026 antes da abertura oficial
+CREATE OR REPLACE FUNCTION public.limpar_votos_teste_admin(p_fingerprint TEXT DEFAULT NULL)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_deleted INTEGER := 0;
+BEGIN
+    IF NOT public.current_user_has_role('admin'::public.app_role) THEN
+        RAISE EXCEPTION 'Acesso negado: apenas administradores podem limpar votos de teste.';
+    END IF;
+
+    DELETE FROM public.votos_populares vp
+    USING public.inscricoes i
+    WHERE vp.inscricao_id = i.id
+      AND COALESCE(i.edicao_ano, 2025) = 2026
+      AND (p_fingerprint IS NULL OR vp.fingerprint = p_fingerprint);
+
+    GET DIAGNOSTICS v_deleted = ROW_COUNT;
+    RETURN v_deleted;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.limpar_votos_teste_admin(TEXT) TO authenticated;
+
+-- 7. Atualizar get_voto_popular_candidatos para reconhecer admin/jurado via current_user_has_role e ordenar em ordem alfabética
+DROP FUNCTION IF EXISTS public.get_voto_popular_candidatos(text, double precision);
+CREATE OR REPLACE FUNCTION public.get_voto_popular_candidatos(p_categoria TEXT, p_session_seed DOUBLE PRECISION)
+RETURNS TABLE (
+    inscricao_id UUID,
+    titulo_iniciativa TEXT,
+    nome_completo TEXT,
+    lotacao TEXT,
+    descricao_iniciativa TEXT,
+    problema_necessidade TEXT,
+    metodologia TEXT,
+    principais_resultados TEXT
+)
+SECURITY DEFINER
+SET search_path = public, pg_temp
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_inicio TIMESTAMP WITH TIME ZONE;
+    v_fim TIMESTAMP WITH TIME ZONE;
+    v_is_admin BOOLEAN := false;
+BEGIN
+    SELECT valor_data INTO v_inicio FROM public.cronograma_parametros WHERE chave = 'inicio_votacao';
+    SELECT valor_data INTO v_fim FROM public.cronograma_parametros WHERE chave = 'fim_votacao';
+
+    IF auth.uid() IS NOT NULL THEN
+        v_is_admin := (
+            public.current_user_has_role('admin'::public.app_role)
+            OR public.current_user_has_role('jurado'::public.app_role)
+        );
+    END IF;
+
+    IF (now() < v_inicio OR now() > v_fim) AND NOT v_is_admin THEN
+        RAISE EXCEPTION 'Fora do período de votação popular (período oficial: % a %).', 
+            to_char(v_inicio AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY'),
+            to_char(v_fim AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY');
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        i.id,
+        i.titulo_iniciativa,
+        i.nome_completo,
+        COALESCE(i.lotacao, i.unidade_setor) AS lotacao,
+        COALESCE(i.descricao_iniciativa, i.resumo_executivo) AS descricao_iniciativa,
+        i.problema_necessidade,
+        COALESCE(i.metodologia, i.etapas_metodologia) AS metodologia,
+        COALESCE(i.principais_resultados, i.resultados_alcancados) AS principais_resultados
+    FROM public.finalistas_snapshot fs
+    JOIN public.inscricoes i ON i.id = fs.inscricao_id
+    WHERE fs.categoria = p_categoria 
+      AND COALESCE(i.edicao_ano, 2025) = 2026
+    ORDER BY i.titulo_iniciativa ASC;
+END;
+$$;

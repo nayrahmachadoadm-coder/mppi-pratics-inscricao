@@ -28,13 +28,14 @@ import {
   PartyPopper,
   Star,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
 import { isAuthenticated, hasRole } from '@/lib/auth';
-import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
-import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos } from '@/lib/votoPopularService';
+import { getDeviceFingerprint, getStoredVote, storeVote, removeStoredVote, purgeLegacy2025Votes } from '@/utils/fingerprint';
+import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos, limparVotosTesteAdmin } from '@/lib/votoPopularService';
 import { getPeriodoVotacao } from '@/lib/supabaseService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
@@ -109,6 +110,12 @@ const VotoPopular: React.FC = () => {
   const [challenge, setChallenge] = useState<{ a: number; b: number }>({ a: 0, b: 0 });
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Confirmação elegante de envio do voto popular
+  const [voteSuccessOpen, setVoteSuccessOpen] = useState(false);
+  const [lastSubmittedVotes, setLastSubmittedVotes] = useState<
+    { catKey: CategoriaKey; catLabel: string; titulo: string }[]
+  >([]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -206,6 +213,14 @@ const VotoPopular: React.FC = () => {
           } catch { void 0; }
         }
         setVotosCountById(merged);
+
+        // Se o banco de dados não possui votos computados para uma inscrição salva localmente, limpa o bloqueio local indevido
+        for (const cat of categorias) {
+          const storedId = getStoredVote(cat.key);
+          if (storedId && (merged[storedId] || 0) === 0) {
+            removeStoredVote(cat.key);
+          }
+        }
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar os finalistas.');
@@ -215,10 +230,23 @@ const VotoPopular: React.FC = () => {
   };
 
   useEffect(() => {
+    purgeLegacy2025Votes();
     carregarDados();
   }, []);
 
-  const hasVoted = (cat: CategoriaKey) => Boolean(getStoredVote(cat));
+  // Garante que apenas votos válidos da edição 2026 (cujo candidato exista entre os finalistas atuais) sejam considerados
+  const getValidStoredVote = (cat: CategoriaKey): string | null => {
+    const storedId = getStoredVote(cat);
+    if (!storedId) return null;
+    const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat);
+    if (catFinalistas.length > 0 && !catFinalistas.some(f => f.inscricao.id === storedId)) {
+      removeStoredVote(cat);
+      return null;
+    }
+    return storedId;
+  };
+
+  const hasVoted = (cat: CategoriaKey) => Boolean(getValidStoredVote(cat));
   const hasVotedAny = () => categorias.some((c) => hasVoted(c.key));
 
   const onSelectOne = (categoria: string, inscricaoId: string) => {
@@ -266,22 +294,42 @@ const VotoPopular: React.FC = () => {
       const categoriesToSubmit = Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey));
       
       let successCount = 0;
-      let errorCount = 0;
+      let duplicateCount = 0;
+      let periodoBlockedCount = 0;
+      let otherErrorMsg = '';
+      const submittedSummary: { catKey: CategoriaKey; catLabel: string; titulo: string }[] = [];
 
       for (const cat of categoriesToSubmit) {
+        const catKey = cat as CategoriaKey;
         const selId = selectedIds[cat];
+        const cand = allFinalistas.find(f => f.inscricao.id === selId);
+        const catLabel = categorias.find(c => c.key === catKey)?.label || cat;
         const res = await submitVotoPopular({ categoria: cat, inscricao_id: selId, fingerprint: fp });
         if (res.success) {
-          storeVote(cat as CategoriaKey, selId);
+          storeVote(catKey, selId);
           successCount++;
+          submittedSummary.push({
+            catKey,
+            catLabel,
+            titulo: cand?.inscricao.titulo_iniciativa || 'Iniciativa finalista',
+          });
+        } else if (res.isDuplicate) {
+          // Apenas se o banco retornar especificamente erro 23505 (unicidade na edição 2026)
+          storeVote(catKey, selId);
+          duplicateCount++;
+          submittedSummary.push({
+            catKey,
+            catLabel,
+            titulo: cand?.inscricao.titulo_iniciativa || 'Iniciativa finalista',
+          });
+        } else if (res.isPeriodoBlocked) {
+          periodoBlockedCount++;
+          otherErrorMsg = res.error || 'O período oficial de votação no banco de dados inicia em 12/11/2026.';
         } else {
-          // Se já havia sido computado no banco (unicidade)
-          storeVote(cat as CategoriaKey, selId);
-          errorCount++;
+          otherErrorMsg = res.error || 'Erro ao gravar voto no servidor.';
         }
       }
 
-      setSelectedIds({});
       setVerifyOpen(false);
 
       if (isAdmin) {
@@ -297,10 +345,34 @@ const VotoPopular: React.FC = () => {
         } catch { void 0; }
       }
       
-      if (errorCount === 0) {
-        toast({ title: 'Voto(s) registrado(s) com sucesso!', description: 'Obrigado por participar da 10ª Edição do Prêmio Melhores Práticas do MPPI.' });
+      if (successCount > 0) {
+        setSelectedIds({});
+        setLastSubmittedVotes(submittedSummary);
+        setVoteSuccessOpen(true);
+        toast({
+          title: 'Voto(s) registrado(s) com sucesso!',
+          description: 'Obrigado por participar da 10ª Edição do Prêmio Melhores Práticas do MPPI.',
+        });
+      } else if (duplicateCount > 0 && periodoBlockedCount === 0) {
+        setSelectedIds({});
+        setLastSubmittedVotes(submittedSummary);
+        setVoteSuccessOpen(true);
+        toast({
+          title: 'Voto já computado nesta edição',
+          description: 'Este dispositivo já possui voto registrado para a(s) categoria(s) selecionada(s) na Edição 2026.',
+        });
+      } else if (periodoBlockedCount > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Período de votação ainda não iniciado no banco de dados',
+          description: `${otherErrorMsg} Para testes administrativos antes de 12/11/2026, autorize o voto de teste de administrador no Supabase.`,
+        });
       } else {
-        toast({ title: 'Atenção', description: `Foram registrados ${successCount} voto(s). Outros já constavam como computados para este dispositivo.` });
+        toast({
+          variant: 'destructive',
+          title: 'Não foi possível registrar o voto',
+          description: otherErrorMsg || 'Verifique sua conexão e tente novamente.',
+        });
       }
     } catch {
       toast({ title: 'Erro', description: 'Houve um problema ao processar seu voto. Tente novamente mais tarde.' });
@@ -310,6 +382,36 @@ const VotoPopular: React.FC = () => {
   };
 
   const totalVotosAdmin = isAdmin ? Object.values(votosCountById).reduce((sum, n) => sum + (n || 0), 0) : 0;
+
+  const handleResetVotoTesteAdmin = async () => {
+    try {
+      const fp = await getDeviceFingerprint();
+      const res = await limparVotosTesteAdmin(fp);
+      categorias.forEach((c) => removeStoredVote(c.key));
+      setSelectedIds({});
+      setLastSubmittedVotes([]);
+      setVoteSuccessOpen(false);
+      await carregarDados();
+      if (res.success) {
+        toast({
+          title: 'Votos de teste limpos',
+          description: `O registro de teste deste dispositivo foi removido (${res.deleted || 0} voto(s) excluído(s) no banco).`,
+        });
+      } else {
+        toast({
+          title: 'Bloqueio local limpo',
+          description: 'O estado local de votação deste dispositivo foi reiniciado para novo teste.',
+        });
+      }
+    } catch {
+      categorias.forEach((c) => removeStoredVote(c.key));
+      setSelectedIds({});
+      toast({
+        title: 'Bloqueio local limpo',
+        description: 'O estado local deste dispositivo foi reiniciado.',
+      });
+    }
+  };
 
   const exportVotoPopularPdf = async () => {
     const doc = new jsPDF();
@@ -457,6 +559,25 @@ const VotoPopular: React.FC = () => {
                   Apuração de Votos
                 </Button>
               </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2.5 text-xs text-amber-800 border-amber-300 bg-amber-50 hover:bg-amber-100"
+                      onClick={handleResetVotoTesteAdmin}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                      Reiniciar Voto de Teste
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Remove os votos de teste deste dispositivo no banco e libera para testar novamente</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -629,10 +750,35 @@ const VotoPopular: React.FC = () => {
                   {hasVotedAny() && (
                     <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
                       <CheckCircle2 className="h-4 w-4" />
-                      Voto registrado neste dispositivo
+                      Voto registrado na Edição 2026
                     </span>
                   )}
                 </div>
+
+                {/* Banner Elegante de Confirmação de Participação na Edição 2026 */}
+                {hasVotedAny() && (
+                  <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-emerald-50/90 p-4 sm:p-5 shadow-sm">
+                    <div className="flex items-start gap-3.5">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-sm sm:text-base font-bold text-emerald-950">
+                            Seu voto popular foi registrado com sucesso na Edição 2026!
+                          </h4>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-white/80 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                            Voto único por dispositivo
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-emerald-900/90 leading-relaxed">
+                          Agradecemos sua participação na <strong>10ª Edição do Prêmio Melhores Práticas do MPPI (Edital nº 88/2026)</strong>. Em conformidade com os <strong>Itens 9.4 e 9.7 do Edital</strong>, o voto popular é <strong>único por dispositivo em cada categoria</strong>, garantindo a segurança, a transparência e a igualdade de condições entre as iniciativas concorrentes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {loading ? (
                   <div className="text-sm text-slate-500 py-10 text-center flex items-center justify-center gap-2">
@@ -703,7 +849,7 @@ const VotoPopular: React.FC = () => {
                             {catFinalistas.map((item) => {
                               const id = item.inscricao.id;
                               const selected = selectedIds[cat.key] === id;
-                              const isVotedItem = catVoted && getStoredVote(cat.key) === id;
+                              const isVotedItem = catVoted && getValidStoredVote(cat.key) === id;
                               const isDisabled = periodoStatus === 'ENCERRADO' || (periodoStatus === 'AGUARDANDO_INICIO' && !isAdmin) || catVoted;
                               const isExpanded = Boolean(expandedIds[id]);
 
@@ -1016,6 +1162,101 @@ const VotoPopular: React.FC = () => {
                   >
                     <PartyPopper className="h-4 w-4 shrink-0" />
                     <span>{isSubmitting ? 'Registrando seu voto...' : 'Confirmar e Enviar Meu Voto'}</span>
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Modal Elegante de Confirmação de Envio do Voto Popular */}
+            <Dialog open={voteSuccessOpen} onOpenChange={setVoteSuccessOpen}>
+              <DialogContent
+                hideClose
+                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden border-0 shadow-2xl gap-0"
+              >
+                {/* Cabeçalho Comemorativo de Confirmação */}
+                <div className="shrink-0 bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] text-white px-5 sm:px-6 py-5 border-b-2 border-amber-400/80 relative overflow-hidden">
+                  <div
+                    className="absolute inset-0 opacity-15 pointer-events-none"
+                    style={{
+                      backgroundImage: 'radial-gradient(circle, #FFD700 1.2px, transparent 1.2px)',
+                      backgroundSize: '18px 18px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVoteSuccessOpen(false)}
+                    aria-label="Fechar"
+                    className="absolute right-4 top-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+
+                  <DialogHeader className="relative z-10 text-left pr-8 space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 w-fit px-3 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-300/50 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-0.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                      <span>Voto Popular Confirmado • Edição 2026</span>
+                    </div>
+                    <DialogTitle className="text-lg sm:text-xl font-bold text-white flex items-center gap-3 tracking-tight">
+                      <div className="h-10 w-10 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 shadow-inner">
+                        <PartyPopper className="h-5 w-5 text-amber-300" />
+                      </div>
+                      <span>Seu Voto Foi Enviado com Sucesso!</span>
+                    </DialogTitle>
+                    <p className="text-xs sm:text-sm text-rose-100/90 pl-[3.25rem]">
+                      Obrigado por participar da 10ª Edição do Prêmio Melhores Práticas do MPPI!
+                    </p>
+                  </DialogHeader>
+                </div>
+
+                {/* Corpo do Comprovante de Votação */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 space-y-4 text-xs sm:text-sm min-w-0 bg-white">
+                  {lastSubmittedVotes.length > 0 && (
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-50/70 to-slate-50 border border-emerald-200/80 space-y-2.5 min-w-0">
+                      <div className="font-bold text-emerald-950 text-xs sm:text-sm flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span>Resumo do seu voto registrado:</span>
+                      </div>
+                      <ul className="space-y-2 min-w-0">
+                        {lastSubmittedVotes.map((item) => (
+                          <li
+                            key={item.catKey}
+                            className="p-3 rounded-lg bg-white border border-emerald-200/90 border-l-4 border-l-emerald-600 shadow-xs min-w-0 break-words leading-snug"
+                          >
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800 mb-0.5">
+                              <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                              <span>{item.catLabel}</span>
+                            </div>
+                            <div className="font-semibold text-slate-900 text-xs sm:text-sm break-words">
+                              {item.titulo}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Confirmação Institucional de Unicidade por Dispositivo */}
+                  <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200/90 space-y-2 min-w-0 shadow-xs">
+                    <div className="font-bold text-amber-950 text-xs sm:text-sm flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                      <span>Garantia de Voto Único por Dispositivo</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-amber-950/90 leading-relaxed break-words">
+                      Confirmamos que seu voto foi devidamente computado para a <strong>Edição 2026</strong>. Em conformidade com os <strong>Itens 9.4 e 9.7 do Edital nº 88/2026</strong>, <strong>o voto popular é único por dispositivo em cada categoria</strong>, assegurando a igualdade de condições, a autenticidade e a transparência na apuração.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rodapé */}
+                <DialogFooter className="shrink-0 flex justify-end px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full sm:w-auto px-6 h-10 text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
+                    onClick={() => setVoteSuccessOpen(false)}
+                  >
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>Concluir</span>
                   </Button>
                 </DialogFooter>
               </DialogContent>

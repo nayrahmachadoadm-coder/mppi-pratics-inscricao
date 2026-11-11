@@ -9,8 +9,17 @@ export type SubmitVotoPayload = {
   email?: string;
 };
 
-export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<{ success: boolean; error?: string }>{
-  const client = supabasePublic || supabase;
+export type SubmitVotoResult = {
+  success: boolean;
+  error?: string;
+  code?: string;
+  isDuplicate?: boolean;
+  isPeriodoBlocked?: boolean;
+};
+
+export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<SubmitVotoResult> {
+  const isAuth = await isAuthenticated();
+  const client = isAuth ? supabase : (supabasePublic || supabase);
   if (!client) {
     console.warn('[VotoPopular] Supabase não configurado. Voto será apenas local.');
     return { success: true };
@@ -26,7 +35,22 @@ export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<{ s
       });
     if (error) {
       console.error('[VotoPopular] Erro ao registrar voto:', error);
-      return { success: false, error: error.message };
+      const code = (error as any)?.code || '';
+      const msg = error.message || '';
+      const isDuplicate =
+        code === '23505' ||
+        /duplicate key|unique constraint|votos_unq/i.test(msg);
+      const isPeriodoBlocked =
+        code === 'P0001' ||
+        code === '42501' ||
+        /Fora do período|Votação popular bloqueada|row-level security/i.test(msg);
+      return {
+        success: false,
+        error: msg,
+        code,
+        isDuplicate,
+        isPeriodoBlocked,
+      };
     }
     return { success: true };
   } catch (e: any) {
@@ -49,6 +73,21 @@ export async function getVotosCountByCategoria(categoria: string): Promise<Recor
     return counts;
   } catch {
     return {};
+  }
+}
+
+export async function limparVotosTesteAdmin(fingerprint?: string): Promise<{ success: boolean; deleted?: number; error?: string }> {
+  if (!supabase) return { success: false, error: 'Sem conexão' };
+  try {
+    const { data, error } = await (supabase as any).rpc('limpar_votos_teste_admin', {
+      p_fingerprint: fingerprint || null,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, deleted: Number(data) || 0 };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao limpar votos de teste' };
   }
 }
 
