@@ -182,26 +182,30 @@ const InscricoesEncerradas: React.FC = () => {
             </Card>
 
             {/* Card 4: Votação Popular */}
-            <Card className="hover:border-black/35 transition-all duration-150 border border-black/15 group bg-white shadow-2xs">
+            <Card className="border-primary/40 hover:border-primary transition-all duration-150 border-2 group bg-rose-50/30 shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div>
-                  <div className="w-8 h-8 rounded-xs bg-purple-50 border border-black/10 text-purple-700 flex items-center justify-center mb-2.5">
-                    <Vote className="w-4 h-4" />
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="w-8 h-8 rounded-xs bg-primary/10 border border-primary/20 text-primary flex items-center justify-center">
+                      <Vote className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                      Votação Aberta
+                    </span>
                   </div>
                   <h3 className="font-bold text-sm text-gray-900 mb-1">
-                    Votação Popular
+                    Votação Popular (12 a 23/11)
                   </h3>
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    Aberta a todos os servidores e membros do MPPI para eleger os destaques.
+                    Aberta a todos os servidores e membros do MPPI para eleger as iniciativas finalistas.
                   </p>
                 </div>
                 <Button 
-                  variant="outline" 
                   size="sm" 
                   onClick={() => navigate('/voto-popular')}
-                  className="w-full text-xs font-semibold text-gray-900 border-black/20 hover:border-black/40 hover:bg-slate-50 justify-between mt-auto rounded-xs"
+                  className="w-full text-xs font-semibold bg-primary hover:bg-primary-dark text-white justify-between mt-auto rounded-xs shadow-xs"
                 >
-                  <span>Conhecer Etapa</span>
+                  <span>Votar Agora</span>
                   <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </CardContent>

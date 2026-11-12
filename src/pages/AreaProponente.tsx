@@ -164,10 +164,10 @@ const AreaProponente: React.FC = () => {
               <Button
                 size="sm"
                 onClick={() => navigate('/voto-popular')}
-                className="bg-black/35 text-white border border-white/50 hover:bg-black/55 hover:border-white text-xs font-medium rounded-xs shadow-xs"
+                className="bg-amber-400 text-slate-950 border border-amber-300 hover:bg-amber-300 text-xs font-bold rounded-xs shadow-sm"
               >
-                <Vote className="w-4 h-4 mr-1.5 text-yellow-300" />
-                Informações da Votação Popular
+                <Vote className="w-4 h-4 mr-1.5 text-slate-950" />
+                Votar Agora — Votação Popular (12 a 23/11)
               </Button>
             </div>
           </div>

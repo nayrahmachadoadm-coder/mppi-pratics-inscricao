@@ -29,7 +29,9 @@ import {
   Star,
   X,
   RotateCcw,
+  Scale,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
@@ -90,6 +92,7 @@ type PeriodoStatus = 'CARREGANDO' | 'AGUARDANDO_INICIO' | 'ABERTO' | 'ENCERRADO'
 
 const VotoPopular: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -129,17 +132,22 @@ const VotoPopular: React.FC = () => {
         setIsAdmin(adminCheck);
       }
 
-      // 1. Verificar período oficial do cronograma
+      // 1. Verificar período oficial do cronograma (Edital nº 88/2026: 12/11/2026 a 23/11/2026)
       const periodo = await getPeriodoVotacao();
       setDatasPeriodo(periodo);
 
       const agora = new Date();
-      // Fallback para datas oficiais do Edital se não configuradas no banco
-      const inicio = periodo.inicio || new Date('2026-11-12T00:00:00-03:00');
-      const fim = periodo.fim || new Date('2026-11-23T23:59:59-03:00');
+      const inicioOficialEdital = new Date('2026-11-12T00:00:00-03:00');
+      const fimOficialEdital = new Date('2026-11-23T23:59:59-03:00');
+      const dentroJanelaOficial = agora >= inicioOficialEdital && agora <= fimOficialEdital;
+
+      const inicio = periodo.inicio || inicioOficialEdital;
+      const fim = periodo.fim || fimOficialEdital;
 
       let statusCalc: PeriodoStatus = 'ABERTO';
-      if (agora < inicio) {
+      if (dentroJanelaOficial) {
+        statusCalc = 'ABERTO';
+      } else if (agora < inicio) {
         statusCalc = 'AGUARDANDO_INICIO';
       } else if (agora > fim) {
         statusCalc = 'ENCERRADO';
@@ -150,7 +158,6 @@ const VotoPopular: React.FC = () => {
       const sessionSeed = 0.5;
       const collected: FinalistaItem[] = [];
 
-      // Se a votação está aberta OU é administrador/jurado visualizando previamente
       for (const cat of categorias) {
         try {
           const res = await getVotoPopularCandidatos(cat.key, sessionSeed);
@@ -166,8 +173,8 @@ const VotoPopular: React.FC = () => {
               }
             }));
             collected.push(...sortFinalistasAlfabetico(mapped));
-          } else if (logged) {
-            // Fallback para ambiente administrativo antes da publicação de snapshot
+          } else {
+            // Fallback caso o snapshot ainda não esteja populado
             try {
               const viaSql = await getTop3ByCategoriaSql(cat.key);
               if (viaSql.success && (viaSql.data || []).length > 0) {
@@ -524,8 +531,54 @@ const VotoPopular: React.FC = () => {
   const isChallengeWrong = answer.trim() !== '' && !isChallengeCorrect;
 
   return (
-    <div className="bg-slate-50 min-h-screen py-4">
-      <main className="max-w-5xl mx-auto px-3 sm:px-4">
+    <div className="bg-slate-50 min-h-screen flex flex-col justify-between">
+      {/* Cabeçalho Institucional Público (exibido quando o usuário não está logado no painel interno) */}
+      {!isLogged && (
+        <header className="w-full border-b border-black/15 bg-white/95 sticky top-0 z-40 shadow-2xs">
+          <div className="max-w-5xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo-mppi.png"
+                alt="Brasão MPPI"
+                className="h-9 w-auto object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/favicon.ico';
+                }}
+              />
+              <div className="border-l border-black/20 pl-3">
+                <span className="block text-xs font-semibold tracking-wider text-primary uppercase">
+                  Ministério Público do Estado do Piauí
+                </span>
+                <span className="block text-[11px] text-muted-foreground font-medium">
+                  Prêmio Melhores Práticas • 10ª Edição (Votação Popular: 12 a 23/11)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/proponente')}
+                className="text-xs h-9 border-black/20 hover:border-black/40 text-gray-800 font-medium rounded-xs"
+              >
+                <Users className="w-3.5 h-3.5 mr-1.5" />
+                Área do Proponente
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate('/admin/login')}
+                className="text-xs h-9 bg-primary hover:bg-primary-dark text-white font-medium rounded-xs border border-black/20 shadow-xs"
+              >
+                <Scale className="w-3.5 h-3.5 mr-1.5" />
+                Comissão Julgadora
+              </Button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <main className="w-full max-w-5xl mx-auto px-3 sm:px-4 py-4 flex-1">
         
         {/* Barra de Administração (Exibida exclusivamente para perfil Administrador) */}
         {isAdmin && (

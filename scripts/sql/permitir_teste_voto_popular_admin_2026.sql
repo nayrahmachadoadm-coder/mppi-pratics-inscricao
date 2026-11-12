@@ -139,7 +139,15 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.limpar_votos_teste_admin(TEXT) TO authenticated;
 
--- 7. Atualizar get_voto_popular_candidatos para reconhecer admin/jurado via current_user_has_role e ordenar em ordem alfabética
+-- 7. Garantir datas oficiais de votação popular no cronograma_parametros (12/11/2026 a 23/11/2026)
+INSERT INTO public.cronograma_parametros (chave, valor_data, descricao) VALUES
+('inicio_votacao', '2026-11-12 00:00:00-03', 'Início da votação popular'),
+('fim_votacao', '2026-11-23 23:59:59-03', 'Fim da votação popular')
+ON CONFLICT (chave) DO UPDATE
+SET valor_data = EXCLUDED.valor_data;
+
+-- 8. Atualizar get_voto_popular_candidatos para retornar os 3 finalistas em ordem alfabética
+--    (usando finalistas_snapshot ou calculando automaticamente o Top 3 da categoria na Edição 2026)
 DROP FUNCTION IF EXISTS public.get_voto_popular_candidatos(text, double precision);
 CREATE OR REPLACE FUNCTION public.get_voto_popular_candidatos(p_categoria TEXT, p_session_seed DOUBLE PRECISION)
 RETURNS TABLE (
@@ -157,40 +165,75 @@ SET search_path = public, pg_temp
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_inicio TIMESTAMP WITH TIME ZONE;
-    v_fim TIMESTAMP WITH TIME ZONE;
-    v_is_admin BOOLEAN := false;
+    v_has_snapshot BOOLEAN := false;
 BEGIN
-    SELECT valor_data INTO v_inicio FROM public.cronograma_parametros WHERE chave = 'inicio_votacao';
-    SELECT valor_data INTO v_fim FROM public.cronograma_parametros WHERE chave = 'fim_votacao';
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.finalistas_snapshot fs
+        JOIN public.inscricoes i ON i.id = fs.inscricao_id
+        WHERE fs.categoria = p_categoria
+          AND COALESCE(i.edicao_ano, 2025) = 2026
+    ) INTO v_has_snapshot;
 
-    IF auth.uid() IS NOT NULL THEN
-        v_is_admin := (
-            public.current_user_has_role('admin'::public.app_role)
-            OR public.current_user_has_role('jurado'::public.app_role)
-        );
+    IF v_has_snapshot THEN
+        RETURN QUERY
+        SELECT 
+            i.id,
+            i.titulo_iniciativa,
+            i.nome_completo,
+            COALESCE(i.lotacao, i.unidade_setor) AS lotacao,
+            COALESCE(i.descricao_iniciativa, i.resumo_executivo) AS descricao_iniciativa,
+            i.problema_necessidade,
+            COALESCE(i.metodologia, i.etapas_metodologia) AS metodologia,
+            COALESCE(i.principais_resultados, i.resultados_alcancados) AS principais_resultados
+        FROM public.finalistas_snapshot fs
+        JOIN public.inscricoes i ON i.id = fs.inscricao_id
+        WHERE fs.categoria = p_categoria 
+          AND COALESCE(i.edicao_ano, 2025) = 2026
+        ORDER BY i.titulo_iniciativa ASC;
+    ELSE
+        RETURN QUERY
+        WITH ranking AS (
+            SELECT
+                i.id,
+                i.titulo_iniciativa,
+                i.nome_completo,
+                COALESCE(i.lotacao, i.unidade_setor) AS lotacao,
+                COALESCE(i.descricao_iniciativa, i.resumo_executivo) AS descricao_iniciativa,
+                i.problema_necessidade,
+                COALESCE(i.metodologia, i.etapas_metodologia) AS metodologia,
+                COALESCE(i.principais_resultados, i.resultados_alcancados) AS principais_resultados,
+                ROW_NUMBER() OVER (
+                    ORDER BY
+                        COALESCE(AVG(a.total::NUMERIC), 0) DESC,
+                        COALESCE(AVG(a.cooperacao::NUMERIC), 0) DESC,
+                        COALESCE(AVG(a.resolutividade::NUMERIC), 0) DESC,
+                        COALESCE(AVG(a.impacto_social::NUMERIC), 0) DESC,
+                        COALESCE(AVG(a.replicabilidade::NUMERIC), 0) DESC,
+                        COALESCE(AVG(a.inovacao::NUMERIC), 0) DESC,
+                        i.titulo_iniciativa ASC
+                ) AS pos
+            FROM public.inscricoes i
+            LEFT JOIN public.avaliacoes a ON a.inscricao_id = i.id
+            WHERE COALESCE(i.area_atuacao, i.area) = p_categoria
+              AND COALESCE(i.status_inscricao, '') NOT IN ('Indeferida', 'Indeferido', 'Cancelada', 'Substituída')
+              AND COALESCE(i.edicao_ano, 2025) = 2026
+            GROUP BY i.id
+        )
+        SELECT
+            r.id,
+            r.titulo_iniciativa,
+            r.nome_completo,
+            r.lotacao,
+            r.descricao_iniciativa,
+            r.problema_necessidade,
+            r.metodologia,
+            r.principais_resultados
+        FROM ranking r
+        WHERE r.pos <= 3
+        ORDER BY r.titulo_iniciativa ASC;
     END IF;
-
-    IF (now() < v_inicio OR now() > v_fim) AND NOT v_is_admin THEN
-        RAISE EXCEPTION 'Fora do período de votação popular (período oficial: % a %).', 
-            to_char(v_inicio AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY'),
-            to_char(v_fim AT TIME ZONE 'America/Fortaleza', 'DD/MM/YYYY');
-    END IF;
-
-    RETURN QUERY
-    SELECT 
-        i.id,
-        i.titulo_iniciativa,
-        i.nome_completo,
-        COALESCE(i.lotacao, i.unidade_setor) AS lotacao,
-        COALESCE(i.descricao_iniciativa, i.resumo_executivo) AS descricao_iniciativa,
-        i.problema_necessidade,
-        COALESCE(i.metodologia, i.etapas_metodologia) AS metodologia,
-        COALESCE(i.principais_resultados, i.resultados_alcancados) AS principais_resultados
-    FROM public.finalistas_snapshot fs
-    JOIN public.inscricoes i ON i.id = fs.inscricao_id
-    WHERE fs.categoria = p_categoria 
-      AND COALESCE(i.edicao_ano, 2025) = 2026
-    ORDER BY i.titulo_iniciativa ASC;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.get_voto_popular_candidatos(text, double precision) TO anon, authenticated;
