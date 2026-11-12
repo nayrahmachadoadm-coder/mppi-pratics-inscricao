@@ -592,7 +592,7 @@ const VotoPopular: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/proponente')}
-                className="text-xs h-9 border-black/20 hover:border-black/40 text-gray-800 font-medium rounded-xs"
+                className="text-xs h-9 border-black/20 hover:border-black/40 text-gray-800 font-medium rounded-none"
               >
                 <Users className="w-3.5 h-3.5 mr-1.5" />
                 Área do Proponente
@@ -600,7 +600,7 @@ const VotoPopular: React.FC = () => {
               <Button
                 size="sm"
                 onClick={() => navigate('/admin/login')}
-                className="text-xs h-9 bg-primary hover:bg-primary-dark text-white font-medium rounded-xs border border-black/20 shadow-xs"
+                className="text-xs h-9 bg-primary hover:bg-primary-dark text-white font-medium rounded-none border border-black/20 shadow-xs"
               >
                 <Scale className="w-3.5 h-3.5 mr-1.5" />
                 Comissão Julgadora
@@ -614,9 +614,9 @@ const VotoPopular: React.FC = () => {
         
         {/* Barra de Administração (Exibida exclusivamente para perfil Administrador) */}
         {isAdmin && (
-          <div className="mb-4 bg-white border border-slate-300 rounded-lg p-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-4 bg-white border border-black/20 rounded-none p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs rounded-none">
                 Administração / APG
               </Badge>
               <span className="text-xs text-slate-600">
@@ -624,11 +624,11 @@ const VotoPopular: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-slate-100 rounded-md p-0.5 border">
+              <div className="flex items-center bg-slate-100 rounded-none p-0.5 border border-black/15">
                 <Button
                   size="sm"
                   variant={adminTab === 'publico' ? 'default' : 'ghost'}
-                  className="h-7 text-xs px-2.5"
+                  className="h-7 text-xs px-2.5 rounded-none"
                   onClick={() => setAdminTab('publico')}
                 >
                   <Users className="h-3.5 w-3.5 mr-1" />
@@ -637,7 +637,7 @@ const VotoPopular: React.FC = () => {
                 <Button
                   size="sm"
                   variant={adminTab === 'apuracao' ? 'default' : 'ghost'}
-                  className="h-7 text-xs px-2.5"
+                  className="h-7 text-xs px-2.5 rounded-none"
                   onClick={() => setAdminTab('apuracao')}
                 >
                   <BarChart3 className="h-3.5 w-3.5 mr-1" />
@@ -651,14 +651,14 @@ const VotoPopular: React.FC = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-7 px-2.5 text-xs text-amber-800 border-amber-300 bg-amber-50 hover:bg-amber-100"
+                      className="h-7 px-2.5 text-xs text-amber-800 border-amber-300 bg-amber-50 hover:bg-amber-100 rounded-none"
                       onClick={handleResetVotoTesteAdmin}
                     >
                       <RotateCcw className="h-3.5 w-3.5 mr-1" />
                       Reiniciar Voto de Teste
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="rounded-none">
                     <span className="text-xs">Remove os votos de teste deste dispositivo no banco e libera para testar novamente</span>
                   </TooltipContent>
                 </Tooltip>
@@ -670,14 +670,14 @@ const VotoPopular: React.FC = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-7 px-2.5 text-xs text-slate-700"
+                      className="h-7 px-2.5 text-xs text-slate-700 border-black/20 rounded-none"
                       onClick={exportVotoPopularPdf}
                     >
                       <FileDown className="h-3.5 w-3.5 mr-1" />
                       Exportar PDF
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="rounded-none">
                     <span className="text-xs">Baixar memória de apuração dos votos</span>
                   </TooltipContent>
                 </Tooltip>
@@ -686,21 +686,21 @@ const VotoPopular: React.FC = () => {
           </div>
         )}
 
-        <Card className="shadow-md border border-slate-200 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-primary/95 to-primary text-primary-foreground py-4 px-4 sm:px-6">
+        <Card className="shadow-xs border border-black/20 rounded-none overflow-hidden bg-white">
+          <CardHeader className="bg-gradient-to-r from-primary-dark via-primary to-primary-dark text-primary-foreground py-4 px-4 sm:px-6 rounded-none border-b border-black/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src="/favicon.ico" alt="MPPI" className="h-9 w-9 bg-white/10 p-1 rounded-md" />
+                <img src="/favicon.ico" alt="MPPI" className="h-9 w-9 bg-white/10 p-1 rounded-none border border-white/20" />
                 <div>
                   <CardTitle className="text-base sm:text-lg font-bold text-white tracking-tight">
                     Voto Popular — 10ª Edição
                   </CardTitle>
-                  <div className="text-xs text-primary-foreground/80">
+                  <div className="text-xs text-primary-foreground/85">
                     Prêmio Melhores Práticas do Ministério Público do Estado do Piauí (Edital nº 88/2026)
                   </div>
                 </div>
               </div>
-              <Badge variant="outline" className="border-white/30 text-white bg-white/10 text-xs hidden sm:inline-flex">
+              <Badge variant="outline" className="border-white/30 text-white bg-white/10 text-xs hidden sm:inline-flex rounded-none">
                 Item 9 do Edital
               </Badge>
             </div>
@@ -708,7 +708,7 @@ const VotoPopular: React.FC = () => {
 
           <CardContent className="p-4 sm:p-6 space-y-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="rounded-none">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">{error}</AlertDescription>
               </Alert>
@@ -716,7 +716,7 @@ const VotoPopular: React.FC = () => {
 
             {/* Aviso Informativo sobre o Período Oficial da Votação */}
             {periodoStatus === 'AGUARDANDO_INICIO' && (
-              <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed space-y-1.5 shadow-sm">
+              <div className="p-4 rounded-none bg-amber-50 border border-amber-300 text-amber-900 text-xs leading-relaxed space-y-1.5 shadow-2xs">
                 <div className="flex items-center gap-2 font-semibold text-amber-950 text-sm">
                   <Clock className="h-4 w-4 text-amber-600 shrink-0" />
                   Período Oficial da Votação Popular: 12/11/2026 a 23/11/2026
@@ -733,7 +733,7 @@ const VotoPopular: React.FC = () => {
             )}
 
             {periodoStatus === 'ENCERRADO' && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs leading-relaxed space-y-1.5 shadow-sm">
+              <div className="p-4 rounded-none bg-red-50 border border-red-300 text-red-900 text-xs leading-relaxed space-y-1.5 shadow-2xs">
                 <div className="flex items-center gap-2 font-semibold text-red-950 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-red-600 shrink-0" />
                   Votação Popular Encerrada
@@ -745,7 +745,7 @@ const VotoPopular: React.FC = () => {
             )}
 
             {periodoStatus === 'ABERTO' && (
-              <div className="p-4 rounded-lg bg-blue-50/80 border border-blue-200 text-blue-900 text-xs leading-relaxed space-y-1 shadow-sm">
+              <div className="p-4 rounded-none bg-blue-50/80 border border-blue-200 text-blue-900 text-xs leading-relaxed space-y-1 shadow-2xs">
                 <div className="flex items-center gap-2 font-semibold text-blue-950 text-sm">
                   <Info className="h-4 w-4 text-blue-600 shrink-0" />
                   Instruções para o Voto Popular
@@ -765,7 +765,7 @@ const VotoPopular: React.FC = () => {
             {/* Painel de Apuração Administrativa (Exibido apenas quando o Admin opta por essa aba) */}
             {isAdmin && adminTab === 'apuracao' ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-2">
+                <div className="flex items-center justify-between border-b border-black/15 pb-2">
                   <h3 className="text-sm font-semibold text-slate-800">
                     Contagem e Apuração de Votos Válidos (Auditoria Interna)
                   </h3>
@@ -784,12 +784,12 @@ const VotoPopular: React.FC = () => {
                       const catTotal = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
 
                       return (
-                        <div key={cat.key} className="rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                          <div className="bg-slate-100 px-3 py-2 flex items-center justify-between">
+                        <div key={cat.key} className="rounded-none border border-black/15 overflow-hidden shadow-2xs">
+                          <div className="bg-slate-100 px-3 py-2 flex items-center justify-between border-b border-black/10">
                             <span className="text-xs font-semibold text-slate-800">{cat.label}</span>
                             <span className="text-xs text-slate-600">Total da Categoria: <strong>{catTotal.toLocaleString('pt-BR')}</strong> votos</span>
                           </div>
-                          <div className="divide-y divide-slate-100">
+                          <div className="divide-y divide-slate-200">
                             {catFinalistas
                               .slice()
                               .sort((a, b) => (votosCountById[b.inscricao.id] || 0) - (votosCountById[a.inscricao.id] || 0))
@@ -823,7 +823,7 @@ const VotoPopular: React.FC = () => {
             ) : (
               /* Interface Pública de Votação (Igualdade de condições - Item 9.2) */
               <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/15 pb-3">
                   <div>
                     <h3 className="text-sm sm:text-base font-bold uppercase tracking-wide text-slate-800">
                       Iniciativas Finalistas por Categoria
@@ -833,18 +833,18 @@ const VotoPopular: React.FC = () => {
                     </p>
                   </div>
                   {hasVotedAny() && (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-800 font-semibold bg-emerald-50 px-3 py-1 rounded-none border border-emerald-300 shadow-2xs">
                       <CheckCircle2 className="h-4 w-4" />
                       Voto registrado na Edição 2026
                     </span>
                   )}
                 </div>
 
-                {/* Banner Elegante de Confirmação de Participação na Edição 2026 */}
+                {/* Banner Institucional de Confirmação de Participação na Edição 2026 */}
                 {hasVotedAny() && (
-                  <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-emerald-50/90 p-4 sm:p-5 shadow-sm">
+                  <div className="rounded-none border border-emerald-300 border-l-4 border-l-emerald-600 bg-emerald-50/70 p-4 sm:p-5 shadow-2xs">
                     <div className="flex items-start gap-3.5">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="h-10 w-10 rounded-none bg-emerald-600 text-white flex items-center justify-center shrink-0 border border-black/10">
                         <CheckCircle2 className="h-5 w-5" />
                       </div>
                       <div className="space-y-1.5 min-w-0 flex-1">
@@ -852,7 +852,7 @@ const VotoPopular: React.FC = () => {
                           <h4 className="text-sm sm:text-base font-bold text-emerald-950">
                             Seu voto popular foi registrado com sucesso na Edição 2026!
                           </h4>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-white/80 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-white text-emerald-800 px-2.5 py-0.5 rounded-none border border-emerald-300">
                             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                             Voto único por dispositivo
                           </span>
@@ -871,7 +871,7 @@ const VotoPopular: React.FC = () => {
                     Carregando iniciativas finalistas...
                   </div>
                 ) : allFinalistas.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
+                  <div className="p-8 text-center text-xs text-slate-500 bg-white rounded-none border border-dashed border-slate-300">
                     <Calendar className="h-8 w-8 mx-auto text-slate-400 mb-2" />
                     <p className="font-semibold text-slate-700 text-sm">Nenhum finalista publicado no momento.</p>
                     <p className="mt-1 text-slate-500">
@@ -879,7 +879,7 @@ const VotoPopular: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {categorias.map(cat => {
                       const catFinalistas = sortFinalistasAlfabetico(
                         allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key)
@@ -892,12 +892,12 @@ const VotoPopular: React.FC = () => {
                       return (
                         <section
                           key={cat.key}
-                          className="rounded-xl border border-slate-200/90 bg-white shadow-sm overflow-hidden"
+                          className="rounded-none border border-black/20 bg-white shadow-2xs overflow-hidden"
                         >
-                          {/* Cabeçalho Elegante da Categoria */}
-                          <div className="bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] border-b-2 border-amber-400/80 px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 text-white">
+                          {/* Cabeçalho Institucional da Categoria */}
+                          <div className="bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] border-b-2 border-amber-400/80 px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 text-white">
                             <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-lg bg-white/10 border border-amber-300/30 flex items-center justify-center shrink-0 shadow-inner">
+                              <div className="h-9 w-9 rounded-none bg-white/10 border border-amber-300/30 flex items-center justify-center shrink-0">
                                 <Award className="h-5 w-5 text-amber-300" />
                               </div>
                               <div>
@@ -912,17 +912,17 @@ const VotoPopular: React.FC = () => {
 
                             <div className="flex items-center gap-2">
                               {catVoted ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/20 text-emerald-100 px-3 py-1 rounded-full font-semibold border border-emerald-400/40">
+                                <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/20 text-emerald-100 px-3 py-1 rounded-none font-semibold border border-emerald-400/40">
                                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
                                   Voto computado
                                 </span>
                               ) : hasSelectionInCat ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs bg-amber-400/20 text-amber-100 px-3 py-1 rounded-full font-semibold border border-amber-300/40">
+                                <span className="inline-flex items-center gap-1.5 text-xs bg-amber-400/20 text-amber-100 px-3 py-1 rounded-none font-semibold border border-amber-300/40">
                                   <CheckCircle2 className="h-3.5 w-3.5 text-amber-300" />
                                   1 iniciativa selecionada
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center text-xs bg-white/10 text-white/90 px-3 py-1 rounded-full font-medium border border-white/20">
+                                <span className="inline-flex items-center text-xs bg-white/10 text-white/90 px-3 py-1 rounded-none font-medium border border-white/25">
                                   Escolha 1 finalista
                                 </span>
                               )}
@@ -930,7 +930,7 @@ const VotoPopular: React.FC = () => {
                           </div>
 
                           {/* Lista de Candidatos Finalistas (Ordem Alfabética) */}
-                          <div className="p-3 sm:p-4 space-y-3 bg-slate-50/50">
+                          <div className="p-3 sm:p-4 space-y-2.5 bg-slate-50/70">
                             {catFinalistas.map((item) => {
                               const id = item.inscricao.id;
                               const selected = selectedIds[cat.key] === id;
@@ -941,12 +941,12 @@ const VotoPopular: React.FC = () => {
                               return (
                                 <div
                                   key={id}
-                                  className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                                  className={`rounded-none border transition-all duration-150 overflow-hidden ${
                                     isVotedItem
-                                      ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/20 shadow-sm'
+                                      ? 'border-emerald-600 border-l-4 border-l-emerald-600 bg-emerald-50/40 shadow-2xs'
                                       : selected
-                                      ? 'border-primary bg-rose-50/30 ring-2 ring-primary/20 shadow-md'
-                                      : 'border-slate-200/90 bg-white hover:border-slate-300 shadow-sm hover:shadow'
+                                      ? 'border-primary border-l-4 border-l-primary bg-rose-50/30 shadow-xs'
+                                      : 'border-black/15 bg-white hover:border-black/35 shadow-2xs'
                                   }`}
                                 >
                                   <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -961,7 +961,7 @@ const VotoPopular: React.FC = () => {
                                         name={`sel-${cat.key}`}
                                         checked={selected || isVotedItem}
                                         onChange={() => onSelectOne(cat.key, id)}
-                                        className="mt-1 h-4 w-4 sm:h-5 sm:w-5 text-primary focus:ring-primary border-slate-300 shrink-0 cursor-pointer"
+                                        className="mt-1 h-4 w-4 sm:h-5 sm:w-5 text-primary focus:ring-primary border-slate-400 shrink-0 cursor-pointer"
                                         disabled={isDisabled}
                                       />
                                       <div className="min-w-0 flex-1 space-y-1.5">
@@ -970,12 +970,12 @@ const VotoPopular: React.FC = () => {
                                             {item.inscricao.titulo_iniciativa}
                                           </span>
                                           {isVotedItem ? (
-                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-semibold shadow-sm">
+                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-none bg-emerald-600 text-white font-semibold border border-black/15">
                                               <CheckCircle2 className="h-3 w-3" />
                                               Seu Voto
                                             </span>
                                           ) : selected ? (
-                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-primary text-white font-semibold shadow-sm">
+                                            <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-none bg-primary text-white font-semibold border border-black/15">
                                               Selecionado para votar
                                             </span>
                                           ) : null}
@@ -1004,10 +1004,10 @@ const VotoPopular: React.FC = () => {
                                         size="sm"
                                         onClick={() => toggleResumo(id)}
                                         aria-expanded={isExpanded}
-                                        className={`h-9 px-3.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${
+                                        className={`h-9 px-3.5 text-xs sm:text-sm font-semibold rounded-none transition-all flex items-center gap-2 ${
                                           isExpanded
-                                            ? 'bg-primary text-white hover:bg-primary/90 shadow-sm'
-                                            : 'border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/50'
+                                            ? 'bg-primary text-white hover:bg-primary/90 border border-black/20 shadow-2xs'
+                                            : 'border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/60'
                                         }`}
                                       >
                                         <BookOpen className="h-4 w-4 shrink-0" />
@@ -1025,7 +1025,7 @@ const VotoPopular: React.FC = () => {
 
                                   {/* Painel Sandwich Expansível com APENAS o Resumo da Iniciativa em fonte de fácil leitura */}
                                   {isExpanded && (
-                                    <div className="border-t border-slate-200/80 bg-slate-50/90 px-4 sm:px-6 py-4 sm:py-5 transition-all">
+                                    <div className="border-t border-black/15 bg-slate-50/90 px-4 sm:px-6 py-4 sm:py-5 transition-all">
                                       <div className="max-w-4xl space-y-2">
                                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
                                           <BookOpen className="h-4 w-4" />
@@ -1048,7 +1048,7 @@ const VotoPopular: React.FC = () => {
                     })}
 
                     {/* Botão de Confirmação de Voto */}
-                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-white p-4 rounded-xl border shadow-sm">
+                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-none border border-black/20 shadow-2xs">
                       <div className="text-xs sm:text-sm text-slate-600 font-medium">
                         {categoriesPendingSubmit.length > 0 ? (
                           <span className="text-slate-800">
@@ -1060,7 +1060,7 @@ const VotoPopular: React.FC = () => {
                       </div>
                       <Button
                         size="default"
-                        className="w-full sm:w-auto px-6 font-bold shadow-sm"
+                        className="w-full sm:w-auto px-6 font-bold rounded-none border border-black/20 shadow-xs"
                         onClick={openConfirmDialog}
                         disabled={
                           (periodoStatus === 'ENCERRADO') ||
@@ -1081,33 +1081,26 @@ const VotoPopular: React.FC = () => {
             <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
               <DialogContent
                 hideClose
-                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden border-0 shadow-2xl gap-0"
+                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-none overflow-hidden border border-black/30 shadow-2xl gap-0"
               >
-                {/* Cabeçalho Elegante com Gradiente Institucional e Elementos Lúdicos */}
+                {/* Cabeçalho Institucional */}
                 <div className="shrink-0 bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] text-white px-5 sm:px-6 py-4 border-b-2 border-amber-400/80 relative overflow-hidden">
-                  <div
-                    className="absolute inset-0 opacity-15 pointer-events-none"
-                    style={{
-                      backgroundImage: 'radial-gradient(circle, #FFD700 1.2px, transparent 1.2px)',
-                      backgroundSize: '18px 18px',
-                    }}
-                  />
                   <button
                     type="button"
                     onClick={() => setVerifyOpen(false)}
                     aria-label="Fechar"
-                    className="absolute right-4 top-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
+                    className="absolute right-4 top-4 h-8 w-8 rounded-none bg-white/10 hover:bg-white/20 border border-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
                   >
                     <X className="h-4 w-4" />
                   </button>
 
                   <DialogHeader className="relative z-10 text-left pr-8 space-y-1">
-                    <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-semibold uppercase tracking-wider mb-1">
+                    <div className="inline-flex items-center gap-1.5 w-fit px-2.5 py-0.5 rounded-none bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-semibold uppercase tracking-wider mb-1">
                       <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                       <span>Quase lá! Seu voto faz a diferença</span>
                     </div>
                     <DialogTitle className="text-lg sm:text-xl font-bold text-white flex items-center gap-2.5 tracking-tight">
-                      <div className="h-9 w-9 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 shadow-inner">
+                      <div className="h-9 w-9 rounded-none bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0">
                         <Trophy className="h-5 w-5 text-amber-300" />
                       </div>
                       <span>Confirmação do Voto Popular</span>
@@ -1121,19 +1114,19 @@ const VotoPopular: React.FC = () => {
                 {/* Corpo do Modal */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 space-y-4 text-xs sm:text-sm min-w-0 bg-white">
                   {/* Lista de Escolhas */}
-                  <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-rose-50/30 border border-slate-200/90 space-y-3 min-w-0">
+                  <div className="p-3.5 sm:p-4 rounded-none bg-slate-50 border border-black/15 space-y-3 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <div className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
                         <Star className="h-4 w-4 text-amber-500 fill-amber-400 shrink-0" />
-                        <span>Suas iniciativas escolhidas para brilhar:</span>
+                        <span>Suas iniciativas escolhidas:</span>
                       </div>
-                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-none bg-primary/10 text-primary border border-primary/20 shrink-0">
                         {categoriesPendingSubmit.length}{' '}
                         {categoriesPendingSubmit.length === 1 ? 'categoria' : 'categorias'}
                       </span>
                     </div>
 
-                    <ul className="space-y-2.5 text-slate-700 min-w-0">
+                    <ul className="space-y-2 text-slate-700 min-w-0">
                       {categoriesPendingSubmit.map(cat => {
                         const selId = selectedIds[cat];
                         const cand = allFinalistas.find(f => f.inscricao.id === selId);
@@ -1141,7 +1134,7 @@ const VotoPopular: React.FC = () => {
                         return (
                           <li
                             key={cat}
-                            className="p-3 rounded-lg bg-white border border-slate-200/90 border-l-4 border-l-primary shadow-xs min-w-0 break-words leading-snug transition-all"
+                            className="p-3 rounded-none bg-white border border-black/15 border-l-4 border-l-primary shadow-2xs min-w-0 break-words leading-snug"
                           >
                             <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary mb-1">
                               <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -1156,22 +1149,22 @@ const VotoPopular: React.FC = () => {
                     </ul>
                   </div>
 
-                  {/*Desafio Rápido Anti-Robô mais Lúdico e Descontraído */}
-                  <div className="p-4 bg-gradient-to-r from-amber-50 via-orange-50/60 to-amber-50 border border-amber-200/90 rounded-xl space-y-3 min-w-0 shadow-xs">
+                  {/* Desafio Rápido Anti-Robô */}
+                  <div className="p-4 bg-amber-50/80 border border-amber-300 rounded-none space-y-3 min-w-0 shadow-2xs">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="font-bold text-amber-950 flex items-center gap-2 text-xs sm:text-sm">
-                        <div className="h-7 w-7 rounded-lg bg-amber-400/25 border border-amber-400/50 flex items-center justify-center shrink-0">
+                        <div className="h-7 w-7 rounded-none bg-amber-400/25 border border-amber-400/50 flex items-center justify-center shrink-0">
                           <Bot className="h-4 w-4 text-amber-800" />
                         </div>
                         <span>Desafio rápido: mostre que você é humano!</span>
                       </div>
                       {isChallengeCorrect ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-none border border-emerald-300">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Resposta certa!
                         </span>
                       ) : isChallengeWrong ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full border border-rose-300">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-none border border-rose-300">
                           <AlertTriangle className="h-3.5 w-3.5" />
                           Resposta incorreta
                         </span>
@@ -1183,11 +1176,11 @@ const VotoPopular: React.FC = () => {
                         <span className="text-xs sm:text-sm font-medium text-amber-900 mr-1">
                           Resolva a continha:
                         </span>
-                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-lg bg-white border border-amber-300 shadow-xs text-primary font-extrabold">
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold">
                           {challenge.a}
                         </span>
                         <span className="text-amber-700 font-extrabold">+</span>
-                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-lg bg-white border border-amber-300 shadow-xs text-primary font-extrabold">
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold">
                           {challenge.b}
                         </span>
                         <span className="text-amber-700 font-extrabold">=</span>
@@ -1205,7 +1198,7 @@ const VotoPopular: React.FC = () => {
                             confirmarVotos();
                           }
                         }}
-                        className={`h-10 text-sm sm:text-base font-semibold bg-white w-full sm:flex-1 rounded-lg ${
+                        className={`h-10 text-sm sm:text-base font-semibold bg-white w-full sm:flex-1 rounded-none ${
                           isChallengeCorrect
                             ? 'border-emerald-400 focus-visible:ring-emerald-500 text-emerald-900'
                             : isChallengeWrong
@@ -1218,7 +1211,7 @@ const VotoPopular: React.FC = () => {
                   </div>
 
                   {/* Nota leve sobre as regras do Edital */}
-                  <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed bg-slate-50 px-3.5 py-2.5 rounded-lg border border-slate-200/70 break-words">
+                  <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-slate-600 leading-relaxed bg-slate-50 px-3.5 py-2.5 rounded-none border border-black/15 break-words">
                     <ShieldCheck className="h-4 w-4 text-primary/70 shrink-0 mt-0.5" />
                     <span>
                       <strong>Voto único e seguro (Itens 9.4 e 9.7 do Edital nº 88/2026):</strong> cada eleitor registra 1 (um) voto por categoria para garantir uma participação justa e transparente para todos.
@@ -1227,12 +1220,12 @@ const VotoPopular: React.FC = () => {
                 </div>
 
                 {/* Rodapé do Modal */}
-                <DialogFooter className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+                <DialogFooter className="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 px-5 sm:px-6 py-4 bg-slate-50 border-t border-black/15">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full sm:w-auto px-4 h-10 text-sm font-medium text-slate-700 border-slate-300 bg-white hover:bg-slate-100 rounded-lg"
+                    className="w-full sm:w-auto px-4 h-10 text-sm font-medium text-slate-700 border-black/20 bg-white hover:bg-slate-100 rounded-none"
                     onClick={() => setVerifyOpen(false)}
                     disabled={isSubmitting}
                   >
@@ -1241,7 +1234,7 @@ const VotoPopular: React.FC = () => {
                   <Button
                     type="button"
                     size="sm"
-                    className="w-full sm:w-auto px-5 h-10 text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-5 h-10 text-sm font-bold rounded-none border border-black/20 shadow-xs flex items-center justify-center gap-2"
                     onClick={confirmarVotos}
                     disabled={isSubmitting || !isChallengeCorrect}
                   >
@@ -1252,37 +1245,30 @@ const VotoPopular: React.FC = () => {
               </DialogContent>
             </Dialog>
 
-            {/* Modal Elegante de Confirmação de Envio do Voto Popular */}
+            {/* Modal Institucional de Confirmação de Envio do Voto Popular */}
             <Dialog open={voteSuccessOpen} onOpenChange={setVoteSuccessOpen}>
               <DialogContent
                 hideClose
-                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-2xl overflow-hidden border-0 shadow-2xl gap-0"
+                className="sm:max-w-xl w-[calc(100%-1.5rem)] max-h-[88vh] flex flex-col p-0 rounded-none overflow-hidden border border-black/30 shadow-2xl gap-0"
               >
-                {/* Cabeçalho Comemorativo de Confirmação */}
+                {/* Cabeçalho de Confirmação */}
                 <div className="shrink-0 bg-gradient-to-r from-[#4A071B] via-[#760A25] to-[#5C081D] text-white px-5 sm:px-6 py-5 border-b-2 border-amber-400/80 relative overflow-hidden">
-                  <div
-                    className="absolute inset-0 opacity-15 pointer-events-none"
-                    style={{
-                      backgroundImage: 'radial-gradient(circle, #FFD700 1.2px, transparent 1.2px)',
-                      backgroundSize: '18px 18px',
-                    }}
-                  />
                   <button
                     type="button"
                     onClick={() => setVoteSuccessOpen(false)}
                     aria-label="Fechar"
-                    className="absolute right-4 top-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
+                    className="absolute right-4 top-4 h-8 w-8 rounded-none bg-white/10 hover:bg-white/20 border border-white/20 text-white/90 hover:text-white flex items-center justify-center transition-colors z-10"
                   >
                     <X className="h-4 w-4" />
                   </button>
 
                   <DialogHeader className="relative z-10 text-left pr-8 space-y-1.5">
-                    <div className="inline-flex items-center gap-1.5 w-fit px-3 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-300/50 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-0.5">
+                    <div className="inline-flex items-center gap-1.5 w-fit px-3 py-0.5 rounded-none bg-emerald-500/25 border border-emerald-300/50 text-emerald-100 text-[11px] font-bold uppercase tracking-wider mb-0.5">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
                       <span>Voto Popular Confirmado • Edição 2026</span>
                     </div>
                     <DialogTitle className="text-lg sm:text-xl font-bold text-white flex items-center gap-3 tracking-tight">
-                      <div className="h-10 w-10 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0 shadow-inner">
+                      <div className="h-10 w-10 rounded-none bg-amber-400/20 border border-amber-300/40 flex items-center justify-center shrink-0">
                         <PartyPopper className="h-5 w-5 text-amber-300" />
                       </div>
                       <span>Seu Voto Foi Enviado com Sucesso!</span>
@@ -1296,7 +1282,7 @@ const VotoPopular: React.FC = () => {
                 {/* Corpo do Comprovante de Votação */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 space-y-4 text-xs sm:text-sm min-w-0 bg-white">
                   {lastSubmittedVotes.length > 0 && (
-                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-50/70 to-slate-50 border border-emerald-200/80 space-y-2.5 min-w-0">
+                    <div className="p-3.5 sm:p-4 rounded-none bg-emerald-50/60 border border-emerald-300 space-y-2.5 min-w-0">
                       <div className="font-bold text-emerald-950 text-xs sm:text-sm flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                         <span>Resumo do seu voto registrado:</span>
@@ -1305,7 +1291,7 @@ const VotoPopular: React.FC = () => {
                         {lastSubmittedVotes.map((item) => (
                           <li
                             key={item.catKey}
-                            className="p-3 rounded-lg bg-white border border-emerald-200/90 border-l-4 border-l-emerald-600 shadow-xs min-w-0 break-words leading-snug"
+                            className="p-3 rounded-none bg-white border border-black/15 border-l-4 border-l-emerald-600 shadow-2xs min-w-0 break-words leading-snug"
                           >
                             <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800 mb-0.5">
                               <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -1321,7 +1307,7 @@ const VotoPopular: React.FC = () => {
                   )}
 
                   {/* Confirmação Institucional de Unicidade por Dispositivo */}
-                  <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200/90 space-y-2 min-w-0 shadow-xs">
+                  <div className="p-4 rounded-none bg-amber-50/80 border border-amber-300 space-y-2 min-w-0 shadow-2xs">
                     <div className="font-bold text-amber-950 text-xs sm:text-sm flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
                       <span>Garantia de Voto Único por Dispositivo</span>
@@ -1333,11 +1319,11 @@ const VotoPopular: React.FC = () => {
                 </div>
 
                 {/* Rodapé */}
-                <DialogFooter className="shrink-0 flex justify-end px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+                <DialogFooter className="shrink-0 flex justify-end px-5 sm:px-6 py-4 bg-slate-50 border-t border-black/15">
                   <Button
                     type="button"
                     size="sm"
-                    className="w-full sm:w-auto px-6 h-10 text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 h-10 text-sm font-bold rounded-none border border-black/20 shadow-xs flex items-center justify-center gap-2"
                     onClick={() => setVoteSuccessOpen(false)}
                   >
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
