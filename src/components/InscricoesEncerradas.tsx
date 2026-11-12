@@ -296,10 +296,10 @@ const InscricoesEncerradas: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="font-bold text-sm text-gray-900 mb-1">5. VOTAÇÃO POPULAR</h4>
+              <h4 className="font-bold text-sm text-gray-900 mb-1">5. VOTAÇÃO POPULAR E CERIMÔNIA DE PREMIAÇÃO</h4>
               <p>
                 Os 3 (três) trabalhos com maior média em cada categoria serão divulgados em <strong>11/11/2026</strong> como finalistas 
-                e concorrerão ao voto dos membros e servidores do MPPI no período de <strong>12/11 a 23/11/2026</strong>.
+                e concorrerão ao voto dos membros e servidores do MPPI no período de <strong>12/11 a 23/11/2026</strong>. A Cerimônia de Premiação e Homologação acontecerá em <strong>09 de dezembro de 2026</strong>.
               </p>
             </div>
 

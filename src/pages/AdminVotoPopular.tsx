@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { CategoriaRankingItem, getRelatorioCategoria } from '@/lib/evaluationService';
+import { CategoriaRankingItem, getRelatorioCategoria, isOfficial2026FinalistTitle } from '@/lib/evaluationService';
 import { getAllInscricoes } from '@/lib/adminService';
 import { getDeviceFingerprint, getStoredVote, storeVote } from '@/utils/fingerprint';
 import { submitVotoPopular } from '@/lib/votoPopularService';
@@ -63,13 +63,26 @@ const AdminVotoPopular = () => {
         for (const cat of categorias) {
           const res = await getRelatorioCategoria(cat.key);
           if (res.success && res.data && res.data.length > 0) {
+            const hasRealScores = res.data.some((it) => it.avaliacoes_count > 0);
+            const top3 = res.data
+              .filter((it) =>
+                hasRealScores
+                  ? Boolean(it.is_finalista)
+                  : isOfficial2026FinalistTitle(cat.key, it.inscricao.titulo_iniciativa)
+              )
+              .slice(0, 3);
+            const finalTop3 = top3.length === 3 ? top3 : res.data.slice(0, 3);
             results[cat.key] = sortAlfabetico(
-              res.data.slice(0, 3).map((item) => ({ inscricao: item.inscricao }))
+              finalTop3.map((item) => ({ inscricao: item.inscricao }))
             );
           } else {
-            // Fallback para ambiente de desenvolvimento sem acesso de leitura (RLS): usa dados diretos
+            // Fallback para ambiente sem acesso de leitura (RLS): filtra pelos finalistas oficiais 2026
             const mock = await getAllInscricoes(1, 1000, { area_atuacao: cat.key });
-            const list = (mock.data || []).slice(0, 3);
+            const allInCat = mock.data || [];
+            const officialMatched = allInCat.filter((insc) =>
+              isOfficial2026FinalistTitle(cat.key, insc.titulo_iniciativa)
+            );
+            const list = (officialMatched.length === 3 ? officialMatched : allInCat).slice(0, 3);
             results[cat.key] = sortAlfabetico(
               list.map((insc) => ({
                 inscricao: insc,

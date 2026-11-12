@@ -258,8 +258,8 @@ const AdminRegulamento = () => {
                   <td className="p-2">12/11/2026 a 23/11/2026</td>
                 </tr>
                 <tr>
-                  <td className="p-2">Cerimônia de premiação</td>
-                  <td className="p-2">Dezembro de 2026, em data a ser divulgada, preferencialmente durante as comemorações do Dia Nacional do Ministério Público</td>
+                  <td className="p-2">Cerimônia de premiação e homologação</td>
+                  <td className="p-2">09 de dezembro de 2026</td>
                 </tr>
                 <tr>
                   <td className="p-2 border-t text-gray-700">Publicação e homologação do resultado final</td>

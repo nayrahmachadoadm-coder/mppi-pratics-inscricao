@@ -19,6 +19,7 @@ const AdminCronograma = () => {
     { date: '2026-10-21', label: 'Divulgação da relação provisória das inscrições deferidas e indeferidas' },
     { date: '2026-10-29', label: 'Divulgação da relação definitiva das inscrições habilitadas' },
     { date: '2026-11-11', label: 'Divulgação dos finalistas' },
+    { date: '2026-12-09', label: 'Cerimônia de Premiação e Homologação' },
   ];
 
   const rangeEvents: { start: string; end: string; label: string }[] = [
@@ -150,7 +151,7 @@ const AdminCronograma = () => {
                 <li>29/10/2026 a 09/11/2026 — Julgamento técnico pela Comissão Julgadora</li>
                 <li>11/11/2026 — Divulgação dos finalistas</li>
                 <li>12/11/2026 a 23/11/2026 — Votação popular</li>
-                <li>Dezembro de 2026 — Cerimônia de premiação</li>
+                <li>09/12/2026 (09 de dezembro de 2026) — Cerimônia de premiação e homologação</li>
                 <li>Após a cerimônia — Publicação e homologação do resultado final</li>
               </ul>
             </div>

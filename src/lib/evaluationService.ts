@@ -117,7 +117,75 @@ export type CategoriaRankingItem = {
   nota_popular_100: number; // Edital 8.5: (votos / max_votos) * 100
   pontuacao_final: number; // Edital 8.6 & 8.8: (nota_tecnica * 0.8) + (nota_popular * 0.2) com até 2 casas
   posicao?: number;
+  posicao_tecnica?: number;
+  is_finalista?: boolean;
   criterio_desempate?: string; // Edital 8.9: Critério aplicado em caso de empate
+};
+
+const normalizeText = (value: string): string =>
+  (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const FINALISTAS_OFICIAIS_2026_KEYWORDS: Record<string, string[]> = {
+  'finalistica-projeto': [
+    'programa infancia e juventude protegida',
+    'direcao para a vida',
+    'mais lacos, menos likes',
+  ],
+  'estruturante-projeto': [
+    'datatrend mppi',
+    'i jornada cientifica do ministerio publico do piaui',
+    'projeto vozes da democracia',
+  ],
+  'finalistica-pratica': [
+    'escuta que transforma',
+    'meia-entrada solidaria',
+    'educacao integral em tempo integral',
+  ],
+  'estruturante-pratica': [
+    'mp uno em pauta',
+    'rubrica mp',
+    'sei analytics',
+  ],
+};
+
+export function isOfficial2026FinalistTitle(area: string, titulo: string): boolean {
+  const keywords = FINALISTAS_OFICIAIS_2026_KEYWORDS[area];
+  if (!keywords || !titulo) return false;
+  const norm = normalizeText(titulo);
+  return keywords.some((kw) => norm.includes(kw));
+}
+
+const compareByTechnicalScore = (a: CategoriaRankingItem, b: CategoriaRankingItem): number => {
+  // I — maior Nota Técnica atribuída pela Comissão Julgadora
+  if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) {
+    return b.nota_tecnica_100 - a.nota_tecnica_100;
+  }
+  // II — maior nota no critério cooperação
+  if (Math.abs(b.media_cooperacao - a.media_cooperacao) > 0.0001) {
+    return b.media_cooperacao - a.media_cooperacao;
+  }
+  // III — maior nota no critério resolutividade
+  if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) {
+    return b.media_resolutividade - a.media_resolutividade;
+  }
+  // IV — maior nota no critério impacto social ou institucional
+  if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) {
+    return b.media_impacto_social - a.media_impacto_social;
+  }
+  // V — maior nota no critério replicabilidade
+  if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) {
+    return b.media_replicabilidade - a.media_replicabilidade;
+  }
+  // VI — maior nota no critério inovação
+  if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) {
+    return b.media_inovacao - a.media_inovacao;
+  }
+  // VII — persistindo o empate, ordenação alfabética determinística
+  return (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR');
 };
 
 export async function getRelatorioCategoria(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
@@ -134,8 +202,6 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
     });
     // Obter votos populares da categoria
     const votosCount = await getVotosCountByCategoria(area);
-    const votosArray = Object.values(votosCount);
-    const maxVotos = votosArray.length > 0 ? Math.max(...votosArray) : 0;
 
     const items: CategoriaRankingItem[] = await Promise.all(
       inscricoes.map(async (insc) => {
@@ -160,13 +226,6 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
         // Edital 8.3: Nota Técnica = (média das notas válidas atribuídas pela Comissão Julgadora / 25) x 100
         const notaTecnica100 = count > 0 ? (mediaTotal / 25.0) * 100.0 : 0;
 
-        // Edital 8.4 e 8.5: Nota Popular proporcional (o mais votado da categoria recebe 100)
-        const votosIniciativa = votosCount[insc.id] || 0;
-        const notaPopular100 = maxVotos > 0 ? (votosIniciativa / maxVotos) * 100.0 : 0;
-
-        // Edital 8.6 e 8.8: Pontuação Final = (Nota Técnica × 0,80) + (Nota Popular × 0,20), com até 2 casas decimais
-        const pontuacaoFinal = Number(((notaTecnica100 * 0.80) + (notaPopular100 * 0.20)).toFixed(2));
-
         return {
           inscricao: insc,
           avaliacoes_count: count,
@@ -183,51 +242,69 @@ export async function getRelatorioCategoria(area: string): Promise<{ success: bo
           total_impacto_social: sumImpacto,
           total_replicabilidade: sumReplic,
           nota_tecnica_100: Number(notaTecnica100.toFixed(2)),
-          votos_populares: votosIniciativa,
-          nota_popular_100: Number(notaPopular100.toFixed(2)),
-          pontuacao_final: pontuacaoFinal,
+          votos_populares: 0,
+          nota_popular_100: 0,
+          pontuacao_final: Number((notaTecnica100 * 0.80).toFixed(2)),
         } as CategoriaRankingItem;
       })
     );
 
-    // Edital 8.7 e 8.9: Classificação decrescente com critérios sucessivos de desempate
-    // I — maior Nota Técnica atribuída pela Comissão Julgadora;
-    // II — maior nota no critério cooperação;
-    // III — maior nota no critério resolutividade;
-    // IV — maior nota no critério impacto social ou institucional;
-    // V — maior nota no critério replicabilidade;
-    // VI — maior nota no critério inovação; e
-    // VII — persistindo o empate, decisão fundamentada da Comissão Julgadora.
+    const hasEvaluationsAccess = items.some((it) => it.avaliacoes_count > 0);
+
+    // 1. Classificação Técnica (Edital 8.3 e 9.1): define estritamente os 3 finalistas da categoria
+    if (hasEvaluationsAccess) {
+      items.sort(compareByTechnicalScore);
+    } else {
+      // Quando consultado por visitante público sem acesso RLS à tabela avaliacoes,
+      // prioriza os 3 finalistas oficiais homologados no julgamento técnico da 10ª Edição (2026)
+      items.sort((a, b) => {
+        const aIsFinalist = isOfficial2026FinalistTitle(area, a.inscricao.titulo_iniciativa) ? 1 : 0;
+        const bIsFinalist = isOfficial2026FinalistTitle(area, b.inscricao.titulo_iniciativa) ? 1 : 0;
+        if (bIsFinalist !== aIsFinalist) return bIsFinalist - aIsFinalist;
+        return (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR');
+      });
+    }
+
+    items.forEach((item, idx) => {
+      item.posicao_tecnica = idx + 1;
+      item.is_finalista = idx < 3;
+    });
+
+    // 2. Nota Popular e Pontuação Final (Edital 8.4, 8.5, 8.6 e 9.1):
+    // Somente as 3 iniciativas finalistas de cada categoria participam da Votação Popular.
+    const finalistasItems = items.filter((it) => it.is_finalista);
+    const maxVotosFinalistas = finalistasItems.reduce(
+      (max, it) => Math.max(max, votosCount[it.inscricao.id] || 0),
+      0
+    );
+
+    items.forEach((item) => {
+      if (item.is_finalista) {
+        const votosIniciativa = votosCount[item.inscricao.id] || 0;
+        const notaPopular100 = maxVotosFinalistas > 0 ? (votosIniciativa / maxVotosFinalistas) * 100.0 : 0;
+        const pontuacaoFinal = Number(((item.nota_tecnica_100 * 0.80) + (notaPopular100 * 0.20)).toFixed(2));
+        item.votos_populares = votosIniciativa;
+        item.nota_popular_100 = Number(notaPopular100.toFixed(2));
+        item.pontuacao_final = pontuacaoFinal;
+      } else {
+        item.votos_populares = 0;
+        item.nota_popular_100 = 0;
+        item.pontuacao_final = Number((item.nota_tecnica_100 * 0.80).toFixed(2));
+      }
+    });
+
+    // 3. Classificação Final (Edital 8.7 e 8.9):
+    // Os 3 finalistas disputam o 1º, 2º e 3º lugar pela Pontuação Final (80% Técnica + 20% Popular),
+    // enquanto os não-finalistas permanecem nas posições 4º em diante conforme sua Nota Técnica.
     items.sort((a, b) => {
+      const aFin = a.is_finalista ? 1 : 0;
+      const bFin = b.is_finalista ? 1 : 0;
+      if (bFin !== aFin) return bFin - aFin;
+
       if (Math.abs(b.pontuacao_final - a.pontuacao_final) > 0.0001) {
         return b.pontuacao_final - a.pontuacao_final;
       }
-      // I — maior Nota Técnica
-      if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) {
-        return b.nota_tecnica_100 - a.nota_tecnica_100;
-      }
-      // II — maior nota no critério cooperação
-      if (Math.abs(b.media_cooperacao - a.media_cooperacao) > 0.0001) {
-        return b.media_cooperacao - a.media_cooperacao;
-      }
-      // III — maior nota no critério resolutividade
-      if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) {
-        return b.media_resolutividade - a.media_resolutividade;
-      }
-      // IV — maior nota no critério impacto social ou institucional
-      if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) {
-        return b.media_impacto_social - a.media_impacto_social;
-      }
-      // V — maior nota no critério replicabilidade
-      if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) {
-        return b.media_replicabilidade - a.media_replicabilidade;
-      }
-      // VI — maior nota no critério inovação
-      if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) {
-        return b.media_inovacao - a.media_inovacao;
-      }
-      // VII — persistindo o empate, alfabético como ordenação determinística
-      return (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR');
+      return compareByTechnicalScore(a, b);
     });
 
     // Atribuir posição e identificar o critério de desempate se houve empate na pontuação final

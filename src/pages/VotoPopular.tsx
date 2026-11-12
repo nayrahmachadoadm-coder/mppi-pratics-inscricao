@@ -34,7 +34,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
-import { getRelatorioCategoria, getTop3ByCategoriaSql } from '@/lib/evaluationService';
+import { getRelatorioCategoria, getTop3ByCategoriaSql, isOfficial2026FinalistTitle } from '@/lib/evaluationService';
 import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote, removeStoredVote, purgeLegacy2025Votes } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos, limparVotosTesteAdmin } from '@/lib/votoPopularService';
@@ -160,48 +160,80 @@ const VotoPopular: React.FC = () => {
 
       for (const cat of categorias) {
         try {
-          const res = await getVotoPopularCandidatos(cat.key, sessionSeed);
-          if (res.success && res.data && res.data.length > 0) {
-            const mapped: FinalistaItem[] = res.data.map(c => ({
-              inscricao: {
-                id: c.inscricao_id,
-                titulo_iniciativa: c.titulo_iniciativa,
-                nome_completo: c.nome_completo,
-                lotacao: c.lotacao,
-                area_atuacao: c.area_atuacao,
-                descricao_iniciativa: c.descricao_iniciativa,
+          let catLoaded = false;
+
+          // 1. Priorizar o cálculo técnico oficial (Top 3 com maiores Notas Técnicas dos jurados - Item 8.3 e 9.1)
+          try {
+            const rel = await getRelatorioCategoria(cat.key);
+            if (rel.success && rel.data && rel.data.length > 0) {
+              const hasRealScores = rel.data.some((it) => it.avaliacoes_count > 0);
+              const top3 = rel.data
+                .filter((it) =>
+                  hasRealScores
+                    ? Boolean(it.is_finalista)
+                    : isOfficial2026FinalistTitle(cat.key, it.inscricao.titulo_iniciativa)
+                )
+                .slice(0, 3);
+
+              if (top3.length === 3) {
+                const list: FinalistaItem[] = top3.map((it) => ({
+                  inscricao: {
+                    id: it.inscricao.id,
+                    titulo_iniciativa: it.inscricao.titulo_iniciativa,
+                    nome_completo: it.inscricao.nome_completo,
+                    lotacao: it.inscricao.lotacao,
+                    area_atuacao: it.inscricao.area_atuacao || cat.key,
+                    descricao_iniciativa: it.inscricao.descricao_iniciativa,
+                  },
+                }));
+                collected.push(...sortFinalistasAlfabetico(list));
+                catLoaded = true;
               }
-            }));
-            collected.push(...sortFinalistasAlfabetico(mapped));
-          } else {
-            // Fallback caso o snapshot ainda não esteja populado
+            }
+          } catch { void 0; }
+
+          // 2. Caso não tenha carregado via relatório, consultar RPC get_voto_popular_candidatos / voto_popular_top3_por_categoria
+          if (!catLoaded) {
+            const res = await getVotoPopularCandidatos(cat.key, sessionSeed);
+            const validRpcCandidates = (res.data || []).filter((c) =>
+              isOfficial2026FinalistTitle(cat.key, c.titulo_iniciativa)
+            );
+            const sourceList =
+              validRpcCandidates.length === 3
+                ? validRpcCandidates
+                : (res.data || []).slice(0, 3);
+
+            if (res.success && sourceList.length > 0) {
+              const mapped: FinalistaItem[] = sourceList.map((c) => ({
+                inscricao: {
+                  id: c.inscricao_id,
+                  titulo_iniciativa: c.titulo_iniciativa,
+                  nome_completo: c.nome_completo,
+                  lotacao: c.lotacao,
+                  area_atuacao: c.area_atuacao || cat.key,
+                  descricao_iniciativa: c.descricao_iniciativa,
+                },
+              }));
+              collected.push(...sortFinalistasAlfabetico(mapped));
+              catLoaded = true;
+            }
+          }
+
+          if (!catLoaded) {
             try {
               const viaSql = await getTop3ByCategoriaSql(cat.key);
               if (viaSql.success && (viaSql.data || []).length > 0) {
-                const top = (viaSql.data || []).slice(0, 3).map(it => ({
+                const top = (viaSql.data || []).slice(0, 3).map((it) => ({
                   inscricao: {
                     id: it.inscricao.id,
                     titulo_iniciativa: it.inscricao.titulo_iniciativa,
                     nome_completo: it.inscricao.nome_completo,
                     lotacao: it.inscricao.lotacao,
-                    area_atuacao: it.inscricao.area_atuacao,
+                    area_atuacao: it.inscricao.area_atuacao || cat.key,
                     descricao_iniciativa: it.inscricao.descricao_iniciativa,
-                  }
+                  },
                 }));
                 collected.push(...sortFinalistasAlfabetico(top));
-              } else {
-                const rel = await getRelatorioCategoria(cat.key);
-                const list = (rel.data || []).slice(0, 3).map(it => ({
-                  inscricao: {
-                    id: it.inscricao.id,
-                    titulo_iniciativa: it.inscricao.titulo_iniciativa,
-                    nome_completo: it.inscricao.nome_completo,
-                    lotacao: it.inscricao.lotacao,
-                    area_atuacao: it.inscricao.area_atuacao,
-                    descricao_iniciativa: it.inscricao.descricao_iniciativa,
-                  }
-                }));
-                collected.push(...sortFinalistasAlfabetico(list));
               }
             } catch { void 0; }
           }
