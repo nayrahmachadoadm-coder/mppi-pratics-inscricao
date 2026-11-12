@@ -9,7 +9,19 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react({ devTarget: "es2018" }), mode === "development" && componentTagger()].filter(Boolean),
+  esbuild: {
+    target: "es2018",
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "es2018",
+    },
+  },
+  build: {
+    target: ["es2018", "firefox60", "chrome64", "edge79", "safari12"],
+    cssTarget: ["firefox60", "chrome64", "edge79", "safari12"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

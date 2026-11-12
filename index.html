@@ -21,6 +21,52 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Compatibilidade para navegadores corporativos/ESR mais antigos (ex.: Firefox 60-78)
+      (function () {
+        if (typeof window !== 'undefined' && typeof window.globalThis === 'undefined') {
+          window.globalThis = window;
+        }
+        if (typeof Object.fromEntries !== 'function') {
+          Object.fromEntries = function (entries) {
+            var obj = {};
+            if (entries) {
+              var arr = Array.from(entries);
+              for (var i = 0; i < arr.length; i++) {
+                var pair = arr[i];
+                if (pair && pair.length >= 2) obj[pair[0]] = pair[1];
+              }
+            }
+            return obj;
+          };
+        }
+        if (typeof Object.hasOwn !== 'function') {
+          Object.hasOwn = function (obj, prop) {
+            return Object.prototype.hasOwnProperty.call(obj, prop);
+          };
+        }
+        if (typeof Promise !== 'undefined' && typeof Promise.allSettled !== 'function') {
+          Promise.allSettled = function (promises) {
+            return Promise.all(
+              Array.from(promises).map(function (p) {
+                return Promise.resolve(p).then(
+                  function (value) { return { status: 'fulfilled', value: value }; },
+                  function (reason) { return { status: 'rejected', reason: reason }; }
+                );
+              })
+            );
+          };
+        }
+        if (typeof String.prototype.replaceAll !== 'function') {
+          String.prototype.replaceAll = function (search, replacement) {
+            if (search instanceof RegExp) {
+              return this.replace(search, replacement);
+            }
+            return this.split(String(search)).join(String(replacement));
+          };
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
