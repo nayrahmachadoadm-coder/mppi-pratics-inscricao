@@ -427,9 +427,10 @@ const VotoPopular: React.FC = () => {
     const margin = 14;
     const tableWidth = pageWidth - 2 * margin;
     const xPos = margin;
-    const xWork = xPos + 14;
-    const xPct = pageWidth - margin - 20;
-    const xVotes = xPct - 22;
+    const xWork = xPos + 12;
+    const xScore = pageWidth - margin - 38;
+    const xPct = xScore - 20;
+    const xVotes = xPct - 20;
     const colWorkW = xVotes - xWork;
 
     const headerY = 18;
@@ -453,13 +454,16 @@ const VotoPopular: React.FC = () => {
       if (catFinalistas.length === 0) continue;
 
       const catTotalVotos = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
+      const catMaxVotos = catFinalistas.reduce((max, f) => Math.max(max, votosCountById[f.inscricao.id] || 0), 0);
 
       const ranked = catFinalistas
         .map((f) => {
           const id = f.inscricao.id;
           const votes = votosCountById[id] || 0;
           const pct = catTotalVotos > 0 ? (votes / catTotalVotos) * 100 : 0;
-          return { name: f.inscricao.titulo_iniciativa || '', votes, pct };
+          const score100 = catMaxVotos > 0 ? (votes / catMaxVotos) * 100 : 0;
+          const pts20 = score100 * 0.2;
+          return { name: f.inscricao.titulo_iniciativa || '', votes, pct, score100, pts20 };
         })
         .sort((a, b) => b.votes - a.votes)
         .map((item, idx) => ({ ...item, pos: idx + 1 }));
@@ -482,7 +486,8 @@ const VotoPopular: React.FC = () => {
       doc.text('Pos', xPos + 2, y + 5);
       doc.text('Trabalho Finalista', xWork + 2, y + 5);
       doc.text('Votos', xVotes + 2, y + 5);
-      doc.text('%', xPct + 2, y + 5);
+      doc.text('% Total', xPct + 2, y + 5);
+      doc.text('Score Pop. (20%)', xScore + 2, y + 5);
       y += rowH;
 
       doc.setTextColor(20);
@@ -494,7 +499,7 @@ const VotoPopular: React.FC = () => {
         doc.setDrawColor(230);
         doc.line(margin, y, margin + tableWidth, y);
 
-        doc.text(String(r.pos).padStart(2, '0'), xPos + 2, y + 6);
+        doc.text(String(r.pos).padStart(2, '0') + 'º', xPos + 2, y + 6);
 
         const wrapped = doc.splitTextToSize(r.name, colWorkW - 4);
         doc.text(wrapped, xWork + 2, y + 6);
@@ -502,6 +507,7 @@ const VotoPopular: React.FC = () => {
 
         doc.text(r.votes.toLocaleString('pt-BR'), xVotes + 2, y + 6);
         doc.text(`${r.pct.toFixed(1)}%`, xPct + 2, y + 6);
+        doc.text(`${r.score100.toFixed(2)} (${r.pts20.toFixed(2)} pts)`, xScore + 2, y + 6);
 
         y += Math.max(rowH, lines * 6);
       });
@@ -518,10 +524,20 @@ const VotoPopular: React.FC = () => {
       doc.text('Total da categoria', xWork + 2, y);
       doc.text(catTotalVotos.toLocaleString('pt-BR'), xVotes + 2, y);
       doc.text(catTotalVotos > 0 ? '100,0%' : '0,0%', xPct + 2, y);
+      doc.text('Máx: 20,00 pts', xScore + 2, y);
       doc.setFont('helvetica', 'normal');
       
       y += 12;
     }
+
+    if (y > doc.internal.pageSize.getHeight() - margin - 16) {
+      doc.addPage();
+      y = margin;
+    }
+    doc.setFontSize(7.5);
+    doc.setTextColor(110);
+    doc.text('* Score Popular (Edital nº 88/2026, Item 8.5): (Votos da iniciativa / Maior votação da categoria) × 100.', margin, y + 6);
+    doc.text('* Ponderação na Nota Final: 20% da Pontuação Final da iniciativa (Item 8.6, até 20,00 pontos).', margin, y + 10);
 
     doc.save('apuracao-voto-popular-mppi-2026.pdf');
   };
@@ -715,10 +731,15 @@ const VotoPopular: React.FC = () => {
             {/* Painel de Apuração Administrativa (Exibido apenas quando o Admin opta por essa aba) */}
             {isAdmin && adminTab === 'apuracao' ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-black/15 pb-2">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Contagem e Apuração de Votos Válidos (Auditoria Interna)
-                  </h3>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/15 pb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Contagem e Apuração de Votos Válidos (Auditoria Interna)
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Cálculo do Score Popular proporcional (Item 8.5) e da pontuação a ser integrada à Nota Final (Item 8.6 — 20%)
+                    </p>
+                  </div>
                   <span className="text-xs font-medium text-slate-600">
                     Total geral de votos computados: <strong>{totalVotosAdmin.toLocaleString('pt-BR')}</strong>
                   </span>
@@ -732,6 +753,7 @@ const VotoPopular: React.FC = () => {
                       const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
                       if (catFinalistas.length === 0) return null;
                       const catTotal = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
+                      const catMax = catFinalistas.reduce((max, f) => Math.max(max, votosCountById[f.inscricao.id] || 0), 0);
 
                       return (
                         <div key={cat.key} className="rounded-none border border-black/15 overflow-hidden shadow-2xs">
@@ -739,6 +761,16 @@ const VotoPopular: React.FC = () => {
                             <span className="text-xs font-semibold text-slate-800">{cat.label}</span>
                             <span className="text-xs text-slate-600">Total da Categoria: <strong>{catTotal.toLocaleString('pt-BR')}</strong> votos</span>
                           </div>
+
+                          {/* Cabeçalho da Tabela de Apuração */}
+                          <div className="grid grid-cols-12 items-center bg-slate-200/80 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-700 border-b border-black/10">
+                            <div className="col-span-1">Pos.</div>
+                            <div className="col-span-5">Iniciativa / Proponente</div>
+                            <div className="col-span-2 text-right">Votos Válidos</div>
+                            <div className="col-span-2 text-right">% do Total</div>
+                            <div className="col-span-2 text-right">Score Pop. (20%)</div>
+                          </div>
+
                           <div className="divide-y divide-slate-200">
                             {catFinalistas
                               .slice()
@@ -747,18 +779,27 @@ const VotoPopular: React.FC = () => {
                                 const id = item.inscricao.id;
                                 const votes = votosCountById[id] || 0;
                                 const pct = catTotal > 0 ? (votes / catTotal) * 100 : 0;
+                                const score100 = catMax > 0 ? (votes / catMax) * 100 : 0;
+                                const pts20 = score100 * 0.2;
+
                                 return (
                                   <div key={id} className="grid grid-cols-12 items-center px-3 py-2.5 text-xs hover:bg-slate-50">
                                     <div className="col-span-1 text-slate-400 font-semibold">{idx + 1}º</div>
-                                    <div className="col-span-7">
-                                      <div className="font-medium text-slate-900">{item.inscricao.titulo_iniciativa}</div>
+                                    <div className="col-span-5 pr-2">
+                                      <div className="font-medium text-slate-900 leading-snug">{item.inscricao.titulo_iniciativa}</div>
                                       <div className="text-[11px] text-slate-500">{item.inscricao.nome_completo} • {item.inscricao.lotacao}</div>
                                     </div>
                                     <div className="col-span-2 text-right font-mono font-medium text-slate-700">
-                                      {votes.toLocaleString('pt-BR')} votos
+                                      {votes.toLocaleString('pt-BR')} {votes === 1 ? 'voto' : 'votos'}
                                     </div>
-                                    <div className="col-span-2 text-right font-mono font-semibold text-primary">
+                                    <div className="col-span-2 text-right font-mono font-medium text-slate-600">
                                       {pct.toFixed(1)}%
+                                    </div>
+                                    <div className="col-span-2 text-right font-mono">
+                                      <span className="text-primary font-bold text-xs">{score100.toFixed(2)}</span>
+                                      <span className="block text-[11px] font-semibold text-emerald-700">
+                                        ({pts20.toFixed(2)} pts)
+                                      </span>
                                     </div>
                                   </div>
                                 );
@@ -767,6 +808,11 @@ const VotoPopular: React.FC = () => {
                         </div>
                       );
                     })}
+
+                    {/* Nota explicativa institucional */}
+                    <div className="p-3 bg-slate-50 border border-black/15 text-[11px] text-slate-600 leading-relaxed rounded-none">
+                      <strong>* Metodologia de Cálculo (Itens 8.5 e 8.6 do Edital nº 88/2026):</strong> À iniciativa que obtiver a maior votação popular na categoria é atribuída a nota 100,00, e às demais, nota proporcional <code>(votos / maior votação) × 100</code>. A Nota Popular integra <strong>20% da Pontuação Final</strong> das iniciativas (até 20,00 pontos).
+                    </div>
                   </div>
                 )}
               </div>
