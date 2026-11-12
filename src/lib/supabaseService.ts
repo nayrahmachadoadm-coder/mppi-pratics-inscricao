@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { createClient } from '@supabase/supabase-js';
+import { generateSafeUUID } from '@/utils/fingerprint';
 
 // Cliente Supabase para inserções públicas usando variáveis de ambiente
 const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL as string;
@@ -190,7 +191,7 @@ export async function saveInscricao(formData: any): Promise<SupabaseResult> {
       // Proponente não autenticado (inscrição pública direta)
     }
 
-    const inscricaoId = formData.id || crypto.randomUUID();
+    const inscricaoId = formData.id || generateSafeUUID();
     const inscricaoData: any = {
       ...convertFormDataToSupabase(formData),
       id: inscricaoId,
@@ -278,7 +279,7 @@ export async function salvarInscricao(formData: InscricaoData): Promise<{ succes
     console.log('🔄 Iniciando salvamento no Supabase...');
     console.log('📝 Dados do formulário:', formData);
     
-    const inscricaoId = crypto.randomUUID();
+    const inscricaoId = generateSafeUUID();
     const supabaseData = {
       ...convertFormDataToSupabase(formData),
       id: inscricaoId

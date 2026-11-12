@@ -412,8 +412,13 @@ const VotoPopular: React.FC = () => {
           description: otherErrorMsg || 'Verifique sua conexão e tente novamente.',
         });
       }
-    } catch {
-      toast({ title: 'Erro', description: 'Houve um problema ao processar seu voto. Tente novamente mais tarde.' });
+    } catch (err: any) {
+      console.error('[VotoPopular] Erro ao submeter voto:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: err?.message || 'Houve um problema ao processar seu voto. Tente novamente mais tarde.',
+      });
     } finally {
       setIsSubmitting(false);
     }
