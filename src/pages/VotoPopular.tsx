@@ -28,7 +28,6 @@ import {
   PartyPopper,
   Star,
   X,
-  RotateCcw,
   Scale,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getRelatorioCategoria, getTop3ByCategoriaSql, isOfficial2026FinalistTitle } from '@/lib/evaluationService';
 import { isAuthenticated, hasRole } from '@/lib/auth';
 import { getDeviceFingerprint, getStoredVote, storeVote, removeStoredVote, purgeLegacy2025Votes } from '@/utils/fingerprint';
-import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos, limparVotosTesteAdmin } from '@/lib/votoPopularService';
+import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos } from '@/lib/votoPopularService';
 import { getPeriodoVotacao } from '@/lib/supabaseService';
 
 type CategoriaKey = 'finalistica-projeto' | 'estruturante-projeto' | 'finalistica-pratica' | 'estruturante-pratica';
@@ -422,36 +421,6 @@ const VotoPopular: React.FC = () => {
 
   const totalVotosAdmin = isAdmin ? Object.values(votosCountById).reduce((sum, n) => sum + (n || 0), 0) : 0;
 
-  const handleResetVotoTesteAdmin = async () => {
-    try {
-      const fp = await getDeviceFingerprint();
-      const res = await limparVotosTesteAdmin(fp);
-      categorias.forEach((c) => removeStoredVote(c.key));
-      setSelectedIds({});
-      setLastSubmittedVotes([]);
-      setVoteSuccessOpen(false);
-      await carregarDados();
-      if (res.success) {
-        toast({
-          title: 'Votos de teste limpos',
-          description: `O registro de teste deste dispositivo foi removido (${res.deleted || 0} voto(s) excluído(s) no banco).`,
-        });
-      } else {
-        toast({
-          title: 'Bloqueio local limpo',
-          description: 'O estado local de votação deste dispositivo foi reiniciado para novo teste.',
-        });
-      }
-    } catch {
-      categorias.forEach((c) => removeStoredVote(c.key));
-      setSelectedIds({});
-      toast({
-        title: 'Bloqueio local limpo',
-        description: 'O estado local deste dispositivo foi reiniciado.',
-      });
-    }
-  };
-
   const exportVotoPopularPdf = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -644,25 +613,6 @@ const VotoPopular: React.FC = () => {
                   Apuração de Votos
                 </Button>
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2.5 text-xs text-amber-800 border-amber-300 bg-amber-50 hover:bg-amber-100 rounded-none"
-                      onClick={handleResetVotoTesteAdmin}
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                      Reiniciar Voto de Teste
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="rounded-none">
-                    <span className="text-xs">Remove os votos de teste deste dispositivo no banco e libera para testar novamente</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

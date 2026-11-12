@@ -76,21 +76,6 @@ export async function getVotosCountByCategoria(categoria: string): Promise<Recor
   }
 }
 
-export async function limparVotosTesteAdmin(fingerprint?: string): Promise<{ success: boolean; deleted?: number; error?: string }> {
-  if (!supabase) return { success: false, error: 'Sem conexão' };
-  try {
-    const { data, error } = await (supabase as any).rpc('limpar_votos_teste_admin', {
-      p_fingerprint: fingerprint || null,
-    });
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true, deleted: Number(data) || 0 };
-  } catch (e: any) {
-    return { success: false, error: e?.message || 'Erro ao limpar votos de teste' };
-  }
-}
-
 export type VotoPopularCandidato = {
   inscricao_id: string;
   titulo_iniciativa: string;
