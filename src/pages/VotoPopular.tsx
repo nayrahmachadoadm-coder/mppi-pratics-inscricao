@@ -1121,42 +1121,44 @@ const VotoPopular: React.FC = () => {
                       ) : null}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
-                      <div className="flex items-center gap-2 text-sm sm:text-base font-bold text-amber-950 shrink-0">
-                        <span className="text-xs sm:text-sm font-medium text-amber-900 mr-1">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 pt-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-amber-950 shrink-0">
+                        <span className="text-xs font-medium text-amber-900 mr-0.5 sm:mr-1">
                           Resolva a continha:
                         </span>
-                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold">
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold text-sm sm:text-base">
                           {challenge.a}
                         </span>
-                        <span className="text-amber-700 font-extrabold">+</span>
-                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold">
+                        <span className="text-amber-700 font-extrabold text-sm sm:text-base">+</span>
+                        <span className="inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2.5 rounded-none bg-white border border-amber-300 shadow-2xs text-primary font-extrabold text-sm sm:text-base">
                           {challenge.b}
                         </span>
-                        <span className="text-amber-700 font-extrabold">=</span>
+                        <span className="text-amber-700 font-extrabold text-sm sm:text-base">=</span>
                       </div>
 
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Digite a soma aqui..."
-                        value={answer}
-                        onChange={(e) => setAnswer(e.target.value.replace(/\D/g, ''))}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && isChallengeCorrect && !isSubmitting) {
-                            e.preventDefault();
-                            confirmarVotos();
-                          }
-                        }}
-                        className={`h-10 text-sm sm:text-base font-semibold bg-white w-full sm:flex-1 rounded-none ${
-                          isChallengeCorrect
-                            ? 'border-emerald-400 focus-visible:ring-emerald-500 text-emerald-900'
-                            : isChallengeWrong
-                            ? 'border-rose-400 focus-visible:ring-rose-500 text-rose-900'
-                            : 'border-amber-300 focus-visible:ring-amber-500'
-                        }`}
-                        autoFocus
-                      />
+                      <div className="w-full sm:w-44 sm:min-w-[130px] sm:max-w-[180px]">
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Resultado..."
+                          value={answer}
+                          onChange={(e) => setAnswer(e.target.value.replace(/\D/g, ''))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && isChallengeCorrect && !isSubmitting) {
+                              e.preventDefault();
+                              confirmarVotos();
+                            }
+                          }}
+                          className={`h-9 sm:h-10 text-sm sm:text-base text-center font-bold bg-white w-full rounded-none ${
+                            isChallengeCorrect
+                              ? 'border-emerald-500 focus-visible:ring-emerald-500 text-emerald-900'
+                              : isChallengeWrong
+                              ? 'border-rose-400 focus-visible:ring-rose-500 text-rose-900'
+                              : 'border-amber-300 focus-visible:ring-amber-500 text-slate-900'
+                          }`}
+                          autoFocus
+                        />
+                      </div>
                     </div>
                   </div>
 
