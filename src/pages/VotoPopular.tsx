@@ -174,14 +174,14 @@ const VotoPopular: React.FC = () => {
                 )
                 .slice(0, 3);
 
-              if (top3.length === 3) {
+              if (top3.length > 0) {
                 const list: FinalistaItem[] = top3.map((it) => ({
                   inscricao: {
                     id: it.inscricao.id,
                     titulo_iniciativa: it.inscricao.titulo_iniciativa,
                     nome_completo: it.inscricao.nome_completo,
                     lotacao: it.inscricao.lotacao,
-                    area_atuacao: it.inscricao.area_atuacao || cat.key,
+                    area_atuacao: cat.key,
                     descricao_iniciativa: it.inscricao.descricao_iniciativa,
                   },
                 }));
@@ -209,7 +209,7 @@ const VotoPopular: React.FC = () => {
                   titulo_iniciativa: c.titulo_iniciativa,
                   nome_completo: c.nome_completo,
                   lotacao: c.lotacao,
-                  area_atuacao: c.area_atuacao || cat.key,
+                  area_atuacao: cat.key,
                   descricao_iniciativa: c.descricao_iniciativa,
                 },
               }));
@@ -228,7 +228,7 @@ const VotoPopular: React.FC = () => {
                     titulo_iniciativa: it.inscricao.titulo_iniciativa,
                     nome_completo: it.inscricao.nome_completo,
                     lotacao: it.inscricao.lotacao,
-                    area_atuacao: it.inscricao.area_atuacao || cat.key,
+                    area_atuacao: cat.key,
                     descricao_iniciativa: it.inscricao.descricao_iniciativa,
                   },
                 }));
@@ -426,37 +426,113 @@ const VotoPopular: React.FC = () => {
 
   const totalVotosAdmin = isAdmin ? Object.values(votosCountById).reduce((sum, n) => sum + (n || 0), 0) : 0;
 
+  const loadLogoBase64 = async (url: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width || 400;
+            canvas.height = img.height || 80;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL('image/png'));
+              return;
+            }
+          } catch {
+            // ignore
+          }
+          resolve(null);
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+      } catch {
+        resolve(null);
+      }
+    });
+  };
+
   const exportVotoPopularPdf = async () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 14;
-    const tableWidth = pageWidth - 2 * margin;
-    const xPos = margin;
-    const xWork = xPos + 12;
-    const xScore = pageWidth - margin - 38;
-    const xPct = xScore - 20;
-    const xVotes = xPct - 20;
-    const colWorkW = xVotes - xWork;
+    if (allFinalistas.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Dados em carregamento',
+        description: 'Os dados da apuração ainda estão sendo carregados. Por favor, aguarde alguns instantes e clique novamente.',
+      });
+      return;
+    }
 
-    const headerY = 18;
-    doc.setFillColor(118, 10, 37);
-    doc.circle(margin + 4, headerY - 2, 3, 'F');
-    doc.setFontSize(13);
-    doc.text('Ministério Público do Estado do Piauí — MPPI', margin + 12, headerY);
-    doc.setFontSize(11);
-    doc.text('Prêmio Melhores Práticas - 10ª Edição (Edital nº 88/2026)', margin + 12, headerY + 6);
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(`Relatório Administrativo de Apuração do Voto Popular — Extraído em: ${new Date().toLocaleString('pt-BR')}`, margin + 12, headerY + 11);
-    doc.setDrawColor(180);
-    doc.line(margin, headerY + 14, pageWidth - margin, headerY + 14);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 12;
+      const tableWidth = pageWidth - 2 * margin; // 186mm
 
-    let y = headerY + 22;
-    const rowH = 8;
+      // Dimensões compactas e proporcionais das colunas da tabela (sem % Total, com Score Popular e Ponderação desmembrados)
+      const wPos = 12;
+      const wWork = 94;
+      const wVotes = 16;
+      const wScore = 28;
+      const wPond = 36;
 
-    for (const cat of categorias) {
-      const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
-      if (catFinalistas.length === 0) continue;
+      const xPos = margin; // 12
+      const xWork = xPos + wPos; // 24
+      const xVotes = xWork + wWork; // 118
+      const xScore = xVotes + wVotes; // 134
+      const xPond = xScore + wScore; // 162
+      const gridCols = [margin, xWork, xVotes, xScore, xPond, margin + tableWidth];
+
+      // Cabeçalho com logo institucional do MPPI (largura 5 vezes a altura: 40mm x 8mm)
+      const headerY = 8.5;
+      const logoH = 8;
+      const logoW = logoH * 5; // 40mm
+      const logoData = await loadLogoBase64('/logo-mppi.png');
+
+      if (logoData) {
+        doc.addImage(logoData, 'PNG', margin, headerY, logoW, logoH);
+      } else {
+        doc.setFillColor(118, 10, 37);
+        doc.circle(margin + 4, headerY + 4, 3.5, 'F');
+      }
+
+      const xText = logoData ? margin + logoW + 4 : margin + 12;
+
+      if (logoData) {
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.2);
+        doc.line(xText - 2, headerY, xText - 2, headerY + logoH);
+      }
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(118, 10, 37);
+      doc.text('Ministério Público do Estado do Piauí — MPPI', xText, headerY + 2.5);
+
+      doc.setFontSize(8.2);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30);
+      doc.text('Prêmio Melhores Práticas - 10ª Edição (Edital nº 88/2026)', xText, headerY + 5.5);
+
+      doc.setFontSize(6.8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(`Relatório Administrativo de Apuração do Voto Popular — Extraído em: ${new Date().toLocaleString('pt-BR')}`, xText, headerY + 8.2);
+
+      doc.setDrawColor(180, 190, 200);
+      doc.setLineWidth(0.3);
+      doc.line(margin, headerY + 10.5, margin + tableWidth, headerY + 10.5);
+
+      let y = headerY + 14.0;
+
+      for (const cat of categorias) {
+        const catFinalistas = allFinalistas.filter(f =>
+          f.inscricao.area_atuacao === cat.key ||
+          isOfficial2026FinalistTitle(cat.key, f.inscricao.titulo_iniciativa)
+        );
+        if (catFinalistas.length === 0) continue;
 
       const catTotalVotos = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
       const catMaxVotos = catFinalistas.reduce((max, f) => Math.max(max, votosCountById[f.inscricao.id] || 0), 0);
@@ -473,78 +549,124 @@ const VotoPopular: React.FC = () => {
         .sort((a, b) => b.votes - a.votes)
         .map((item, idx) => ({ ...item, pos: idx + 1 }));
 
-      if (y > doc.internal.pageSize.getHeight() - margin - 20) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.setFontSize(11);
-      doc.setTextColor(0);
+      // Título da Categoria
+      doc.setFontSize(8.2);
+      doc.setTextColor(118, 10, 37);
       doc.setFont('helvetica', 'bold');
       doc.text(cat.label, margin, y);
-      y += 6;
+      y += 3.5;
 
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(255);
+      // Cabeçalho da Tabela
+      const headerH = 5.2;
       doc.setFillColor(118, 10, 37);
-      doc.rect(margin, y, tableWidth, rowH, 'F');
-      doc.text('Pos', xPos + 2, y + 5);
-      doc.text('Trabalho Finalista', xWork + 2, y + 5);
-      doc.text('Votos', xVotes + 2, y + 5);
-      doc.text('% Total', xPct + 2, y + 5);
-      doc.text('Score Pop. (20%)', xScore + 2, y + 5);
-      y += rowH;
+      doc.rect(margin, y, tableWidth, headerH, 'F');
 
-      doc.setTextColor(20);
-      ranked.forEach((r) => {
-        if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
-          doc.addPage();
-          y = margin;
-        }
-        doc.setDrawColor(230);
-        doc.line(margin, y, margin + tableWidth, y);
+      doc.setFontSize(7.0);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255);
+      doc.text('Pos', xPos + wPos / 2, y + 3.6, { align: 'center' });
+      doc.text('Trabalho Finalista', xWork + 2, y + 3.6);
+      doc.text('Votos', xVotes + wVotes / 2, y + 3.6, { align: 'center' });
+      doc.text('Score Popular', xScore + wScore / 2, y + 3.6, { align: 'center' });
+      doc.setFontSize(6.7);
+      doc.text('Ponderação na Nota Final', xPond + wPond / 2, y + 3.6, { align: 'center' });
 
-        doc.text(String(r.pos).padStart(2, '0') + 'º', xPos + 2, y + 6);
+      // Linhas de grade verticais do cabeçalho
+      doc.setDrawColor(160, 40, 60);
+      doc.setLineWidth(0.2);
+      [xWork, xVotes, xScore, xPond].forEach(x => {
+        doc.line(x, y, x, y + headerH);
+      });
+      doc.setDrawColor(118, 10, 37);
+      doc.rect(margin, y, tableWidth, headerH, 'S');
 
-        const wrapped = doc.splitTextToSize(r.name, colWorkW - 4);
-        doc.text(wrapped, xWork + 2, y + 6);
+      y += headerH;
+
+      // Linhas de Dados com Grade Completa e Zebrado Suave
+      ranked.forEach((r, idx) => {
+        const wrapped = doc.splitTextToSize(r.name, wWork - 4);
         const lines = Array.isArray(wrapped) ? wrapped.length : 1;
+        const rowH = lines === 1 ? 5.0 : lines === 2 ? 7.6 : 10.2;
 
-        doc.text(r.votes.toLocaleString('pt-BR'), xVotes + 2, y + 6);
-        doc.text(`${r.pct.toFixed(1)}%`, xPct + 2, y + 6);
-        doc.text(`${r.score100.toFixed(2)} (${r.pts20.toFixed(2)} pts)`, xScore + 2, y + 6);
+        if (idx % 2 === 1) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(margin, y, tableWidth, rowH, 'F');
+        } else {
+          doc.setFillColor(255, 255, 255);
+          doc.rect(margin, y, tableWidth, rowH, 'F');
+        }
 
-        y += Math.max(rowH, lines * 6);
+        doc.setFontSize(6.8);
+        doc.setTextColor(25);
+
+        // Posição
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(r.pos).padStart(2, '0') + 'º', xPos + wPos / 2, y + (lines > 1 ? 4.6 : 3.4), { align: 'center' });
+
+        // Trabalho
+        doc.setFont('helvetica', 'normal');
+        doc.text(wrapped, xWork + 2, y + (lines > 1 ? 3.2 : 3.4));
+
+        // Votos
+        doc.text(r.votes.toLocaleString('pt-BR'), xVotes + wVotes / 2, y + (lines > 1 ? 4.6 : 3.4), { align: 'center' });
+
+        // Score Popular
+        doc.text(r.score100.toFixed(2), xScore + wScore / 2, y + (lines > 1 ? 4.6 : 3.4), { align: 'center' });
+
+        // Ponderação na Nota Final
+        doc.text(`${r.pts20.toFixed(2)} pts`, xPond + wPond / 2, y + (lines > 1 ? 4.6 : 3.4), { align: 'center' });
+
+        // Linhas de grade completas (todas as divisões de colunas + linha inferior)
+        doc.setDrawColor(205, 215, 225);
+        doc.setLineWidth(0.2);
+        gridCols.forEach(x => {
+          doc.line(x, y, x, y + rowH);
+        });
+        doc.line(margin, y + rowH, margin + tableWidth, y + rowH);
+
+        y += rowH;
       });
 
-      if (y > doc.internal.pageSize.getHeight() - margin - rowH) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.setDrawColor(0);
-      doc.line(margin, y, margin + tableWidth, y);
-      y += 4;
-      doc.setFontSize(9);
+      // Linha de Totais da Categoria com Grade Completa
+      const totalH = 5.0;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, y, tableWidth, totalH, 'F');
+
+      doc.setFontSize(7.0);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total da categoria', xWork + 2, y);
-      doc.text(catTotalVotos.toLocaleString('pt-BR'), xVotes + 2, y);
-      doc.text(catTotalVotos > 0 ? '100,0%' : '0,0%', xPct + 2, y);
-      doc.text('Máx: 20,00 pts', xScore + 2, y);
-      doc.setFont('helvetica', 'normal');
-      
-      y += 12;
+      doc.setTextColor(15);
+      doc.text('Total da categoria', xWork + 2, y + 3.4);
+      doc.text(catTotalVotos.toLocaleString('pt-BR'), xVotes + wVotes / 2, y + 3.4, { align: 'center' });
+      doc.text(catTotalVotos > 0 ? '100,00' : '0,00', xScore + wScore / 2, y + 3.4, { align: 'center' });
+      doc.text('Máx: 20,00 pts', xPond + wPond / 2, y + 3.4, { align: 'center' });
+
+      doc.setDrawColor(180, 195, 210);
+      doc.setLineWidth(0.2);
+      gridCols.forEach(x => {
+        doc.line(x, y, x, y + totalH);
+      });
+      doc.line(margin, y + totalH, margin + tableWidth, y + totalH);
+
+      y += totalH + 6.8; // Espaçamento de respiro aumentado (linha em branco) entre categorias
     }
 
-    if (y > doc.internal.pageSize.getHeight() - margin - 16) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.setFontSize(7.5);
-    doc.setTextColor(110);
-    doc.text('* Score Popular (Edital nº 88/2026, Item 8.5): (Votos da iniciativa / Maior votação da categoria) × 100.', margin, y + 6);
-    doc.text('* Ponderação na Nota Final: 20% da Pontuação Final da iniciativa (Item 8.6, até 20,00 pontos).', margin, y + 10);
+    // Notas de rodapé explicativas no final da página única
+    y = Math.max(y + 1, 281);
+    doc.setFontSize(6.5);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
+    doc.text('* Score Popular (Edital nº 88/2026, Item 8.5): (Votos da iniciativa / Maior votação da categoria) × 100.', margin, y);
+    doc.text('* Ponderação na Nota Final: 20% da Pontuação Final da iniciativa (Item 8.6, até 20,00 pontos).', margin, y + 3.5);
 
     doc.save('apuracao-voto-popular-mppi-2026.pdf');
+    } catch (err: any) {
+      console.error('[VotoPopular] Erro ao exportar relatório PDF:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao gerar PDF',
+        description: err?.message || 'Houve uma falha ao gerar o arquivo PDF. Tente novamente.',
+      });
+    }
   };
 
   const categoriesPendingSubmit = Object.keys(selectedIds).filter(cat => !hasVoted(cat as CategoriaKey));
@@ -641,7 +763,8 @@ const VotoPopular: React.FC = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-7 px-2.5 text-xs text-slate-700 border-black/20 rounded-none"
+                      disabled={loading || allFinalistas.length === 0}
+                      className="h-7 px-2.5 text-xs text-slate-700 border-black/20 rounded-none disabled:opacity-50"
                       onClick={exportVotoPopularPdf}
                     >
                       <FileDown className="h-3.5 w-3.5 mr-1" />
@@ -755,7 +878,10 @@ const VotoPopular: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {categorias.map(cat => {
-                      const catFinalistas = allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key);
+                      const catFinalistas = allFinalistas.filter(f =>
+                        f.inscricao.area_atuacao === cat.key ||
+                        isOfficial2026FinalistTitle(cat.key, f.inscricao.titulo_iniciativa)
+                      );
                       if (catFinalistas.length === 0) return null;
                       const catTotal = catFinalistas.reduce((sum, f) => sum + (votosCountById[f.inscricao.id] || 0), 0);
                       const catMax = catFinalistas.reduce((max, f) => Math.max(max, votosCountById[f.inscricao.id] || 0), 0);
@@ -772,8 +898,8 @@ const VotoPopular: React.FC = () => {
                             <div className="col-span-1">Pos.</div>
                             <div className="col-span-5">Iniciativa / Proponente</div>
                             <div className="col-span-2 text-right">Votos Válidos</div>
-                            <div className="col-span-2 text-right">% do Total</div>
-                            <div className="col-span-2 text-right">Score Pop. (20%)</div>
+                            <div className="col-span-2 text-right">Score Popular</div>
+                            <div className="col-span-2 text-right">Ponderação (20%)</div>
                           </div>
 
                           <div className="divide-y divide-slate-200">
@@ -783,7 +909,6 @@ const VotoPopular: React.FC = () => {
                               .map((item, idx) => {
                                 const id = item.inscricao.id;
                                 const votes = votosCountById[id] || 0;
-                                const pct = catTotal > 0 ? (votes / catTotal) * 100 : 0;
                                 const score100 = catMax > 0 ? (votes / catMax) * 100 : 0;
                                 const pts20 = score100 * 0.2;
 
@@ -797,14 +922,11 @@ const VotoPopular: React.FC = () => {
                                     <div className="col-span-2 text-right font-mono font-medium text-slate-700">
                                       {votes.toLocaleString('pt-BR')} {votes === 1 ? 'voto' : 'votos'}
                                     </div>
-                                    <div className="col-span-2 text-right font-mono font-medium text-slate-600">
-                                      {pct.toFixed(1)}%
+                                    <div className="col-span-2 text-right font-mono font-bold text-slate-900">
+                                      {score100.toFixed(2)}
                                     </div>
-                                    <div className="col-span-2 text-right font-mono">
-                                      <span className="text-primary font-bold text-xs">{score100.toFixed(2)}</span>
-                                      <span className="block text-[11px] font-semibold text-emerald-700">
-                                        ({pts20.toFixed(2)} pts)
-                                      </span>
+                                    <div className="col-span-2 text-right font-mono font-semibold text-emerald-700">
+                                      {pts20.toFixed(2)} pts
                                     </div>
                                   </div>
                                 );
@@ -883,7 +1005,10 @@ const VotoPopular: React.FC = () => {
                   <div className="space-y-6">
                     {categorias.map(cat => {
                       const catFinalistas = sortFinalistasAlfabetico(
-                        allFinalistas.filter(f => f.inscricao.area_atuacao === cat.key)
+                        allFinalistas.filter(f =>
+                          f.inscricao.area_atuacao === cat.key ||
+                          isOfficial2026FinalistTitle(cat.key, f.inscricao.titulo_iniciativa)
+                        )
                       );
                       if (catFinalistas.length === 0) return null;
                       

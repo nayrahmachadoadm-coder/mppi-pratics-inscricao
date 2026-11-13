@@ -178,17 +178,32 @@ const AdminPremiacao = () => {
           <main className="w-full pt-5">
             {error && (
               <div className="mb-4">
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="rounded-none border-red-300">
                   <AlertDescription className="text-sm font-medium">{error}</AlertDescription>
                 </Alert>
               </div>
             )}
 
-            <Card className="shadow-lg border border-slate-200 rounded-xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-light))] text-[hsl(var(--primary-foreground))] py-4 px-5">
-                <CardTitle className="text-base sm:text-lg font-bold tracking-wide">
-                  Cerimônia de Premiação — 10ª Edição
-                </CardTitle>
+            <Card className="shadow-xs border border-black/20 rounded-none overflow-hidden bg-white">
+              <CardHeader className="bg-[#760A25] text-white py-4 px-5 rounded-none border-b border-black/20">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/logo-mppi.png"
+                    alt="MPPI"
+                    className="h-8 w-auto object-contain bg-white/10 p-1 border border-white/20"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/favicon.ico';
+                    }}
+                  />
+                  <div>
+                    <CardTitle className="text-base sm:text-lg font-bold tracking-wide text-white">
+                      Cerimônia de Premiação — 10ª Edição
+                    </CardTitle>
+                    <p className="text-xs text-white/80">
+                      Prêmio Melhores Práticas do Ministério Público do Estado do Piauí (Edital nº 88/2026)
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-4 pb-5 px-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -196,17 +211,17 @@ const AdminPremiacao = () => {
                     <Button
                       key={key}
                       variant="default"
-                      className={`group relative flex flex-col items-center justify-center h-28 px-4 py-3 text-center shadow-md transition-all duration-200 border-2 rounded-xl ${
+                      className={`group relative flex flex-col items-center justify-center h-28 px-4 py-3 text-center transition-all duration-150 border-2 rounded-none ${
                         selectedArea === key
-                          ? 'bg-[hsl(var(--primary))] text-white border-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))] shadow-lg scale-[1.01]'
-                          : 'bg-white text-slate-900 border-slate-200 hover:shadow-xl hover:bg-primary hover:text-white hover:border-primary'
+                          ? 'bg-[#760A25] text-white border-[#760A25] shadow-xs'
+                          : 'bg-white text-slate-900 border-black/15 hover:border-[#760A25] hover:bg-[#760A25]/5 hover:text-[#760A25] shadow-2xs'
                       }`}
                       disabled={loading}
                       onClick={() => setSelectedArea(key)}
                     >
                       <span
                         className={`font-bold leading-snug whitespace-normal break-words text-base sm:text-lg ${
-                          selectedArea === key ? 'text-white' : 'text-slate-900 group-hover:text-white'
+                          selectedArea === key ? 'text-white' : 'text-slate-900 group-hover:text-[#760A25]'
                         }`}
                       >
                         {lines[0]}
@@ -214,11 +229,11 @@ const AdminPremiacao = () => {
                         {lines[1]}
                       </span>
                       <span
-                        className={`mt-1.5 text-xs sm:text-sm font-medium ${
-                          selectedArea === key ? 'text-white/90' : 'text-slate-500 group-hover:text-white/90'
+                        className={`mt-2 text-xs font-semibold uppercase tracking-wider ${
+                          selectedArea === key ? 'text-amber-300' : 'text-slate-500 group-hover:text-[#760A25]'
                         }`}
                       >
-                        {selectedArea === key ? 'Categoria selecionada' : 'Selecionar'}
+                        {selectedArea === key ? '● Categoria Selecionada' : 'Selecionar'}
                       </span>
                     </Button>
                   ))}
@@ -228,9 +243,9 @@ const AdminPremiacao = () => {
 
             {selectedArea && (
               <section className="mt-5">
-                <Card className="shadow-lg border border-slate-200 rounded-xl">
-                  <CardHeader className="border-b border-slate-100 bg-white rounded-t-xl py-4 px-5 flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg sm:text-xl font-bold text-slate-900">
+                <Card className="shadow-xs border border-black/20 rounded-none bg-white">
+                  <CardHeader className="border-b border-black/15 bg-slate-50 rounded-none py-3.5 px-5 flex flex-row items-center justify-between">
+                    <CardTitle className="text-base sm:text-lg font-bold text-slate-900">
                       Finalistas — {labelPorArea[selectedArea]}
                     </CardTitle>
                   </CardHeader>
@@ -248,15 +263,16 @@ const AdminPremiacao = () => {
                           return (
                             <div
                               key={it.inscricao.id}
-                              className={`relative rounded-xl border-2 p-4 sm:p-5 transition-all duration-300 ${
+                              className={`relative rounded-none border p-4 sm:p-5 transition-all duration-200 ${
                                 isWinner
-                                  ? 'bg-gradient-to-br from-amber-50 via-yellow-50/80 to-amber-100/60 border-amber-400 shadow-lg ring-2 ring-amber-400/50'
-                                  : 'bg-[#760A25]/[0.04] border-[#760A25]/25 shadow-sm'
+                                  ? 'bg-gradient-to-br from-amber-50 via-yellow-50/60 to-amber-100/40 border-2 border-amber-500 shadow-sm'
+                                  : 'bg-white border-black/15 shadow-2xs hover:border-black/30'
                               }`}
                             >
                               {isWinner && (
-                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white border-2 border-amber-400 rounded-full p-2.5 shadow-lg ring-4 ring-amber-300/40 pointer-events-none z-10">
-                                  <Crown className="w-9 h-9 text-amber-500 fill-amber-400/20" />
+                                <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-white border-2 border-amber-500 rounded-none px-3 py-1 shadow-md pointer-events-none z-10 flex items-center gap-1.5">
+                                  <Crown className="w-5 h-5 text-amber-600 fill-amber-400" />
+                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">1º Lugar Oficial</span>
                                 </div>
                               )}
                               <div className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
@@ -266,8 +282,8 @@ const AdminPremiacao = () => {
                                 <span className="font-bold text-slate-900">Proponente:</span>{' '}
                                 {it.inscricao.nome_completo}
                               </div>
-                              <div className="mt-1 text-xs sm:text-sm text-slate-700 font-medium">
-                                <span className="font-bold text-slate-800">Lotação:</span> {it.inscricao.lotacao}
+                              <div className="mt-1 text-xs sm:text-sm text-slate-600 font-medium">
+                                <span className="font-bold text-slate-700">Lotação:</span> {it.inscricao.lotacao}
                               </div>
                             </div>
                           );
@@ -279,10 +295,10 @@ const AdminPremiacao = () => {
                       <Button
                         size="default"
                         variant={showResultado ? 'outline' : 'default'}
-                        className={`text-sm sm:text-base font-bold px-6 py-2.5 h-auto rounded-lg shadow-sm ${
+                        className={`text-sm sm:text-base font-bold px-6 py-2.5 h-auto rounded-none shadow-2xs ${
                           showResultado
-                            ? 'border-slate-300 text-slate-800 hover:bg-slate-100'
-                            : 'bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white'
+                            ? 'border-black/30 text-slate-800 hover:bg-slate-100'
+                            : 'bg-[#760A25] hover:bg-[#5c081d] text-white border border-[#760A25]'
                         }`}
                         disabled={loading || ranking.length === 0}
                         onClick={() => {
@@ -293,39 +309,39 @@ const AdminPremiacao = () => {
                           });
                         }}
                       >
-                        {showResultado ? 'Ocultar resultado' : 'Exibir o resultado'}
+                        {showResultado ? 'Ocultar Resultado' : 'Exibir Resultado Oficial'}
                       </Button>
                     </div>
 
                     {showResultado && ranking.length > 0 && (
-                      <div className="mt-5 rounded-xl border-2 border-slate-200 overflow-hidden shadow-md bg-white">
-                        <div className="grid grid-cols-12 items-center bg-slate-800 px-4 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+                      <div className="mt-5 rounded-none border border-black/20 overflow-hidden shadow-xs bg-white">
+                        <div className="grid grid-cols-12 items-center bg-[#760A25] px-4 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-white border-b border-black/20">
                           <div className="col-span-1">Pos.</div>
                           <div className="col-span-5">Iniciativa / Proponente</div>
                           <div className="col-span-2 text-right">Nota Téc. (80%)</div>
                           <div className="col-span-2 text-right">Nota Pop. (20%)</div>
                           <div className="col-span-2 text-right">Pontuação Final</div>
                         </div>
-                        <div className="divide-y divide-slate-200">
+                        <div className="divide-y divide-black/10">
                           {ranking.map((it, idx) => {
                             const isTop1 = idx === 0;
                             const isTop3 = idx < 3;
                             return (
                               <div
                                 key={it.inscricao.id}
-                                className={`grid grid-cols-12 items-center px-4 py-3.5 sm:py-4 transition-colors ${
+                                className={`grid grid-cols-12 items-center px-4 py-3.5 transition-colors ${
                                   isTop1
-                                    ? 'bg-amber-50/90 border-l-4 border-l-amber-500'
+                                    ? 'bg-amber-50/90 border-l-4 border-l-amber-600'
                                     : isTop3
-                                    ? 'bg-amber-50/35 border-l-4 border-l-[#760A25]/60'
-                                    : 'bg-white hover:bg-slate-50/80'
+                                    ? 'bg-slate-50/60 border-l-4 border-l-[#760A25]/70'
+                                    : 'bg-white hover:bg-slate-50/60'
                                 }`}
                               >
                                 <div className="col-span-1 flex items-center gap-2">
                                   <span
                                     className={`text-base sm:text-lg font-extrabold tabular-nums ${
                                       isTop1
-                                        ? 'text-amber-700'
+                                        ? 'text-amber-800'
                                         : isTop3
                                         ? 'text-slate-900'
                                         : 'text-slate-600'
@@ -334,7 +350,7 @@ const AdminPremiacao = () => {
                                     {String(idx + 1).padStart(2, '0')}º
                                   </span>
                                   {idx === 0 ? (
-                                    <Medal className="w-6 h-6 text-amber-500 shrink-0" />
+                                    <Medal className="w-5 h-5 text-amber-600 shrink-0" />
                                   ) : idx === 1 ? (
                                     <Medal className="w-5 h-5 text-slate-400 shrink-0" />
                                   ) : idx === 2 ? (
@@ -350,13 +366,13 @@ const AdminPremiacao = () => {
                                   >
                                     {it.inscricao.titulo_iniciativa}
                                   </div>
-                                  <div className="mt-1 text-xs sm:text-sm font-medium text-slate-700">
+                                  <div className="mt-1 text-xs sm:text-sm font-medium text-slate-600">
                                     {it.inscricao.nome_completo}{' '}
-                                    <span className="text-slate-400">•</span>{' '}
+                                    <span className="text-slate-300">•</span>{' '}
                                     <span className="text-slate-600">{it.inscricao.lotacao}</span>
                                   </div>
                                   {it.criterio_desempate && it.criterio_desempate !== 'Sem empate' && (
-                                    <span className="inline-block mt-1.5 text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md font-semibold border border-amber-300">
+                                    <span className="inline-block mt-1.5 text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-none font-semibold border border-amber-300">
                                       Desempate: {it.criterio_desempate}
                                     </span>
                                   )}
@@ -366,7 +382,7 @@ const AdminPremiacao = () => {
                                   <div className="text-base sm:text-lg font-extrabold text-slate-900">
                                     {it.nota_tecnica_100.toFixed(2)}
                                   </div>
-                                  <div className="mt-0.5 inline-block text-xs sm:text-sm font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                                  <div className="mt-0.5 inline-block text-xs font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-none">
                                     {(it.nota_tecnica_100 * 0.8).toFixed(2)} pts
                                   </div>
                                 </div>
@@ -375,16 +391,16 @@ const AdminPremiacao = () => {
                                   <div className="text-base sm:text-lg font-extrabold text-slate-900">
                                     {it.nota_popular_100.toFixed(2)}
                                   </div>
-                                  <div className="mt-0.5 inline-block text-xs sm:text-sm font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                  <div className="mt-0.5 inline-block text-xs font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-none">
                                     {(it.nota_popular_100 * 0.2).toFixed(2)} pts
                                   </div>
                                 </div>
 
                                 <div className="col-span-2 text-right font-mono tabular-nums">
                                   <span
-                                    className={`inline-block text-lg sm:text-2xl font-extrabold px-3 py-1 rounded-lg border ${
+                                    className={`inline-block text-lg sm:text-2xl font-extrabold px-3 py-1 rounded-none border ${
                                       isTop1
-                                        ? 'bg-[#760A25] text-white border-[#760A25] shadow-sm'
+                                        ? 'bg-[#760A25] text-white border-[#760A25] shadow-2xs'
                                         : isTop3
                                         ? 'bg-[#760A25]/10 text-[#760A25] border-[#760A25]/30'
                                         : 'bg-slate-100 text-slate-800 border-slate-200'
