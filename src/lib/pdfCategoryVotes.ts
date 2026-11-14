@@ -305,27 +305,57 @@ export async function exportCategoryVotesByWorkPdf(areaKey: string): Promise<voi
     const status = (insc.status_inscricao || '').trim().toLowerCase();
     return status !== 'indeferida' && status !== 'indeferido';
   });
-  const works: Array<{ insc: any; avs: any[]; sumCoop: number; sumInov: number; sumResol: number; sumImp: number; sumRep: number; totalWork: number }> = [];
+  const works: Array<{
+    insc: any;
+    avs: any[];
+    sumCoop: number;
+    sumInov: number;
+    sumResol: number;
+    sumImp: number;
+    sumRep: number;
+    totalWork: number;
+    mediaWork: number;
+    mediaCoop: number;
+    mediaResol: number;
+    mediaImp: number;
+    mediaRep: number;
+    mediaInov: number;
+  }> = [];
+
   for (const insc of list) {
     const avRes = await getAvaliacoesByInscricao(insc.id);
     const avs = avRes.success ? (avRes.data || []) : [];
+    const count = avs.length;
     const sumCoop = avs.reduce((sum, r) => sum + (r.cooperacao || 0), 0);
     const sumInov = avs.reduce((sum, r) => sum + (r.inovacao || 0), 0);
     const sumResol = avs.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
     const sumImp = avs.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
     const sumRep = avs.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
     const totalWork = avs.reduce((sum, r) => sum + (r.total || 0), 0);
-    works.push({ insc, avs, sumCoop, sumInov, sumResol, sumImp, sumRep, totalWork });
+    const mediaWork = count > 0 ? totalWork / count : 0;
+    const mediaCoop = count > 0 ? sumCoop / count : 0;
+    const mediaResol = count > 0 ? sumResol / count : 0;
+    const mediaImp = count > 0 ? sumImp / count : 0;
+    const mediaRep = count > 0 ? sumRep / count : 0;
+    const mediaInov = count > 0 ? sumInov / count : 0;
+    works.push({ insc, avs, sumCoop, sumInov, sumResol, sumImp, sumRep, totalWork, mediaWork, mediaCoop, mediaResol, mediaImp, mediaRep, mediaInov });
   }
 
   works.sort((a, b) => {
-    if (b.totalWork !== a.totalWork) return b.totalWork - a.totalWork;
-    // Critérios sucessivos de desempate conforme Item 8.9 do Edital:
-    if (b.sumCoop !== a.sumCoop) return b.sumCoop - a.sumCoop;
-    if (b.sumResol !== a.sumResol) return b.sumResol - a.sumResol;
-    if (b.sumImp !== a.sumImp) return b.sumImp - a.sumImp;
-    if (b.sumRep !== a.sumRep) return b.sumRep - a.sumRep;
-    if (b.sumInov !== a.sumInov) return b.sumInov - a.sumInov;
+    // I — Maior média da nota técnica atribuída pela Comissão Julgadora (Itens 8.2 e 8.3)
+    if (Math.abs(b.mediaWork - a.mediaWork) > 0.0001) return b.mediaWork - a.mediaWork;
+    // Critérios sucessivos de desempate conforme Item 8.9 do Edital nº 88/2026:
+    // II — maior nota no critério cooperação
+    if (Math.abs(b.mediaCoop - a.mediaCoop) > 0.0001) return b.mediaCoop - a.mediaCoop;
+    // III — maior nota no critério resolutividade
+    if (Math.abs(b.mediaResol - a.mediaResol) > 0.0001) return b.mediaResol - a.mediaResol;
+    // IV — maior nota no critério impacto social ou institucional
+    if (Math.abs(b.mediaImp - a.mediaImp) > 0.0001) return b.mediaImp - a.mediaImp;
+    // V — maior nota no critério replicabilidade
+    if (Math.abs(b.mediaRep - a.mediaRep) > 0.0001) return b.mediaRep - a.mediaRep;
+    // VI — maior nota no critério inovação
+    if (Math.abs(b.mediaInov - a.mediaInov) > 0.0001) return b.mediaInov - a.mediaInov;
+    // VII — persistindo o empate, ordenação alfabética pelo título
     return (a.insc.titulo_iniciativa || '').localeCompare(b.insc.titulo_iniciativa || '', 'pt-BR', { sensitivity: 'base' });
   });
 

@@ -159,36 +159,164 @@ export function isOfficial2026FinalistTitle(area: string, titulo: string): boole
   return keywords.some((kw) => norm.includes(kw));
 }
 
-const compareByTechnicalScore = (a: CategoriaRankingItem, b: CategoriaRankingItem): number => {
-  // I — maior Nota Técnica atribuída pela Comissão Julgadora
-  if (Math.abs(b.nota_tecnica_100 - a.nota_tecnica_100) > 0.0001) {
-    return b.nota_tecnica_100 - a.nota_tecnica_100;
+export const compareByTechnicalScore = (a: CategoriaRankingItem, b: CategoriaRankingItem): number => {
+  // I — maior Nota Técnica atribuída pela Comissão Julgadora (Itens 8.3 e 8.9, I)
+  const diffNota = b.nota_tecnica_100 - a.nota_tecnica_100;
+  if (Math.abs(diffNota) >= 0.005) {
+    return diffNota;
   }
-  // II — maior nota no critério cooperação
-  if (Math.abs(b.media_cooperacao - a.media_cooperacao) > 0.0001) {
-    return b.media_cooperacao - a.media_cooperacao;
+
+  // Se houver empate na escala convertida, compara a média aritmética original (Item 8.2)
+  const diffMedia = b.media_total - a.media_total;
+  if (Math.abs(diffMedia) >= 0.0001) {
+    return diffMedia;
   }
-  // III — maior nota no critério resolutividade
-  if (Math.abs(b.media_resolutividade - a.media_resolutividade) > 0.0001) {
-    return b.media_resolutividade - a.media_resolutividade;
+
+  // II — maior nota no critério cooperação (Item 8.9, II e 9.1.1)
+  const diffCoop = b.media_cooperacao - a.media_cooperacao;
+  if (Math.abs(diffCoop) >= 0.0001) {
+    return diffCoop;
   }
-  // IV — maior nota no critério impacto social ou institucional
-  if (Math.abs(b.media_impacto_social - a.media_impacto_social) > 0.0001) {
-    return b.media_impacto_social - a.media_impacto_social;
+
+  // III — maior nota no critério resolutividade (Item 8.9, III e 9.1.1)
+  const diffResol = b.media_resolutividade - a.media_resolutividade;
+  if (Math.abs(diffResol) >= 0.0001) {
+    return diffResol;
   }
-  // V — maior nota no critério replicabilidade
-  if (Math.abs(b.media_replicabilidade - a.media_replicabilidade) > 0.0001) {
-    return b.media_replicabilidade - a.media_replicabilidade;
+
+  // IV — maior nota no critério impacto social ou institucional (Item 8.9, IV e 9.1.1)
+  const diffImp = b.media_impacto_social - a.media_impacto_social;
+  if (Math.abs(diffImp) >= 0.0001) {
+    return diffImp;
   }
-  // VI — maior nota no critério inovação
-  if (Math.abs(b.media_inovacao - a.media_inovacao) > 0.0001) {
-    return b.media_inovacao - a.media_inovacao;
+
+  // V — maior nota no critério replicabilidade (Item 8.9, V e 9.1.1)
+  const diffRepl = b.media_replicabilidade - a.media_replicabilidade;
+  if (Math.abs(diffRepl) >= 0.0001) {
+    return diffRepl;
   }
-  // VII — persistindo o empate, ordenação alfabética determinística
-  return (a.inscricao.titulo_iniciativa || '').localeCompare(b.inscricao.titulo_iniciativa || '', 'pt-BR');
+
+  // VI — maior nota no critério inovação (Item 8.9, VI e 9.1.1)
+  const diffInov = b.media_inovacao - a.media_inovacao;
+  if (Math.abs(diffInov) >= 0.0001) {
+    return diffInov;
+  }
+
+  // VII — persistindo o empate, ordenação alfabética determinística pelo título da iniciativa
+  return (a.inscricao.titulo_iniciativa || '').localeCompare(
+    b.inscricao.titulo_iniciativa || '',
+    'pt-BR',
+    { sensitivity: 'base' }
+  );
 };
 
-export async function getRelatorioCategoria(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
+/**
+ * Totalização exclusiva do Julgamento Técnico (Etapa 3, Itens 8.2, 8.3, 8.9 e 9.1 do Edital nº 88/2026).
+ * Considera única e exclusivamente os votos válidos atribuídos pelos jurados da Comissão Julgadora,
+ * calculando a média aritmética e aplicando sucessivamente os critérios de desempate técnicos
+ * sem qualquer interferência ou inclusão de votação popular (que ocorre somente na etapa posterior).
+ */
+export async function getTotalizacaoJulgamento(area: string): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }> {
+  try {
+    const res = await getAllInscricoes(1, 1000, { area_atuacao: area });
+    if (!res.success) {
+      return { success: false, error: res.error || 'Erro ao buscar inscrições da categoria.' };
+    }
+    const inscricoes = (res.data || []).filter((insc) => {
+      const status = (insc.status_inscricao || '').trim().toLowerCase();
+      return status !== 'indeferida' && status !== 'indeferido';
+    });
+
+    const items: CategoriaRankingItem[] = await Promise.all(
+      inscricoes.map(async (insc) => {
+        const av = await getAvaliacoesByInscricao(insc.id);
+        const list = av.success ? (av.data || []) : [];
+        const count = list.length;
+        const totalGeral = list.reduce((sum, r) => sum + (r.total || 0), 0);
+        const sumCoop = list.reduce((sum, r) => sum + (r.cooperacao || 0), 0);
+        const sumInovacao = list.reduce((sum, r) => sum + (r.inovacao || 0), 0);
+        const sumResol = list.reduce((sum, r) => sum + (r.resolutividade || 0), 0);
+        const sumImpacto = list.reduce((sum, r) => sum + (r.impacto_social || 0), 0);
+        const sumReplic = list.reduce((sum, r) => sum + (r.replicabilidade || 0), 0);
+
+        // Edital 8.2 e 8.2.3: Média aritmética das notas válidas dos jurados
+        const mediaTotal = count > 0 ? totalGeral / count : 0;
+        const mediaCoop = count > 0 ? sumCoop / count : 0;
+        const mediaInovacao = count > 0 ? sumInovacao / count : 0;
+        const mediaResol = count > 0 ? sumResol / count : 0;
+        const mediaImpacto = count > 0 ? sumImpacto / count : 0;
+        const mediaReplic = count > 0 ? sumReplic / count : 0;
+
+        // Edital 8.3: Nota Técnica = (média das notas válidas / 25) * 100
+        const notaTecnica100 = count > 0 ? (mediaTotal / 25.0) * 100.0 : 0;
+
+        return {
+          inscricao: insc,
+          avaliacoes_count: count,
+          total_geral: totalGeral,
+          media_total: mediaTotal,
+          media_cooperacao: mediaCoop,
+          media_inovacao: mediaInovacao,
+          media_resolutividade: mediaResol,
+          media_impacto_social: mediaImpacto,
+          media_replicabilidade: mediaReplic,
+          total_cooperacao: sumCoop,
+          total_inovacao: sumInovacao,
+          total_resolutividade: sumResol,
+          total_impacto_social: sumImpacto,
+          total_replicabilidade: sumReplic,
+          nota_tecnica_100: Number(notaTecnica100.toFixed(2)),
+          votos_populares: 0,
+          nota_popular_100: 0,
+          pontuacao_final: Number(notaTecnica100.toFixed(2)),
+        } as CategoriaRankingItem;
+      })
+    );
+
+    // Ordenação estritamente técnica (Nota Técnica dos jurados + Critérios de desempate do Item 8.9)
+    items.sort(compareByTechnicalScore);
+
+    // Identificação das posições, dos 3 finalistas e dos critérios de desempate eventualmente aplicados
+    items.forEach((item, idx) => {
+      item.posicao = idx + 1;
+      item.posicao_tecnica = idx + 1;
+      item.is_finalista = idx < 3;
+
+      if (idx > 0) {
+        const prev = items[idx - 1];
+        const sameNotaTec = Math.abs(prev.nota_tecnica_100 - item.nota_tecnica_100) < 0.005;
+        if (sameNotaTec) {
+          if (Math.abs(prev.media_cooperacao - item.media_cooperacao) >= 0.0001) {
+            item.criterio_desempate = 'Desempate: Inciso II (Cooperação)';
+          } else if (Math.abs(prev.media_resolutividade - item.media_resolutividade) >= 0.0001) {
+            item.criterio_desempate = 'Desempate: Inciso III (Resolutividade)';
+          } else if (Math.abs(prev.media_impacto_social - item.media_impacto_social) >= 0.0001) {
+            item.criterio_desempate = 'Desempate: Inciso IV (Impacto Social/Inst.)';
+          } else if (Math.abs(prev.media_replicabilidade - item.media_replicabilidade) >= 0.0001) {
+            item.criterio_desempate = 'Desempate: Inciso V (Replicabilidade)';
+          } else if (Math.abs(prev.media_inovacao - item.media_inovacao) >= 0.0001) {
+            item.criterio_desempate = 'Desempate: Inciso VI (Inovação)';
+          } else {
+            item.criterio_desempate = 'Desempate: Inciso VII (Decisão Comissão Julgadora)';
+          }
+        } else {
+          item.criterio_desempate = 'Sem empate';
+        }
+      } else {
+        item.criterio_desempate = 'Sem empate';
+      }
+    });
+
+    return { success: true, data: items };
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Erro ao carregar totalização de julgamento técnico.' };
+  }
+}
+
+export async function getRelatorioCategoria(area: string, options?: { apenasJulgamentoTecnico?: boolean }): Promise<{ success: boolean; error?: string; data?: CategoriaRankingItem[] }>{
+  if (options?.apenasJulgamentoTecnico) {
+    return getTotalizacaoJulgamento(area);
+  }
   try {
     // Buscar inscrições da categoria
     const res = await getAllInscricoes(1, 1000, { area_atuacao: area });

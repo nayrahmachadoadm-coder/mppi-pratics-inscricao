@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AdminInscricaoData, getAllInscricoes, getInscricaoById, InscricaoFilters } from '@/lib/adminService';
 import { getCurrentProfile } from '@/lib/auth';
 import { ScoreEntry, submitAvaliacao, getAvaliacoesByJurado, getMinhasAvaliacoes, MinhasAvaliacaoItem, getAvaliacoesByInscricao, isVotacaoFinalizada, finalizeVotacao } from '@/lib/evaluationService';
-import { getRelatorioCategoria, CategoriaRankingItem } from '@/lib/evaluationService';
+import { getRelatorioCategoria, getTotalizacaoJulgamento, CategoriaRankingItem } from '@/lib/evaluationService';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -382,7 +382,7 @@ const AdminJulgamento: React.FC = () => {
                                 setTotalsLoading(true);
                                 setTotalsError('');
                                 try {
-                                  const res = await getRelatorioCategoria(selectedArea);
+                                  const res = await getTotalizacaoJulgamento(selectedArea);
                                   if (res.success) {
                                     setTotalsItems(res.data || []);
                                   } else {
@@ -695,57 +695,142 @@ const AdminJulgamento: React.FC = () => {
     </div>
 
     <Dialog open={totalsOpen} onOpenChange={setTotalsOpen}>
-      <DialogContent className="sm:max-w-6xl">
-        <DialogHeader>
-          <DialogTitle>Totalização de votos da categoria</DialogTitle>
+      <DialogContent className="sm:max-w-6xl rounded-none border border-black/20 p-0 overflow-hidden">
+        <DialogHeader className="bg-slate-900 text-white px-5 py-4">
+          <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center justify-between">
+            <span>Totalização do Julgamento Técnico — Comissão Julgadora</span>
+            {selectedArea && (
+              <span className="text-xs font-normal text-slate-300">
+                {categorias.find(c => c.key === selectedArea)?.label}
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
+
         {totalsLoading ? (
-          <div className="py-6 text-center text-sm text-gray-600">Carregando totalização...</div>
+          <div className="py-12 text-center text-sm text-gray-600 flex flex-col items-center justify-center gap-2">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span>Totalizando notas válidas da Comissão Julgadora...</span>
+          </div>
         ) : totalsError ? (
-          <Alert className="mb-2"><AlertDescription>{totalsError}</AlertDescription></Alert>
+          <div className="p-5">
+            <Alert variant="destructive" className="rounded-none">
+              <AlertDescription>{totalsError}</AlertDescription>
+            </Alert>
+          </div>
         ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full text-sm table-fixed">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="text-left p-2 w-[50px]">Pos.</th>
-                  <th className="text-left p-2 w-[240px]">Título</th>
-                  <th className="text-left p-2 w-[180px]">Proponente</th>
-                  <th className="text-center p-2 w-[70px]">Jurados</th>
-                  <th className="text-center p-2 w-[90px]">Média (0-25)</th>
-                  <th className="text-center p-2 w-[90px] font-bold text-primary">Nota Téc. (100)</th>
-                  <th className="text-center p-2">Coop.</th>
-                  <th className="text-center p-2">Resol.</th>
-                  <th className="text-center p-2">Imp.</th>
-                  <th className="text-center p-2">Repl.</th>
-                  <th className="text-center p-2">Inov.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {totalsItems.map((it, idx) => (
-                  <tr key={it.inscricao.id} className="border-t hover:bg-gray-50/50">
-                    <td className="p-2 font-semibold">{idx + 1}º</td>
-                    <td className="p-2 font-medium w-[240px] break-words">{it.inscricao.titulo_iniciativa}</td>
-                    <td className="p-2 w-[180px] break-words text-gray-700">{it.inscricao.nome_completo}</td>
-                    <td className="p-2 text-center">{it.avaliacoes_count}</td>
-                    <td className="p-2 text-center font-medium">{it.media_total.toFixed(2)}</td>
-                    <td className="p-2 text-center font-bold text-primary">{it.nota_tecnica_100.toFixed(2)}</td>
-                    <td className="p-2 text-center text-xs">{it.media_cooperacao.toFixed(2)}</td>
-                    <td className="p-2 text-center text-xs">{it.media_resolutividade.toFixed(2)}</td>
-                    <td className="p-2 text-center text-xs">{it.media_impacto_social.toFixed(2)}</td>
-                    <td className="p-2 text-center text-xs">{it.media_replicabilidade.toFixed(2)}</td>
-                    <td className="p-2 text-center text-xs">{it.media_inovacao.toFixed(2)}</td>
-                  </tr>
-                ))}
-                {totalsItems.length === 0 && (
+          <div className="p-4 sm:p-5 space-y-3">
+            <div className="bg-blue-50 border border-blue-200 p-3 text-xs text-blue-950 flex items-start gap-2 rounded-none">
+              <BarChart3 className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
+              <div>
+                <strong>Etapa 3 — Julgamento Técnico (Itens 8.2, 8.3 e 9.1 do Edital nº 88/2026):</strong> Contabilização exclusiva dos votos atribuídos pelos jurados, sem influência de votos populares. A Nota Técnica corresponde à média aritmética convertida para a escala de 0 a 100 <em>((Média ÷ 25) × 100)</em>. As 3 primeiras iniciativas constituem os finalistas oficiais para a etapa seguinte de Voto Popular.
+              </div>
+            </div>
+
+            <div className="border border-slate-200 rounded-none overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <table className="w-full text-xs sm:text-sm border-collapse">
+                <thead className="bg-slate-100 text-slate-800 text-xs sticky top-0 border-b border-slate-300 z-10">
                   <tr>
-                    <td className="p-4 text-center text-gray-600" colSpan={11}>Nenhum trabalho encontrado na categoria.</td>
+                    <th className="text-center p-2.5 w-[55px] font-bold">Pos.</th>
+                    <th className="text-left p-2.5 min-w-[250px] font-bold">Trabalho / Iniciativa</th>
+                    <th className="text-left p-2.5 min-w-[160px] font-bold">Proponente</th>
+                    <th className="text-center p-2.5 w-[65px] font-bold" title="Quantidade de jurados que avaliaram este trabalho">Jurados</th>
+                    <th className="text-center p-2.5 w-[90px] font-bold" title="Média aritmética das notas dos jurados (escala 0 a 25)">Média (0-25)</th>
+                    <th className="text-center p-2.5 w-[100px] font-bold text-primary" title="Nota Técnica oficial convertida para escala 0 a 100">Nota Téc. (100)</th>
+                    <th className="text-center p-2.5 w-[60px]" title="Média Cooperação (Critério II de Desempate)">Coop.</th>
+                    <th className="text-center p-2.5 w-[60px]" title="Média Resolutividade (Critério III de Desempate)">Resol.</th>
+                    <th className="text-center p-2.5 w-[60px]" title="Média Impacto Social/Institucional (Critério IV de Desempate)">Imp.</th>
+                    <th className="text-center p-2.5 w-[60px]" title="Média Replicabilidade (Critério V de Desempate)">Repl.</th>
+                    <th className="text-center p-2.5 w-[60px]" title="Média Inovação (Critério VI de Desempate)">Inov.</th>
+                    <th className="text-center p-2.5 min-w-[140px] font-bold">Situação / Desempate</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-            <div className="mt-2 text-xs text-gray-600 px-3 py-2 bg-gray-50 border-t">
-              <strong>Regra do Edital nº 88/2026 (Item 8.2 e 8.9):</strong> A Nota Técnica é a média aritmética das notas válidas convertida para escala 0 a 100 <em>((Média ÷ 25) × 100)</em>. Desempate sucessivo por maior nota em: I — Nota Técnica; II — Cooperação; III — Resolutividade; IV — Impacto Social ou Institucional; V — Replicabilidade; VI — Inovação; VII — Decisão da Comissão Julgadora.
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {totalsItems.map((it, idx) => (
+                    <tr 
+                      key={it.inscricao.id} 
+                      className={`hover:bg-slate-50 transition-colors ${it.is_finalista ? 'bg-amber-50/40' : ''}`}
+                    >
+                      <td className="p-2.5 text-center font-bold">
+                        <span className={`inline-flex items-center justify-center w-7 h-7 text-xs font-bold ${
+                          idx === 0 ? 'bg-amber-500 text-white shadow-2xs' :
+                          idx === 1 ? 'bg-slate-400 text-white' :
+                          idx === 2 ? 'bg-amber-700 text-white' :
+                          'text-slate-600'
+                        }`}>
+                          {idx + 1}º
+                        </span>
+                      </td>
+                      <td className="p-2.5">
+                        <div className="font-semibold text-slate-900 leading-snug">
+                          {it.inscricao.titulo_iniciativa}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {it.inscricao.lotacao}
+                        </div>
+                      </td>
+                      <td className="p-2.5 text-slate-700">
+                        {it.inscricao.nome_completo}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs">
+                        {it.avaliacoes_count}
+                      </td>
+                      <td className="p-2.5 text-center font-mono font-medium">
+                        {it.media_total.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono font-bold text-primary text-sm sm:text-base">
+                        {it.nota_tecnica_100.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs text-slate-600">
+                        {it.media_cooperacao.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs text-slate-600">
+                        {it.media_resolutividade.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs text-slate-600">
+                        {it.media_impacto_social.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs text-slate-600">
+                        {it.media_replicabilidade.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-xs text-slate-600">
+                        {it.media_inovacao.toFixed(2)}
+                      </td>
+                      <td className="p-2.5 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          {it.is_finalista ? (
+                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                              Finalista (Top 3)
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-500">
+                              Classificado ({idx + 1}º)
+                            </span>
+                          )}
+                          {it.criterio_desempate && it.criterio_desempate !== 'Sem empate' && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-900 border border-amber-300 text-center">
+                              {it.criterio_desempate}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {totalsItems.length === 0 && (
+                    <tr>
+                      <td className="p-6 text-center text-gray-500" colSpan={12}>
+                        Nenhum trabalho participante encontrado nesta categoria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="text-[11px] text-slate-600 p-3 bg-slate-50 border border-slate-200 rounded-none space-y-1">
+              <div>
+                <strong>Critérios Sucessivos de Desempate Técnico (Itens 8.9 e 9.1.1 do Edital nº 88/2026):</strong> Em caso de empate na Nota Técnica, aplicam-se sucessivamente: <strong>I</strong> — Maior Nota Técnica; <strong>II</strong> — Maior nota em Cooperação; <strong>III</strong> — Maior nota em Resolutividade; <strong>IV</strong> — Maior nota em Impacto Social ou Institucional; <strong>V</strong> — Maior nota em Replicabilidade; <strong>VI</strong> — Maior nota em Inovação; <strong>VII</strong> — Decisão fundamentada da Comissão Julgadora / Ordem Alfabética.
+              </div>
             </div>
           </div>
         )}
