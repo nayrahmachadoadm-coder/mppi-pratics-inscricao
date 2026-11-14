@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   FileDown,
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -35,7 +36,7 @@ import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { getRelatorioCategoria, getTop3ByCategoriaSql, isOfficial2026FinalistTitle } from '@/lib/evaluationService';
 import { isAuthenticated, hasRole } from '@/lib/auth';
-import { getDeviceFingerprint, getStoredVote, storeVote, removeStoredVote, purgeLegacy2025Votes } from '@/utils/fingerprint';
+import { getDeviceFingerprint, getStoredVote, storeVote, removeStoredVote, purgeLegacy2025Votes, isIncognitoMode } from '@/utils/fingerprint';
 import { submitVotoPopular, getVotosCountByCategoria, getVotoPopularCandidatos } from '@/lib/votoPopularService';
 import { getPeriodoVotacao } from '@/lib/supabaseService';
 
@@ -109,6 +110,7 @@ const VotoPopular: React.FC = () => {
 
   // Desafio anti-automação (Item 9.7 do Edital)
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [isIncognito, setIsIncognito] = useState(false);
   const [challenge, setChallenge] = useState<{ a: number; b: number }>({ a: 0, b: 0 });
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -270,6 +272,7 @@ const VotoPopular: React.FC = () => {
   useEffect(() => {
     purgeLegacy2025Votes();
     carregarDados();
+    isIncognitoMode().then(setIsIncognito).catch(() => void 0);
   }, []);
 
   // Garante que apenas votos válidos da edição 2026 (cujo candidato exista entre os finalistas atuais) sejam considerados
@@ -316,6 +319,7 @@ const VotoPopular: React.FC = () => {
     const b = Math.floor(2 + Math.random() * 7);
     setChallenge({ a, b });
     setAnswer('');
+    isIncognitoMode().then(setIsIncognito).catch(() => void 0);
     setVerifyOpen(true);
   };
 
@@ -387,17 +391,23 @@ const VotoPopular: React.FC = () => {
         setSelectedIds({});
         setLastSubmittedVotes(submittedSummary);
         setVoteSuccessOpen(true);
-        toast({
-          title: 'Voto(s) registrado(s) com sucesso!',
-          description: 'Obrigado por participar da 10ª Edição do Prêmio Melhores Práticas do MPPI.',
-        });
+        if (duplicateCount > 0) {
+          toast({
+            title: `${successCount} voto(s) registrado(s) com sucesso!`,
+            description: `${duplicateCount} categoria(s) já haviam sido votadas anteriormente neste dispositivo.`,
+          });
+        } else {
+          toast({
+            title: 'Voto(s) registrado(s) com sucesso!',
+            description: 'Obrigado por participar da 10ª Edição do Prêmio Melhores Práticas do MPPI.',
+          });
+        }
       } else if (duplicateCount > 0 && periodoBlockedCount === 0) {
-        setSelectedIds({});
-        setLastSubmittedVotes(submittedSummary);
-        setVoteSuccessOpen(true);
+        // Bloqueia com toast destrutivo e NÃO abre o modal de sucesso caso todas as tentativas tenham sido duplicadas
         toast({
-          title: 'Voto já computado nesta edição',
-          description: 'Este dispositivo já possui voto registrado para a(s) categoria(s) selecionada(s) na Edição 2026.',
+          variant: 'destructive',
+          title: 'Voto não permitido: Dispositivo já votou',
+          description: 'Este dispositivo já possui voto computado nesta edição (identificado via assinatura de hardware, mesmo em navegação anônima). Cada aparelho só pode votar uma única vez por categoria.',
         });
       } else if (periodoBlockedCount > 0) {
         toast({
@@ -416,8 +426,8 @@ const VotoPopular: React.FC = () => {
       console.error('[VotoPopular] Erro ao submeter voto:', err);
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: err?.message || 'Houve um problema ao processar seu voto. Tente novamente mais tarde.',
+        title: 'Erro ao registrar voto',
+        description: err?.message || 'Houve um problema de comunicação ao registrar seu voto. Tente novamente.',
       });
     } finally {
       setIsSubmitting(false);
@@ -1345,6 +1355,16 @@ const VotoPopular: React.FC = () => {
                       <strong>Voto único e seguro (Itens 9.4 e 9.7 do Edital nº 88/2026):</strong> cada eleitor registra 1 (um) voto por categoria para garantir uma participação justa e transparente para todos.
                     </span>
                   </div>
+
+                  {/* Alerta de navegação anônima detectada */}
+                  {isIncognito && (
+                    <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-amber-950 leading-relaxed bg-amber-50/90 px-3.5 py-2.5 rounded-none border border-amber-300 break-words">
+                      <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>Navegação anônima detectada:</strong> A votação é limitada a 1 (um) voto por categoria por dispositivo físico (Edital nº 88/2026). A assinatura de hardware do seu aparelho é identificada para assegurar a unicidade do voto.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Rodapé do Modal */}

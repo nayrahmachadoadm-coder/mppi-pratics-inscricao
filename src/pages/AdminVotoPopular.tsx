@@ -129,16 +129,29 @@ const AdminVotoPopular = () => {
     try {
       const fp = await getDeviceFingerprint();
       const res = await submitVotoPopular({ categoria: pendingVote.cat, inscricao_id: pendingVote.inscricaoId, fingerprint: fp });
-      // Mesmo se falhar no backend, garantimos o voto local para evitar múltiplos do mesmo dispositivo
       storeVote(pendingVote.cat, pendingVote.inscricaoId);
-      if (!res.success) {
-        toast({ title: 'Voto registrado localmente', description: 'Houve um problema ao registrar no servidor. Seu voto foi limitado pelo dispositivo.' });
+      if (res.isDuplicate) {
+        toast({
+          variant: 'destructive',
+          title: 'Voto não permitido: Dispositivo já votou',
+          description: 'Este dispositivo já possui voto computado nesta categoria para a Edição 2026 (mesmo via navegação anônima).',
+        });
+      } else if (!res.success) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao registrar voto',
+          description: res.error || 'Houve um problema ao registrar no servidor.',
+        });
       } else {
         toast({ title: 'Voto confirmado', description: `Seu voto foi registrado para: ${pendingVote.titulo}` });
       }
     } catch (e: any) {
       storeVote(pendingVote.cat, pendingVote.inscricaoId);
-      toast({ title: 'Voto registrado', description: 'Seu voto foi salvo no dispositivo.' });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao processar voto',
+        description: e?.message || 'Houve um problema de comunicação.',
+      });
     } finally {
       setVerifyOpen(false);
       setPendingVote(null);

@@ -18,13 +18,22 @@ export type SubmitVotoResult = {
 };
 
 export async function submitVotoPopular(payload: SubmitVotoPayload): Promise<SubmitVotoResult> {
-  const isAuth = await isAuthenticated();
-  const client = isAuth ? supabase : (supabasePublic || supabase);
-  if (!client) {
-    console.warn('[VotoPopular] Supabase não configurado. Voto será apenas local.');
-    return { success: true };
-  }
   try {
+    let client = supabasePublic || supabase;
+    try {
+      const isAuth = await isAuthenticated();
+      if (isAuth && supabase) {
+        client = supabase;
+      }
+    } catch {
+      client = supabasePublic || supabase;
+    }
+
+    if (!client) {
+      console.warn('[VotoPopular] Supabase não configurado. Voto será apenas local.');
+      return { success: true };
+    }
+
     const { error } = await client
       .from('votos_populares')
       .insert({
