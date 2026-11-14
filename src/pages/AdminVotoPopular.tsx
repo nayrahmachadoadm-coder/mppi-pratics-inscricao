@@ -133,8 +133,8 @@ const AdminVotoPopular = () => {
       if (res.isDuplicate) {
         toast({
           variant: 'destructive',
-          title: 'Voto não permitido: Dispositivo já votou',
-          description: 'Este dispositivo já possui voto computado nesta categoria para a Edição 2026 (mesmo via navegação anônima).',
+          title: 'Voto não permitido',
+          description: 'Não foi possível registrar este voto porque já existe um voto computado para esta categoria nesta edição a partir das características técnicas deste navegador/dispositivo. Se você acredita que isso é um erro, utilize o canal de contestação informado no edital.',
         });
       } else if (!res.success) {
         toast({

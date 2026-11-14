@@ -406,8 +406,8 @@ const VotoPopular: React.FC = () => {
         // Bloqueia com toast destrutivo e NÃO abre o modal de sucesso caso todas as tentativas tenham sido duplicadas
         toast({
           variant: 'destructive',
-          title: 'Voto não permitido: Dispositivo já votou',
-          description: 'Este dispositivo já possui voto computado nesta edição (identificado via assinatura de hardware, mesmo em navegação anônima). Cada aparelho só pode votar uma única vez por categoria.',
+          title: 'Voto não permitido',
+          description: 'Não foi possível registrar este voto porque já existe um voto computado para esta categoria nesta edição a partir das características técnicas deste navegador/dispositivo. Se você acredita que isso é um erro, utilize o canal de contestação informado no edital.',
         });
       } else if (periodoBlockedCount > 0) {
         toast({
@@ -1361,7 +1361,7 @@ const VotoPopular: React.FC = () => {
                     <div className="flex items-start gap-2.5 text-[11px] sm:text-xs text-amber-950 leading-relaxed bg-amber-50/90 px-3.5 py-2.5 rounded-none border border-amber-300 break-words">
                       <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                       <span>
-                        <strong>Navegação anônima detectada:</strong> A votação é limitada a 1 (um) voto por categoria por dispositivo físico (Edital nº 88/2026). A assinatura de hardware do seu aparelho é identificada para assegurar a unicidade do voto.
+                        <strong>Navegação anônima detectada:</strong> A votação é limitada a 1 (um) voto por categoria nesta edição (Edital nº 88/2026). As características técnicas de navegação são verificadas para assegurar a unicidade e a integridade da votação.
                       </span>
                     </div>
                   )}
