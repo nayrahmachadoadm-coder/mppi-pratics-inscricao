@@ -380,19 +380,19 @@ const AdminPremiacao = () => {
 
                                 <div className="col-span-2 text-right font-mono tabular-nums">
                                   <div className="text-base sm:text-lg font-extrabold text-slate-900">
-                                    {it.nota_tecnica_100.toFixed(2)}
-                                  </div>
-                                  <div className="mt-0.5 inline-block text-xs font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-none">
                                     {(it.nota_tecnica_100 * 0.8).toFixed(2)} pts
+                                  </div>
+                                  <div className="mt-0.5 text-xs font-medium text-slate-500">
+                                    ({it.nota_tecnica_100.toFixed(2)}%)
                                   </div>
                                 </div>
 
                                 <div className="col-span-2 text-right font-mono tabular-nums">
                                   <div className="text-base sm:text-lg font-extrabold text-slate-900">
-                                    {it.nota_popular_100.toFixed(2)}
-                                  </div>
-                                  <div className="mt-0.5 inline-block text-xs font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-none">
                                     {(it.nota_popular_100 * 0.2).toFixed(2)} pts
+                                  </div>
+                                  <div className="mt-0.5 text-xs font-medium text-slate-500">
+                                    ({it.nota_popular_100.toFixed(2)}%)
                                   </div>
                                 </div>
 
